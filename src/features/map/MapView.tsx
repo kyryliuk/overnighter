@@ -33,21 +33,25 @@ export default function MapView() {
           <RigFilterOverlay />
         </div>
       </div>
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center" style={{ height: '100dvh' }}>
-            <span className="text-muted-foreground text-sm">Loading map…</span>
-          </div>
-        }
-      >
-        <LeafletMap
-          pins={pins}
-          isLoading={isLoading}
-          rigProfile={rigProfile}
-          onMapReady={(map) => { mapRef.current = map }}
-          onMapRemove={() => { mapRef.current = null }}
-        />
-      </Suspense>
+      {/* z-0 creates a stacking context that contains all Leaflet internal panes (z-index 400–1000),
+          preventing them from bleeding above the overlay controls at z-10 */}
+      <div className="absolute inset-0 z-0">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center" style={{ height: '100dvh' }}>
+              <span className="text-muted-foreground text-sm">Loading map…</span>
+            </div>
+          }
+        >
+          <LeafletMap
+            pins={pins}
+            isLoading={isLoading}
+            rigProfile={rigProfile}
+            onMapReady={(map) => { mapRef.current = map }}
+            onMapRemove={() => { mapRef.current = null }}
+          />
+        </Suspense>
+      </div>
     </div>
   )
 }
