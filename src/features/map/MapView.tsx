@@ -1,7 +1,9 @@
-import { useEffect, lazy, Suspense } from 'react'
+import { useEffect, useRef, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRigStore } from '@/store/rigStore'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
+import type * as L from 'leaflet'
+import SearchBar from './SearchBar'
 import RigFilterOverlay from './RigFilterOverlay'
 
 const LeafletMap = lazy(() => import('./LeafletMap'))
@@ -13,6 +15,7 @@ export default function MapView() {
   const onboardingDismissed = useRigStore((state) => state.onboardingDismissed)
   const shouldShowMap = hasRigProfile() || onboardingDismissed
   const { data: pins = [], isLoading } = usePinsQuery({ enabled: shouldShowMap })
+  const mapRef = useRef<L.Map | null>(null)
 
   useEffect(() => {
     if (!hasRigProfile() && !onboardingDismissed) {
@@ -22,7 +25,14 @@ export default function MapView() {
 
   return (
     <div className="relative bg-background" style={{ height: '100dvh' }}>
-      <RigFilterOverlay />
+      <div className="absolute top-0 left-0 right-0 z-10 p-4 flex flex-col gap-2 pointer-events-none">
+        <div className="pointer-events-auto">
+          <SearchBar mapRef={mapRef} />
+        </div>
+        <div className="pointer-events-auto flex justify-center">
+          <RigFilterOverlay />
+        </div>
+      </div>
       <Suspense
         fallback={
           <div className="flex items-center justify-center" style={{ height: '100dvh' }}>
@@ -30,7 +40,13 @@ export default function MapView() {
           </div>
         }
       >
-        <LeafletMap pins={pins} isLoading={isLoading} rigProfile={rigProfile} />
+        <LeafletMap
+          pins={pins}
+          isLoading={isLoading}
+          rigProfile={rigProfile}
+          onMapReady={(map) => { mapRef.current = map }}
+          onMapRemove={() => { mapRef.current = null }}
+        />
       </Suspense>
     </div>
   )

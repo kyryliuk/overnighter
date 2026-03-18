@@ -14,9 +14,11 @@ interface LeafletMapProps {
   pins: Pin[]
   isLoading: boolean
   rigProfile: RigProfile
+  onMapReady?: (map: L.Map) => void
+  onMapRemove?: () => void
 }
 
-export default function LeafletMap({ pins, isLoading, rigProfile }: LeafletMapProps) {
+export default function LeafletMap({ pins, isLoading, rigProfile, onMapReady, onMapRemove }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
 
@@ -61,10 +63,12 @@ export default function LeafletMap({ pins, isLoading, rigProfile }: LeafletMapPr
     )
 
     setMapInstance(map)
+    onMapReady?.(map)
 
     return () => {
       map.remove()
       setMapInstance(null)
+      onMapRemove?.()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

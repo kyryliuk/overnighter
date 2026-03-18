@@ -17,6 +17,11 @@ vi.mock('./LeafletMap', () => ({
   default: vi.fn(() => <div data-testid="leaflet-map" />),
 }))
 
+// Mock SearchBar to avoid fetch/geolocation in MapView tests
+vi.mock('./SearchBar', () => ({
+  default: vi.fn(() => <div data-testid="search-bar" />),
+}))
+
 // Avoid Supabase calls in tests
 vi.mock('@/hooks/usePinsQuery', () => ({
   usePinsQuery: vi.fn(() => ({ data: [], isLoading: false, error: null })),
@@ -110,5 +115,11 @@ describe('MapView rig context indicator', () => {
     useRigStore.getState().setRigProfile({ rigType: 'Class C', lengthFt: 28, heightFt: 11 })
     render(<MapView />, { wrapper: Wrapper })
     expect(screen.getByTestId('leaflet-map')).toBeInTheDocument()
+  })
+
+  it('renders SearchBar in the overlay stack', () => {
+    useRigStore.getState().setRigProfile({ rigType: 'Class A', lengthFt: 35, heightFt: 12.5 })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByTestId('search-bar')).toBeInTheDocument()
   })
 })
