@@ -33,6 +33,7 @@ function fromDecimalFeet(decimal: number): { ft: number; inches: number } {
 export default function OnboardingScreen() {
   const navigate = useNavigate()
   const setRigProfile = useRigStore((state) => state.setRigProfile)
+  const setOnboardingDismissed = useRigStore((state) => state.setOnboardingDismissed)
 
   const [selectedRigType, setSelectedRigType] = useState<RigType | null>(null)
   const [lengthFt, setLengthFt] = useState<number>(25)
@@ -117,6 +118,7 @@ export default function OnboardingScreen() {
   }
 
   function handleSkip() {
+    setOnboardingDismissed()
     navigate('/')
   }
 

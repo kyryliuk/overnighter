@@ -6,6 +6,7 @@ import type { RigProfile } from '@/types/rigProfile'
 beforeEach(() => {
   localStorage.clear()
   useRigStore.getState().clearRigProfile()
+  useRigStore.setState({ onboardingDismissed: false })
 })
 
 describe('useRigStore', () => {
@@ -44,6 +45,22 @@ describe('useRigStore', () => {
     expect(rigProfile.rigType).toBeNull()
     expect(rigProfile.lengthFt).toBeNull()
     expect(rigProfile.heightFt).toBeNull()
+  })
+
+  it('initial state has onboardingDismissed as false', () => {
+    expect(useRigStore.getState().onboardingDismissed).toBe(false)
+  })
+
+  it('setOnboardingDismissed sets onboardingDismissed to true', () => {
+    useRigStore.getState().setOnboardingDismissed()
+    expect(useRigStore.getState().onboardingDismissed).toBe(true)
+  })
+
+  it('clearRigProfile also resets onboardingDismissed to false', () => {
+    useRigStore.getState().setOnboardingDismissed()
+    expect(useRigStore.getState().onboardingDismissed).toBe(true)
+    useRigStore.getState().clearRigProfile()
+    expect(useRigStore.getState().onboardingDismissed).toBe(false)
   })
 
   it('state update is immutable — does not mutate previous state reference', () => {
