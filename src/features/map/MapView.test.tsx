@@ -138,8 +138,11 @@ describe('MapView rig context indicator', () => {
 })
 
 const STUB_PIN: Pin = {
-  id: 'p1', name: 'Test Spot', latitude: 0, longitude: 0,
+  id: 'p1', name: 'Test Spot', description: null, latitude: 0, longitude: 0,
+  pinType: 'community', sourceId: null, maxLengthFt: null, maxHeightFt: null,
   badgeState: 'green', lastCheckInAt: new Date().toISOString(),
+  recentCheckInCount: 1, isVerified: false, isFlagged: false,
+  createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   amenities: { overnight: true, dump: false, water: false, fuel: false, propane: false, electric: false, shower: false },
 }
 
