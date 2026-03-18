@@ -13,7 +13,7 @@ export function dbPinToPin(db: DbPin): Pin {
     sourceId: db.source_id,
     maxLengthFt: db.max_length_ft,
     maxHeightFt: db.max_height_ft,
-    amenities: db.amenities as PinAmenities,
+    amenities: db.amenities as unknown as PinAmenities,
     badgeState: db.badge_state as BadgeColor,
     lastCheckInAt: db.last_check_in_at,
     recentCheckInCount: db.recent_check_in_count,

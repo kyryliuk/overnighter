@@ -137,7 +137,7 @@ describe('LeafletMap', () => {
     render(
       <LeafletMap pins={[]} isLoading={false} rigProfile={DEFAULT_RIG_PROFILE} />,
     )
-    const firstCall = (L.tileLayer as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+    const firstCall = (L.tileLayer as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
     expect(firstCall).toContain('{r}')
   })
 

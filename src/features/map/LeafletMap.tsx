@@ -28,8 +28,9 @@ export default function LeafletMap({ pins, isLoading, rigProfile, onMapReady, on
     const map = L.map(containerRef.current, {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
-      tap: false, // Prevents iOS Safari double-tap ghost events
-    })
+      // tap exists in Leaflet 1.9.x runtime but is absent from @types/leaflet
+      tap: false,
+    } as unknown as L.MapOptions)
 
     const cartoTile = L.tileLayer(CARTO_DARK_URL, {
       attribution: '© <a href="https://carto.com/attributions">CARTO</a>',
