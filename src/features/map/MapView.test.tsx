@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -23,8 +23,18 @@ vi.mock('./SearchBar', () => ({
 }))
 
 // Avoid Supabase calls in tests
+const mockUsePinsQuery = vi.fn(() => ({ data: [], isLoading: false, error: null }))
 vi.mock('@/hooks/usePinsQuery', () => ({
-  usePinsQuery: vi.fn(() => ({ data: [], isLoading: false, error: null })),
+  usePinsQuery: (...args: unknown[]) => mockUsePinsQuery(...args),
+}))
+
+// Mock BadgeTooltip to isolate MapView integration concerns
+vi.mock('./BadgeTooltip', () => ({
+  default: vi.fn(({ onDismiss }: { onDismiss: () => void }) => (
+    <div data-testid="badge-tooltip">
+      <button onClick={onDismiss}>dismiss</button>
+    </div>
+  )),
 }))
 
 function Wrapper({ children }: { children: React.ReactNode }) {
@@ -121,5 +131,55 @@ describe('MapView rig context indicator', () => {
     useRigStore.getState().setRigProfile({ rigType: 'Class A', lengthFt: 35, heightFt: 12.5 })
     render(<MapView />, { wrapper: Wrapper })
     expect(screen.getByTestId('search-bar')).toBeInTheDocument()
+  })
+})
+
+const STUB_PIN = {
+  id: 'p1', name: 'Test Spot', latitude: 0, longitude: 0,
+  badgeState: 'green', lastCheckInAt: new Date().toISOString(),
+  amenities: { overnight: true, dump: false, water: false, fuel: false, propane: false, electric: false, shower: false },
+}
+
+describe('MapView BadgeTooltip integration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    mockNavigate.mockClear()
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+  })
+
+  afterEach(() => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+  })
+
+  it('shows BadgeTooltip when pins are loaded and badge_tooltip_seen is not set', () => {
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByTestId('badge-tooltip')).toBeInTheDocument()
+  })
+
+  it('does not show BadgeTooltip when badge_tooltip_seen is already set', () => {
+    localStorage.setItem('badge_tooltip_seen', '1')
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByTestId('badge-tooltip')).not.toBeInTheDocument()
+  })
+
+  it('does not show BadgeTooltip while pins are loading', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: true, error: null })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByTestId('badge-tooltip')).not.toBeInTheDocument()
+  })
+
+  it('does not show BadgeTooltip when pins array is empty', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByTestId('badge-tooltip')).not.toBeInTheDocument()
+  })
+
+  it('dismissing BadgeTooltip hides it and writes badge_tooltip_seen to localStorage', () => {
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByTestId('badge-tooltip')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'dismiss' }))
+    expect(screen.queryByTestId('badge-tooltip')).not.toBeInTheDocument()
+    expect(localStorage.getItem('badge_tooltip_seen')).toBe('1')
   })
 })

@@ -85,14 +85,14 @@ const bigRig: RigProfile = { rigType: 'Class A', lengthFt: 50, heightFt: 14 }
 // Icon config structure
 // ---------------------------------------------------------------------------
 describe('createPinIconConfig — structure', () => {
-  it('returns iconSize [36, 36]', () => {
+  it('returns iconSize [44, 54]', () => {
     const config = createPinIconConfig(makePin(), fitProfile)
-    expect(config.iconSize).toEqual([36, 36])
+    expect(config.iconSize).toEqual([44, 54])
   })
 
-  it('returns iconAnchor [18, 18]', () => {
+  it('returns iconAnchor [22, 18]', () => {
     const config = createPinIconConfig(makePin(), fitProfile)
-    expect(config.iconAnchor).toEqual([18, 18])
+    expect(config.iconAnchor).toEqual([22, 18])
   })
 
   it('returns className as empty string', () => {
@@ -104,6 +104,68 @@ describe('createPinIconConfig — structure', () => {
     const config = createPinIconConfig(makePin(), fitProfile)
     expect(config.html).toContain('<div')
     expect(config.html).toContain('</div>')
+  })
+
+  it('html contains a span element (pill label)', () => {
+    const config = createPinIconConfig(makePin(), fitProfile)
+    expect(config.html).toContain('<span')
+    expect(config.html).toContain('</span>')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Pill label text — visible recency label (NFR-A3 dual-coding)
+// ---------------------------------------------------------------------------
+describe('createPinIconConfig — pill label text (NFR-A3)', () => {
+  it('green badge shows "fresh" label', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'green' }), fitProfile)
+    expect(config.html).toContain('>fresh<')
+  })
+
+  it('yellow badge shows "recent" label', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'yellow' }), fitProfile)
+    expect(config.html).toContain('>recent<')
+  })
+
+  it('red badge shows "stale" label', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'red' }), fitProfile)
+    expect(config.html).toContain('>stale<')
+  })
+
+  it('grey badge shows "unknown" label', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'grey' }), fitProfile)
+    expect(config.html).toContain('>unknown<')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Pill text color — contrast compliance (NFR-A6)
+// ---------------------------------------------------------------------------
+describe('createPinIconConfig — pill text color (NFR-A6)', () => {
+  it('green badge uses dark pill text #0f172a', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'green' }), fitProfile)
+    expect(config.html).toContain('color:#0f172a')
+  })
+
+  it('yellow badge uses dark pill text #0f172a', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'yellow' }), fitProfile)
+    expect(config.html).toContain('color:#0f172a')
+  })
+
+  it('red badge uses dark pill text #0f172a', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'red' }), fitProfile)
+    expect(config.html).toContain('color:#0f172a')
+  })
+
+  it('grey badge uses white pill text #ffffff', () => {
+    const config = createPinIconConfig(makePin({ badgeState: 'grey' }), fitProfile)
+    expect(config.html).toContain('color:#ffffff')
+  })
+
+  it('unfit pin (any badge) uses white pill text #ffffff', () => {
+    // Unfit pins use grey ring regardless of badge — pill text falls back to white
+    const config = createPinIconConfig(makePin({ badgeState: 'green', maxLengthFt: 10 }), bigRig)
+    expect(config.html).toContain('color:#ffffff')
   })
 })
 

@@ -1,5 +1,5 @@
 import * as L from 'leaflet'
-import type { Pin } from '@/types/pin'
+import type { Pin, BadgeColor } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
 import { doesPinFitRig } from './PinLayer'
 import { useUIStore } from '@/store/uiStore'
@@ -15,8 +15,6 @@ export interface PinIconConfig {
   iconAnchor: [number, number]
   className: string
 }
-
-type BadgeColor = 'green' | 'yellow' | 'red' | 'grey'
 
 const RING_COLORS: Record<BadgeColor, string> = {
   green: '#22c55e',
@@ -37,6 +35,16 @@ const BADGE_LABELS: Record<BadgeColor, string> = {
   yellow: 'recent',
   red: 'stale',
   grey: 'unknown',
+}
+
+// Pill text colors — contrast-compliant (≥4.5:1) per NFR-A6:
+// green/yellow/red: dark #0f172a on colored background
+// grey: white #ffffff on grey #6b7280
+const PILL_TEXT_COLORS: Record<BadgeColor, string> = {
+  green: '#0f172a',
+  yellow: '#0f172a',
+  red: '#0f172a',
+  grey: '#ffffff',
 }
 
 function getCategoryEmoji(pin: Pin): { emoji: string; label: string } {
@@ -79,19 +87,31 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
 
   const unfitStyles = fits ? '' : 'filter:grayscale(1);opacity:0.5;'
 
+  // Pill text color: dark text on colored backgrounds for green/yellow/red;
+  // white text on grey — all meet NFR-A6 4.5:1 contrast requirement
+  const pillTextColor = fits ? (PILL_TEXT_COLORS[badge] ?? '#ffffff') : '#ffffff'
+
   const html =
-    `<div ` +
-    `style="width:36px;height:36px;border-radius:50%;border:3px solid ${ringColor};` +
-    `background:${fillColor};display:flex;align-items:center;justify-content:center;` +
-    `font-size:16px;cursor:pointer;${unfitStyles}" ` +
-    `role="img" ` +
-    `aria-label="${ariaLabel}"` +
-    `>${emoji}</div>`
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">` +
+      `<div ` +
+        `style="width:36px;height:36px;border-radius:50%;border:3px solid ${ringColor};` +
+        `background:${fillColor};display:flex;align-items:center;justify-content:center;` +
+        `font-size:16px;cursor:pointer;${unfitStyles}" ` +
+        `role="img" ` +
+        `aria-label="${ariaLabel}"` +
+      `>${emoji}</div>` +
+      `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;` +
+        `background:${ringColor};color:${pillTextColor};line-height:1.2;cursor:pointer;${unfitStyles}"` +
+      `>${recency}</span>` +
+    `</div>`
 
   return {
     html,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    // iconSize [44, 54]: wider to accommodate label pill, taller for circle (36) + gap (2) + pill (~14)
+    iconSize: [44, 54],
+    // iconAnchor [22, 18]: horizontally centered (22 = 44/2); vertically at circle center (18 = 36/2)
+    // so the pin's lat/lng coordinate aligns with the center of the circle, not the pill
+    iconAnchor: [22, 18],
     className: '', // MUST be '' — Leaflet's default adds a white square background div
   }
 }

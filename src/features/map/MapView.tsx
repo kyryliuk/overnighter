@@ -1,10 +1,11 @@
-import { useEffect, useRef, lazy, Suspense } from 'react'
+import { useEffect, useRef, lazy, Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRigStore } from '@/store/rigStore'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import type * as L from 'leaflet'
 import SearchBar from './SearchBar'
 import RigFilterOverlay from './RigFilterOverlay'
+import BadgeTooltip from './BadgeTooltip'
 
 const LeafletMap = lazy(() => import('./LeafletMap'))
 
@@ -17,11 +18,22 @@ export default function MapView() {
   const { data: pins = [], isLoading } = usePinsQuery({ enabled: shouldShowMap })
   const mapRef = useRef<L.Map | null>(null)
 
+  // Lazy initializer avoids reading localStorage on every render.
+  // Set to false immediately when badge_tooltip_seen is already in storage.
+  const [showBadgeTooltip, setShowBadgeTooltip] = useState(
+    () => !localStorage.getItem('badge_tooltip_seen'),
+  )
+
   useEffect(() => {
     if (!hasRigProfile() && !onboardingDismissed) {
       navigate('/onboarding', { replace: true })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleDismissTooltip() {
+    localStorage.setItem('badge_tooltip_seen', '1')
+    setShowBadgeTooltip(false)
+  }
 
   return (
     <div className="relative bg-background" style={{ height: '100dvh' }}>
@@ -52,6 +64,10 @@ export default function MapView() {
           />
         </Suspense>
       </div>
+      {/* First-session badge onboarding tooltip (AC7) — shown above all map layers */}
+      {showBadgeTooltip && pins.length > 0 && !isLoading && (
+        <BadgeTooltip onDismiss={handleDismissTooltip} />
+      )}
     </div>
   )
 }
