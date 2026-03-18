@@ -114,6 +114,46 @@ describe('POST /api/sync', () => {
     expect((ctx.body as { synced: number }).synced).toBe(3)
   })
 
+  it('upsert rows exclude status fields and include updated_at (AC2/H2/H3)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ridbPage(1),
+    } as Response)
+
+    const { res } = mockRes()
+    await handler(mockReq(), res)
+
+    const upsertArg = mockUpsert.mock.calls[0][0] as Array<Record<string, unknown>>
+    expect(upsertArg[0]).not.toHaveProperty('badge_state')
+    expect(upsertArg[0]).not.toHaveProperty('last_check_in_at')
+    expect(upsertArg[0]).not.toHaveProperty('recent_check_in_count')
+    expect(upsertArg[0]).not.toHaveProperty('is_verified')
+    expect(upsertArg[0]).not.toHaveProperty('is_flagged')
+    expect(upsertArg[0]).toHaveProperty('updated_at')
+    expect(typeof upsertArg[0].updated_at).toBe('string')
+  })
+
+  it('calls stale-pin update after sync (AC2 — NFR-I1)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ridbPage(1),
+    } as Response)
+
+    const { res } = mockRes()
+    const before = Date.now()
+    await handler(mockReq(), res)
+    const after = Date.now()
+
+    expect(mockUpdate).toHaveBeenCalledWith({ badge_state: 'red' })
+    expect(mockLt).toHaveBeenCalledOnce()
+    const cutoffArg = mockLt.mock.calls[0][1] as string
+    const cutoffMs = new Date(cutoffArg).getTime()
+    const expectedCutoff48h = before - 48 * 60 * 60 * 1000
+    expect(cutoffMs).toBeGreaterThanOrEqual(expectedCutoff48h - 100)
+    expect(cutoffMs).toBeLessThanOrEqual(after - 48 * 60 * 60 * 1000 + 100)
+    expect(mockEq).toHaveBeenCalledWith('badge_state', 'grey')
+  })
+
   it('paginates when CURRENT_COUNT equals PAGE_SIZE (50)', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce({

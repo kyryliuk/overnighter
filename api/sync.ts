@@ -39,9 +39,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .filter((r): r is NonNullable<ReturnType<typeof normalizeRidbFacility>> => r !== null)
 
       if (rows.length > 0) {
+        // Strip status fields so upsert doesn't overwrite badge_state/check-in data on existing pins.
+        // DB defaults (badge_state='grey', recent_check_in_count=0, etc.) apply on INSERT.
+        // updated_at is set explicitly so stale detection works correctly after each sync.
+        const now = new Date().toISOString()
+        const syncRows = rows.map(({ badge_state: _b, last_check_in_at: _l, recent_check_in_count: _r, is_verified: _v, is_flagged: _f, ...data }) => ({
+          ...data,
+          updated_at: now,
+        }))
         const { error } = await supabase
           .from('pins')
-          .upsert(rows, { onConflict: 'pin_type,source_id' })
+          .upsert(syncRows, { onConflict: 'pin_type,source_id' })
         if (error) throw new Error(`Supabase upsert: ${error.message}`)
         totalSynced += rows.length
       }

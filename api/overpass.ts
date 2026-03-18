@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'MISSING_BBOX', message: 'bbox query param required', status: 400 })
   }
   const parts = bbox.split(',')
-  if (parts.length !== 4 || parts.some(p => isNaN(Number(p)))) {
+  if (parts.length !== 4 || parts.some(p => p.trim() === '' || isNaN(Number(p)))) {
     return res.status(400).json({ error: 'INVALID_BBOX', message: 'bbox must be south,west,north,east', status: 400 })
   }
 
@@ -35,11 +35,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = createServiceClient()
 
     // Check cache
-    const { data: cached } = await supabase
+    const { data: cached, error: cacheErr } = await supabase
       .from('overpass_cache')
       .select('payload, cached_at')
       .eq('bbox_key', bbox)
       .single()
+    if (cacheErr && cacheErr.code !== 'PGRST116') {
+      // PGRST116 = no rows found (expected cache miss) — all other errors are unexpected
+      console.warn('[api/overpass] cache read error:', cacheErr.message)
+    }
 
     if (cached) {
       const ageMs = Date.now() - new Date(cached.cached_at as string).getTime()
