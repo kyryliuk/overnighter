@@ -25,24 +25,13 @@ const mockTileLayer = {
   remove: mockTileLayerRemove,
 }
 
-const mockCircleMarkerAddTo = vi.fn()
-const mockCircleMarkerRemove = vi.fn()
-
 vi.mock('leaflet', () => ({
   default: {
     map: vi.fn(() => mockMap),
     tileLayer: vi.fn(() => mockTileLayer),
-    circleMarker: vi.fn(() => ({
-      addTo: mockCircleMarkerAddTo,
-      remove: mockCircleMarkerRemove,
-    })),
   },
   map: vi.fn(() => mockMap),
   tileLayer: vi.fn(() => mockTileLayer),
-  circleMarker: vi.fn(() => ({
-    addTo: mockCircleMarkerAddTo,
-    remove: mockCircleMarkerRemove,
-  })),
 }))
 
 // PinLayer also imports leaflet — mock it to avoid double-init issues
@@ -89,6 +78,11 @@ function makePin(overrides: Partial<Pin> = {}): Pin {
 // ---------------------------------------------------------------------------
 beforeEach(() => {
   vi.clearAllMocks()
+  // jsdom does not implement matchMedia — provide a minimal stub
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+  })
 })
 
 describe('LeafletMap', () => {
@@ -148,5 +142,33 @@ describe('LeafletMap', () => {
       <LeafletMap pins={pins} isLoading={false} rigProfile={DEFAULT_RIG_PROFILE} />,
     )
     expect(PinLayer).toHaveBeenCalled()
+  })
+
+  it('disables zoom and fade animations when prefers-reduced-motion is active (AC6)', async () => {
+    // Override matchMedia to report prefers-reduced-motion: reduce
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+    })
+    const L = await import('leaflet')
+    render(
+      <LeafletMap pins={[]} isLoading={false} rigProfile={DEFAULT_RIG_PROFILE} />,
+    )
+    expect(L.map).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({ zoomAnimation: false, fadeAnimation: false }),
+    )
+  })
+
+  it('enables animations when prefers-reduced-motion is not active', async () => {
+    // matchMedia returns matches: false (set in beforeEach — default state)
+    const L = await import('leaflet')
+    render(
+      <LeafletMap pins={[]} isLoading={false} rigProfile={DEFAULT_RIG_PROFILE} />,
+    )
+    expect(L.map).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({ zoomAnimation: true, fadeAnimation: true }),
+    )
   })
 })

@@ -25,11 +25,18 @@ export default function LeafletMap({ pins, isLoading, rigProfile, onMapReady, on
   useEffect(() => {
     if (!containerRef.current || mapInstance) return
 
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
     const map = L.map(containerRef.current, {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       // tap exists in Leaflet 1.9.x runtime but is absent from @types/leaflet
       tap: false,
+      // Respect prefers-reduced-motion (NFR-A5)
+      zoomAnimation: !prefersReduced,
+      fadeAnimation: !prefersReduced,
     } as unknown as L.MapOptions)
 
     const cartoTile = L.tileLayer(CARTO_DARK_URL, {

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import * as L from 'leaflet'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
+import { createPinMarker } from './PinMarker'
 
 interface PinLayerProps {
   map: L.Map
@@ -26,24 +27,8 @@ export function doesPinFitRig(pin: Pin, rigProfile: RigProfile): boolean {
   return lengthOk && heightOk
 }
 
-const FIT_STYLE: L.CircleMarkerOptions = {
-  radius: 8,
-  fillColor: '#22c55e',
-  fillOpacity: 0.9,
-  color: '#16a34a',
-  weight: 2,
-}
-
-const UNFIT_STYLE: L.CircleMarkerOptions = {
-  radius: 8,
-  fillColor: '#6b7280',
-  fillOpacity: 0.35,
-  color: '#4b5563',
-  weight: 1,
-}
-
 export default function PinLayer({ map, pins, rigProfile, isLoading }: PinLayerProps) {
-  const markersRef = useRef<L.CircleMarker[]>([])
+  const markersRef = useRef<L.Marker[]>([])
 
   useEffect(() => {
     markersRef.current.forEach((m) => m.remove())
@@ -55,8 +40,7 @@ export default function PinLayer({ map, pins, rigProfile, isLoading }: PinLayerP
     }
 
     pins.forEach((pin) => {
-      const fits = doesPinFitRig(pin, rigProfile)
-      const marker = L.circleMarker([pin.latitude, pin.longitude], fits ? FIT_STYLE : UNFIT_STYLE)
+      const marker = createPinMarker(pin, rigProfile)
       marker.addTo(map)
       markersRef.current.push(marker)
     })

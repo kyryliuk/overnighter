@@ -1,7 +1,39 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render } from '@testing-library/react'
+import React from 'react'
 import { doesPinFitRig } from './PinLayer'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
+import type * as L from 'leaflet'
+
+// ---------------------------------------------------------------------------
+// Mocks — use vi.hoisted so vars are available when vi.mock factory runs
+// ---------------------------------------------------------------------------
+
+const mocks = vi.hoisted(() => {
+  const mockMarkerOn = vi.fn().mockReturnThis()
+  const mockMarkerAddTo = vi.fn().mockReturnThis()
+  const mockMarkerRemove = vi.fn()
+  const mockMarkerInstance = {
+    on: mockMarkerOn,
+    addTo: mockMarkerAddTo,
+    remove: mockMarkerRemove,
+  }
+  const mockCreatePinMarker = vi.fn(() => mockMarkerInstance)
+  return { mockMarkerOn, mockMarkerAddTo, mockMarkerRemove, mockCreatePinMarker, mockMarkerInstance }
+})
+
+vi.mock('./PinMarker', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./PinMarker')>()
+  return {
+    ...actual,
+    createPinMarker: mocks.mockCreatePinMarker,
+  }
+})
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function makePin(overrides: Partial<Pin> = {}): Pin {
   return {
@@ -37,6 +69,10 @@ function makePin(overrides: Partial<Pin> = {}): Pin {
 function makeProfile(overrides: Partial<RigProfile> = {}): RigProfile {
   return { rigType: 'Class A', lengthFt: 35, heightFt: 12.5, ...overrides }
 }
+
+// ---------------------------------------------------------------------------
+// Existing doesPinFitRig tests — DO NOT CHANGE
+// ---------------------------------------------------------------------------
 
 describe('doesPinFitRig', () => {
   it('returns true when rigProfile has no rigType (no profile set)', () => {
@@ -109,5 +145,61 @@ describe('doesPinFitRig', () => {
     const pin = makePin({ maxLengthFt: null, maxHeightFt: 10 })
     const profile = makeProfile({ heightFt: null })
     expect(doesPinFitRig(pin, profile)).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PinLayer component — new tests for Story 2.2
+// ---------------------------------------------------------------------------
+
+let PinLayer: React.ComponentType<{
+  map: L.Map
+  pins: Pin[]
+  rigProfile: RigProfile
+  isLoading: boolean
+}>
+
+beforeEach(async () => {
+  vi.clearAllMocks()
+  const mod = await import('./PinLayer')
+  PinLayer = mod.default
+})
+
+const mockMap = {} as L.Map
+
+describe('PinLayer component', () => {
+  it('calls createPinMarker (not circleMarker) for each pin when not loading', () => {
+    const pins = [makePin({ id: 'pin-a' }), makePin({ id: 'pin-b' })]
+    const profile = makeProfile()
+    render(
+      React.createElement(PinLayer, { map: mockMap, pins, rigProfile: profile, isLoading: false }),
+    )
+    expect(mocks.mockCreatePinMarker).toHaveBeenCalledTimes(2)
+    expect(mocks.mockCreatePinMarker).toHaveBeenCalledWith(pins[0], profile)
+    expect(mocks.mockCreatePinMarker).toHaveBeenCalledWith(pins[1], profile)
+  })
+
+  it('does not call createPinMarker when isLoading is true', () => {
+    render(
+      React.createElement(PinLayer, {
+        map: mockMap,
+        pins: [makePin()],
+        rigProfile: makeProfile(),
+        isLoading: true,
+      }),
+    )
+    expect(mocks.mockCreatePinMarker).not.toHaveBeenCalled()
+  })
+
+  it('adds each marker to the map', () => {
+    render(
+      React.createElement(PinLayer, {
+        map: mockMap,
+        pins: [makePin()],
+        rigProfile: makeProfile(),
+        isLoading: false,
+      }),
+    )
+    expect(mocks.mockMarkerAddTo).toHaveBeenCalledWith(mockMap)
   })
 })
