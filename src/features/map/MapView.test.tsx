@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import MapView from './MapView'
 import { useRigStore } from '@/store/rigStore'
+import { useAmenityFilterStore } from '@/store/amenityFilterStore'
 import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
@@ -54,6 +55,7 @@ describe('MapView redirect guard', () => {
     localStorage.clear()
     useRigStore.getState().clearRigProfile()
     useRigStore.setState({ onboardingDismissed: false })
+    useAmenityFilterStore.setState({ activeFilters: [] })
     mockNavigate.mockClear()
   })
 
@@ -80,6 +82,7 @@ describe('MapView rig context indicator', () => {
     localStorage.clear()
     useRigStore.getState().clearRigProfile()
     useRigStore.setState({ onboardingDismissed: false })
+    useAmenityFilterStore.setState({ activeFilters: [] })
     mockNavigate.mockClear()
   })
 
@@ -150,6 +153,7 @@ describe('MapView BadgeTooltip integration', () => {
   beforeEach(() => {
     localStorage.clear()
     useRigStore.setState({ onboardingDismissed: true })
+    useAmenityFilterStore.setState({ activeFilters: [] })
     mockNavigate.mockClear()
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
   })
@@ -187,5 +191,72 @@ describe('MapView BadgeTooltip integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'dismiss' }))
     expect(screen.queryByTestId('badge-tooltip')).not.toBeInTheDocument()
     expect(localStorage.getItem('badge_tooltip_seen')).toBe('1')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MapView AmenityFilterBar integration — Story 2.5
+// ---------------------------------------------------------------------------
+
+const WATER_PIN: Pin = {
+  ...STUB_PIN,
+  id: 'water-pin',
+  amenities: { overnight: false, dump: false, water: true, fuel: false, propane: false, electric: false, shower: false },
+}
+const NO_WATER_PIN: Pin = {
+  ...STUB_PIN,
+  id: 'no-water-pin',
+  amenities: { overnight: true, dump: false, water: false, fuel: false, propane: false, electric: false, shower: false },
+}
+
+describe('MapView AmenityFilterBar integration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+    mockNavigate.mockClear()
+  })
+
+  afterEach(() => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+  })
+
+  it('renders AmenityFilterBar with all 7 chips in MapView', () => {
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByRole('button', { name: /water/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /dump/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /overnight/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /fuel/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /propane/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /electric/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /shower/i })).toBeInTheDocument()
+  })
+
+  it('empty state message not shown when no filters active', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByText(/no matching spots/i)).not.toBeInTheDocument()
+  })
+
+  it('empty state message appears when active filters match no pins', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [NO_WATER_PIN], isLoading: false, error: null })
+    useAmenityFilterStore.setState({ activeFilters: ['water'] })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByText(/no matching spots in this area/i)).toBeInTheDocument()
+  })
+
+  it('empty state not shown when pins data is loading', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: true, error: null })
+    useAmenityFilterStore.setState({ activeFilters: ['water'] })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByText(/no matching spots/i)).not.toBeInTheDocument()
+  })
+
+  it('empty state not shown when at least one pin matches the active filter', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [WATER_PIN, NO_WATER_PIN], isLoading: false, error: null })
+    useAmenityFilterStore.setState({ activeFilters: ['water'] })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByText(/no matching spots/i)).not.toBeInTheDocument()
   })
 })

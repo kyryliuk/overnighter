@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as L from 'leaflet'
-import type { Pin } from '@/types/pin'
+import type { Pin, PinAmenities } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
 import { createPinMarker } from './PinMarker'
 
@@ -9,6 +9,11 @@ interface PinLayerProps {
   pins: Pin[]
   rigProfile: RigProfile
   isLoading: boolean
+}
+
+export function doesPinMatchFilters(pin: Pin, activeFilters: Array<keyof PinAmenities>): boolean {
+  if (activeFilters.length === 0) return true
+  return activeFilters.every((amenity) => pin.amenities[amenity])
 }
 
 export function doesPinFitRig(pin: Pin, rigProfile: RigProfile): boolean {

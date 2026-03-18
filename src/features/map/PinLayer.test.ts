@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import React from 'react'
-import { doesPinFitRig } from './PinLayer'
+import { doesPinFitRig, doesPinMatchFilters } from './PinLayer'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
 import type * as L from 'leaflet'
@@ -145,6 +145,42 @@ describe('doesPinFitRig', () => {
     const pin = makePin({ maxLengthFt: null, maxHeightFt: 10 })
     const profile = makeProfile({ heightFt: null })
     expect(doesPinFitRig(pin, profile)).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// doesPinMatchFilters — Story 2.5 amenity filter tests
+// ---------------------------------------------------------------------------
+
+describe('doesPinMatchFilters', () => {
+  it('returns true for any pin when no filters are active', () => {
+    const pin = makePin({ amenities: { water: false, dump: false, electric: false, shower: false, fuel: false, propane: false, overnight: false } })
+    expect(doesPinMatchFilters(pin, [])).toBe(true)
+  })
+
+  it('returns true for a pin with water=true when only water filter is active', () => {
+    const pin = makePin({ amenities: { water: true, dump: false, electric: false, shower: false, fuel: false, propane: false, overnight: false } })
+    expect(doesPinMatchFilters(pin, ['water'])).toBe(true)
+  })
+
+  it('returns false for a pin with water=false when water filter is active', () => {
+    const pin = makePin({ amenities: { water: false, dump: true, electric: false, shower: false, fuel: false, propane: false, overnight: false } })
+    expect(doesPinMatchFilters(pin, ['water'])).toBe(false)
+  })
+
+  it('applies AND logic — returns true only when pin has BOTH water and dump', () => {
+    const pin = makePin({ amenities: { water: true, dump: true, electric: false, shower: false, fuel: false, propane: false, overnight: false } })
+    expect(doesPinMatchFilters(pin, ['water', 'dump'])).toBe(true)
+  })
+
+  it('applies AND logic — returns false when pin has water but not dump', () => {
+    const pin = makePin({ amenities: { water: true, dump: false, electric: false, shower: false, fuel: false, propane: false, overnight: false } })
+    expect(doesPinMatchFilters(pin, ['water', 'dump'])).toBe(false)
+  })
+
+  it('returns false when filter is active but pin lacks that amenity field entirely (treated as false)', () => {
+    const pin = makePin({ amenities: { water: false, dump: false, electric: false, shower: false, fuel: false, propane: false, overnight: false } })
+    expect(doesPinMatchFilters(pin, ['electric'])).toBe(false)
   })
 })
 
