@@ -18,6 +18,7 @@ const queryClient = new QueryClient({
 // Lazy-loaded routes — Leaflet and Admin excluded from main bundle (NFR-P5)
 const MapView = lazy(() => import('@/features/map/MapView'))
 const OnboardingScreen = lazy(() => import('@/features/rig-profile/OnboardingScreen'))
+const RigEditScreen = lazy(() => import('@/features/rig-profile/RigEditScreen'))
 const PinDetailSheet = lazy(() => import('@/features/pin-detail/PinDetailSheet'))
 const SavedSpotsScreen = lazy(() => import('@/features/saved-spots/SavedSpotsScreen'))
 const AdminDashboard = lazy(() => import('@/features/admin/AdminDashboard'))
@@ -30,6 +31,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<MapView />} />
             <Route path="/onboarding" element={<OnboardingScreen />} />
+            <Route path="/rig-edit" element={<RigEditScreen />} />
             <Route path="/pin/:id" element={<PinDetailSheet />} />
             <Route path="/saved" element={<SavedSpotsScreen />} />
             <Route path="/admin" element={<AdminDashboard />} />
