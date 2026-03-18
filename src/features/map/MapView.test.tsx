@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import MapView from './MapView'
 import { useRigStore } from '@/store/rigStore'
+import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
 
@@ -22,10 +23,12 @@ vi.mock('./SearchBar', () => ({
   default: vi.fn(() => <div data-testid="search-bar" />),
 }))
 
-// Avoid Supabase calls in tests
-const mockUsePinsQuery = vi.fn(() => ({ data: [], isLoading: false, error: null }))
+// Avoid Supabase calls in tests — vi.hoisted required so the variable is in scope inside vi.mock factory
+const { mockUsePinsQuery } = vi.hoisted(() => ({
+  mockUsePinsQuery: vi.fn(() => ({ data: [] as Pin[], isLoading: false, error: null as null })),
+}))
 vi.mock('@/hooks/usePinsQuery', () => ({
-  usePinsQuery: (...args: unknown[]) => mockUsePinsQuery(...args),
+  usePinsQuery: mockUsePinsQuery,
 }))
 
 // Mock BadgeTooltip to isolate MapView integration concerns
@@ -134,7 +137,7 @@ describe('MapView rig context indicator', () => {
   })
 })
 
-const STUB_PIN = {
+const STUB_PIN: Pin = {
   id: 'p1', name: 'Test Spot', latitude: 0, longitude: 0,
   badgeState: 'green', lastCheckInAt: new Date().toISOString(),
   amenities: { overnight: true, dump: false, water: false, fuel: false, propane: false, electric: false, shower: false },
