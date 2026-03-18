@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useRigStore } from './rigStore'
 import type { RigProfile } from '@/types/rigProfile'
 
-// Reset store between tests
+// Reset store and localStorage between tests
 beforeEach(() => {
+  localStorage.clear()
   useRigStore.getState().clearRigProfile()
 })
 

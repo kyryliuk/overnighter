@@ -23,7 +23,7 @@ const mockPin: Pin = {
 }
 
 beforeEach(() => {
-  // Reset store
+  localStorage.clear()
   useSpotsStore.setState({ savedSpots: [] })
 })
 

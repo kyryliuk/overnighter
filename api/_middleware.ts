@@ -7,9 +7,11 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
  */
 export function requireAdminAuth(req: VercelRequest, res: VercelResponse): boolean {
   const authHeader = req.headers['authorization']
-  const token = authHeader?.replace('Bearer ', '').trim()
+  const parts = authHeader?.split(' ')
+  const scheme = parts?.[0]
+  const token = parts?.[1]?.trim()
 
-  if (!token || token !== process.env.ADMIN_SECRET) {
+  if (scheme !== 'Bearer' || !token || token !== process.env.ADMIN_SECRET) {
     res.status(401).json({
       error: 'UNAUTHORIZED',
       message: 'Invalid or missing Bearer token',
