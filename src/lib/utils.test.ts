@@ -7,7 +7,8 @@ describe('cn() utility', () => {
   })
 
   it('handles conditional classes', () => {
-    expect(cn('base', false && 'skipped', 'included')).toBe('base included')
+    const show = false
+    expect(cn('base', show && 'skipped', 'included')).toBe('base included')
   })
 
   it('deduplicates conflicting Tailwind classes — last wins', () => {
