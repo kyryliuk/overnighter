@@ -258,6 +258,14 @@ export default function PinDetailSheet() {
               >
                 Get Directions →
               </button>
+              {/* Report an Issue — sets pendingReport in uiStore; IssueReportSheet mounts in App.tsx */}
+              <button
+                onClick={() => useUIStore.getState().setPendingReport({ pinId: pin.id })}
+                aria-label="Report an Issue"
+                className="w-full min-h-[44px] rounded-lg font-medium text-muted-foreground border border-border mt-2"
+              >
+                Report an Issue
+              </button>
             </div>
           )}
         </div>

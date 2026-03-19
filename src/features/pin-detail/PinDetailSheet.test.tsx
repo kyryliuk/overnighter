@@ -398,6 +398,37 @@ describe('PinDetailSheet bookmark button', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Report an Issue button tests — Story 4.4
+// ---------------------------------------------------------------------------
+
+describe('PinDetailSheet Report an Issue button', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear()
+    useRigStore.getState().clearRigProfile()
+    useUIStore.setState({ selectedPinId: null, pendingReport: null })
+    useSpotsStore.setState({ savedSpots: [] })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+  })
+
+  afterEach(() => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+    vi.restoreAllMocks()
+  })
+
+  it('renders "Report an Issue" button when pin is found', () => {
+    renderSheet('pin-1')
+    expect(screen.getByRole('button', { name: /report an issue/i })).toBeInTheDocument()
+  })
+
+  it('clicking "Report an Issue" sets pendingReport in uiStore with correct pinId', () => {
+    renderSheet('pin-1')
+    fireEvent.click(screen.getByRole('button', { name: /report an issue/i }))
+    expect(useUIStore.getState().pendingReport).toEqual({ pinId: 'pin-1' })
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Visit recording tests — Story 4.2
 // ---------------------------------------------------------------------------
 

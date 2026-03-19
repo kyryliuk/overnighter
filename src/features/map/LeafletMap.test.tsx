@@ -115,13 +115,13 @@ describe('LeafletMap', () => {
     )
   })
 
-  it('adds CartoDB Dark Matter tile layer', async () => {
+  it('adds CartoDB Voyager tile layer', async () => {
     const L = await import('leaflet')
     render(
       <LeafletMap pins={[]} isLoading={false} rigProfile={DEFAULT_RIG_PROFILE} />,
     )
     expect(L.tileLayer).toHaveBeenCalledWith(
-      expect.stringContaining('basemaps.cartocdn.com/dark_all'),
+      expect.stringContaining('basemaps.cartocdn.com/rastertiles/voyager'),
       expect.any(Object),
     )
   })

@@ -19,6 +19,7 @@ const queryClient = new QueryClient({
 
 // Lazy-loaded routes — Leaflet and Admin excluded from main bundle (NFR-P5)
 const CheckInForm = lazy(() => import('@/features/check-in/CheckInForm'))
+const IssueReportSheet = lazy(() => import('@/features/issue-report/IssueReportSheet'))
 const MapView = lazy(() => import('@/features/map/MapView'))
 const OnboardingScreen = lazy(() => import('@/features/rig-profile/OnboardingScreen'))
 const RigEditScreen = lazy(() => import('@/features/rig-profile/RigEditScreen'))
@@ -30,6 +31,8 @@ export default function App() {
   useDeviceId() // Initialize anonymous device ID on first app load (Story 4.1)
   const pendingCheckIn = useUIStore((state) => state.pendingCheckIn)
   const setPendingCheckIn = useUIStore((state) => state.setPendingCheckIn)
+  const pendingReport = useUIStore((state) => state.pendingReport)
+  const setPendingReport = useUIStore((state) => state.setPendingReport)
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -50,6 +53,14 @@ export default function App() {
           <CheckInForm
             pinId={pendingCheckIn.pinId}
             onClose={() => setPendingCheckIn(null)}
+          />
+        </Suspense>
+      )}
+      {pendingReport && (
+        <Suspense fallback={null}>
+          <IssueReportSheet
+            pinId={pendingReport.pinId}
+            onClose={() => setPendingReport(null)}
           />
         </Suspense>
       )}

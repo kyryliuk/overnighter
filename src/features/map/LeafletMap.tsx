@@ -5,7 +5,7 @@ import PinLayer from './PinLayer'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
 
-const CARTO_DARK_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+const CARTO_VOYAGER_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 const OSM_FALLBACK_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const DEFAULT_CENTER: [number, number] = [39.5, -98.35]
 const DEFAULT_ZOOM = 4
@@ -39,7 +39,7 @@ export default function LeafletMap({ pins, isLoading, rigProfile, onMapReady, on
       fadeAnimation: !prefersReduced,
     } as unknown as L.MapOptions)
 
-    const cartoTile = L.tileLayer(CARTO_DARK_URL, {
+    const cartoTile = L.tileLayer(CARTO_VOYAGER_URL, {
       attribution: '© <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 19,

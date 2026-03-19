@@ -16,6 +16,11 @@ vi.mock('@/features/check-in/CheckInForm', () => ({
     <div data-testid="check-in-form" data-pin-id={pinId} />
   ),
 }))
+vi.mock('@/features/issue-report/IssueReportSheet', () => ({
+  default: ({ pinId }: { pinId: string }) => (
+    <div data-testid="issue-report-sheet" data-pin-id={pinId} />
+  ),
+}))
 
 const STUB_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
 
@@ -64,5 +69,36 @@ describe('App CheckInForm mounting (Story 4.3)', () => {
     useUIStore.setState({ pendingCheckIn: { pinId: 'p1' } })
     await act(async () => { render(<App />) })
     expect(screen.getByTestId('check-in-form')).toHaveAttribute('data-pin-id', 'p1')
+  })
+})
+
+describe('App IssueReportSheet mounting (Story 4.4)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => STUB_UUID) })
+    useUIStore.setState({ pendingReport: null })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    localStorage.clear()
+    useUIStore.setState({ pendingReport: null })
+  })
+
+  it('does NOT render IssueReportSheet when pendingReport is null', async () => {
+    await act(async () => { render(<App />) })
+    expect(screen.queryByTestId('issue-report-sheet')).not.toBeInTheDocument()
+  })
+
+  it('renders IssueReportSheet when pendingReport is set', async () => {
+    useUIStore.setState({ pendingReport: { pinId: 'p2' } })
+    await act(async () => { render(<App />) })
+    expect(screen.getByTestId('issue-report-sheet')).toBeInTheDocument()
+  })
+
+  it('passes correct pinId prop to IssueReportSheet', async () => {
+    useUIStore.setState({ pendingReport: { pinId: 'p2' } })
+    await act(async () => { render(<App />) })
+    expect(screen.getByTestId('issue-report-sheet')).toHaveAttribute('data-pin-id', 'p2')
   })
 })
