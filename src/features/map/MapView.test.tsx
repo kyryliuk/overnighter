@@ -33,6 +33,15 @@ vi.mock('@/hooks/usePinsQuery', () => ({
   usePinsQuery: mockUsePinsQuery,
 }))
 
+// Mock useGeolocation to prevent real GPS calls in MapView
+const { mockUseGeolocation } = vi.hoisted(() => ({
+  mockUseGeolocation: vi.fn(() => [
+    { isLoading: false, coords: null as GeolocationCoordinates | null, error: null as 'denied' | 'no-api' | 'unavailable' | null },
+    vi.fn(),
+  ]),
+}))
+vi.mock('@/hooks/useGeolocation', () => ({ useGeolocation: mockUseGeolocation }))
+
 // Mock BadgeTooltip to isolate MapView integration concerns
 vi.mock('./BadgeTooltip', () => ({
   default: vi.fn(({ onDismiss }: { onDismiss: () => void }) => (
@@ -311,5 +320,57 @@ describe('MapView pin selection navigation', () => {
     render(<MapView />, { wrapper: Wrapper })
     // Only the onboarding redirect may fire (but dismissed=true so it won't)
     expect(mockNavigate).not.toHaveBeenCalledWith(expect.stringContaining('/pin/'))
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MapView Near Me FAB — moved from SearchBar in UX update
+// ---------------------------------------------------------------------------
+
+describe('MapView Near Me FAB', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
+    mockNavigate.mockClear()
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: null as GeolocationCoordinates | null, error: null as 'denied' | 'no-api' | 'unavailable' | null },
+      vi.fn(),
+    ])
+  })
+
+  it('renders Near Me button at all times', () => {
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByLabelText('Use my current location')).toBeInTheDocument()
+  })
+
+  it('Near Me button shows loading state when GPS is loading', () => {
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: true, coords: null as GeolocationCoordinates | null, error: null as 'denied' | 'no-api' | 'unavailable' | null },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByLabelText('Getting location...')).toBeDisabled()
+  })
+
+  it('clicking Near Me button calls requestGeo', () => {
+    const mockRequestGeo = vi.fn()
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: null as GeolocationCoordinates | null, error: null as 'denied' | 'no-api' | 'unavailable' | null },
+      mockRequestGeo,
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    fireEvent.click(screen.getByLabelText('Use my current location'))
+    expect(mockRequestGeo).toHaveBeenCalledOnce()
+  })
+
+  it('shows geo error alert when geolocation is denied', () => {
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: null as GeolocationCoordinates | null, error: 'denied' as const },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByRole('alert')).toHaveTextContent('Location access denied')
   })
 })

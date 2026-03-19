@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { useGeolocation } from '@/hooks/useGeolocation'
+import { useState, useEffect, useRef } from 'react'
 
 interface NominatimResult {
   lat: string
@@ -14,30 +13,16 @@ interface SearchBarProps {
 // NOTE: For production, proxy Nominatim via /api/geocode to respect usage policy
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 
-const GEO_ERROR_MESSAGES: Record<string, string> = {
-  denied: 'Location access denied \u2014 search for a place to get started',
-  'no-api': 'Location not available \u2014 search for a place instead',
-  unavailable: 'Could not get location \u2014 try again or search for a place',
-}
-
 export default function SearchBar({ mapRef }: SearchBarProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<NominatimResult[]>([])
-  const [geoError, setGeoError] = useState<string | null>(null)
-  const [geoState, requestGeo] = useGeolocation()
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  // React to geolocation state changes
+  // Auto-focus input when search opens
   useEffect(() => {
-    if (geoState.coords) {
-      const { latitude, longitude } = geoState.coords
-      const map = mapRef.current as { setView?: (center: [number, number], zoom: number) => void } | null
-      map?.setView?.([latitude, longitude], 12)
-      setGeoError(null)
-    }
-    if (geoState.error) {
-      setGeoError(GEO_ERROR_MESSAGES[geoState.error] ?? 'Location error')
-    }
-  }, [geoState, mapRef])
+    if (isOpen) inputRef.current?.focus()
+  }, [isOpen])
 
   // Debounced Nominatim search
   useEffect(() => {
@@ -66,13 +51,9 @@ export default function SearchBar({ mapRef }: SearchBarProps) {
   function selectResult(result: NominatimResult) {
     const map = mapRef.current as { setView?: (center: [number, number], zoom: number) => void } | null
     map?.setView?.([parseFloat(result.lat), parseFloat(result.lon)], 12)
-    setQuery(result.display_name.split(', ')[0])
+    setQuery('')
     setResults([])
-  }
-
-  function handleNearMe() {
-    setGeoError(null)
-    requestGeo()
+    setIsOpen(false)
   }
 
   function handleClear() {
@@ -80,15 +61,44 @@ export default function SearchBar({ mapRef }: SearchBarProps) {
     setResults([])
   }
 
+  function handleClose() {
+    setIsOpen(false)
+    setQuery('')
+    setResults([])
+  }
+
+  if (!isOpen) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="bg-surface border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm text-foreground text-lg"
+        aria-label="Open search"
+      >
+        🔍
+      </button>
+    )
+  }
+
   return (
     <div className="relative">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
+        <button
+          type="button"
+          onClick={handleClose}
+          className="bg-surface border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center text-foreground flex-shrink-0"
+          aria-label="Close search"
+        >
+          ←
+        </button>
         <div className="relative flex-1">
           <input
+            ref={inputRef}
             type="search"
             role="combobox"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') handleClose() }}
             placeholder="Search destination..."
             className="w-full bg-surface border border-border rounded-full px-4 py-2 pr-10 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
             aria-label="Search destination"
@@ -107,22 +117,7 @@ export default function SearchBar({ mapRef }: SearchBarProps) {
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={handleNearMe}
-          disabled={geoState.isLoading}
-          className="bg-surface border border-border rounded-full px-4 py-2 text-sm text-foreground min-h-[44px] whitespace-nowrap disabled:opacity-50"
-          aria-label={geoState.isLoading ? 'Getting location...' : 'Use my current location'}
-        >
-          {geoState.isLoading ? '...' : '\ud83d\udccd Near Me'}
-        </button>
       </div>
-
-      {geoError && (
-        <p className="text-sm text-muted-foreground mt-1 px-2" role="alert">
-          {geoError}
-        </p>
-      )}
 
       {results.length > 0 && (
         <ul

@@ -4,7 +4,14 @@ import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
 import { useAmenityFilterStore } from '@/store/amenityFilterStore'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
+import { useGeolocation } from '@/hooks/useGeolocation'
 import type * as L from 'leaflet'
+
+const GEO_ERROR_MESSAGES: Record<string, string> = {
+  denied: 'Location access denied',
+  'no-api': 'Location not available',
+  unavailable: 'Could not get location — try again',
+}
 import SearchBar from './SearchBar'
 import RigFilterOverlay from './RigFilterOverlay'
 import BadgeTooltip from './BadgeTooltip'
@@ -33,6 +40,8 @@ export default function MapView() {
   const pendingMapCenter = useUIStore((state) => state.pendingMapCenter)
   const setPendingMapCenter = useUIStore((state) => state.setPendingMapCenter)
   const location = useLocation()
+  const [geoState, requestGeo] = useGeolocation()
+  const [geoError, setGeoError] = useState<string | null>(null)
 
   useEffect(() => {
     // M2 fix: skip onboarding redirect on deep-linked pin routes (/pin/:id)
@@ -53,6 +62,18 @@ export default function MapView() {
       setPendingMapCenter(null)
     }
   }, [pendingMapCenter]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (geoState.coords) {
+      const { latitude, longitude } = geoState.coords
+      const map = mapRef.current as { setView?: (center: [number, number], zoom: number) => void } | null
+      map?.setView?.([latitude, longitude], 12)
+      setGeoError(null)
+    }
+    if (geoState.error) {
+      setGeoError(GEO_ERROR_MESSAGES[geoState.error] ?? 'Location error')
+    }
+  }, [geoState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleDismissTooltip() {
     localStorage.setItem('badge_tooltip_seen', '1')
@@ -115,6 +136,26 @@ export default function MapView() {
           </div>
         </div>
       )}
+      {/* Near Me FAB — bottom-right floating action button */}
+      <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
+        {geoError && (
+          <p
+            className="text-xs text-foreground bg-background/90 border border-border rounded-lg px-3 py-1 max-w-[180px] text-right"
+            role="alert"
+          >
+            {geoError}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => { setGeoError(null); requestGeo() }}
+          disabled={geoState.isLoading}
+          className="bg-surface border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-md disabled:opacity-50 text-lg"
+          aria-label={geoState.isLoading ? 'Getting location...' : 'Use my current location'}
+        >
+          {geoState.isLoading ? '…' : '📍'}
+        </button>
+      </div>
       {/* First-session badge onboarding tooltip (AC7) — shown above all map layers */}
       {showBadgeTooltip && pins.length > 0 && !isLoading && (
         <BadgeTooltip onDismiss={handleDismissTooltip} />
