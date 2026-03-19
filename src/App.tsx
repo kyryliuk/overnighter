@@ -3,6 +3,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { useDeviceId } from '@/hooks/useDeviceId'
+import { useUIStore } from '@/store/uiStore'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
 })
 
 // Lazy-loaded routes — Leaflet and Admin excluded from main bundle (NFR-P5)
+const CheckInForm = lazy(() => import('@/features/check-in/CheckInForm'))
 const MapView = lazy(() => import('@/features/map/MapView'))
 const OnboardingScreen = lazy(() => import('@/features/rig-profile/OnboardingScreen'))
 const RigEditScreen = lazy(() => import('@/features/rig-profile/RigEditScreen'))
@@ -26,6 +28,8 @@ const AdminDashboard = lazy(() => import('@/features/admin/AdminDashboard'))
 
 export default function App() {
   useDeviceId() // Initialize anonymous device ID on first app load (Story 4.1)
+  const pendingCheckIn = useUIStore((state) => state.pendingCheckIn)
+  const setPendingCheckIn = useUIStore((state) => state.setPendingCheckIn)
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -41,6 +45,14 @@ export default function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      {pendingCheckIn && (
+        <Suspense fallback={null}>
+          <CheckInForm
+            pinId={pendingCheckIn.pinId}
+            onClose={() => setPendingCheckIn(null)}
+          />
+        </Suspense>
+      )}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   )

@@ -26,6 +26,7 @@ export interface DbCheckIn {
   id: string
   pin_id: string
   device_id: string
+  status: string
   checked_in_at: string
   notes: string | null
 }
