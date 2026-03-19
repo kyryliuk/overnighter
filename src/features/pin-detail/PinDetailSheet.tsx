@@ -13,16 +13,10 @@ import RecencyBadge from '@/components/RecencyBadge'
 export function buildMapsUrl(
   lat: number,
   lng: number,
-  name: string,
-  userAgent = navigator.userAgent,
+  _name: string,
+  _userAgent = navigator.userAgent,
 ): string {
-  if (/iPhone|iPad|iPod/.test(userAgent)) {
-    return `maps://?daddr=${lat},${lng}`
-  }
-  if (/Android/.test(userAgent)) {
-    return `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(name)})`
-  }
-  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+  return `https://maps.google.com/?q=${lat},${lng}`
 }
 
 // Inline to avoid cross-feature import (architecture: features must not import from other features)
@@ -95,11 +89,6 @@ export default function PinDetailSheet() {
     navigate('/')
   }
 
-  function handleGetDirections() {
-    if (!pin) return
-    const url = buildMapsUrl(pin.latitude, pin.longitude, pin.name)
-    window.open(url, '_blank', 'noopener,noreferrer')
-  }
 
   const fits = pin ? doesPinFitRig(pin, rigProfile) : true
   const showRigNotice = rigProfile.rigType !== null && !fits
@@ -250,14 +239,16 @@ export default function PinDetailSheet() {
                 </div>
               )}
               {/* Get Directions — primary CTA (AC1, AC5). Visible even on stale pins: warn never block */}
-              <button
-                onClick={handleGetDirections}
+              <a
+                href={buildMapsUrl(pin.latitude, pin.longitude, pin.name)}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Get Directions"
-                className="w-full min-h-[44px] rounded-lg font-semibold text-white"
+                className="flex items-center justify-center w-full min-h-[44px] rounded-lg font-semibold text-white"
                 style={{ backgroundColor: '#0ea5e9' }}
               >
                 Get Directions →
-              </button>
+              </a>
               {/* Report an Issue — sets pendingReport in uiStore; IssueReportSheet mounts in App.tsx */}
               <button
                 onClick={() => useUIStore.getState().setPendingReport({ pinId: pin.id })}

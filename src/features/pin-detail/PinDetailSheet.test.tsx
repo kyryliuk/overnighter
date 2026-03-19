@@ -219,51 +219,15 @@ describe('PinDetailSheet', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildMapsUrl', () => {
-  it('returns maps:// URL for iPhone user agent', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)')
-    expect(url).toBe('maps://?daddr=40,-104')
+  it('returns a Google Maps URL with coordinates embedded', () => {
+    const url = buildMapsUrl(40, -104, 'Test Spot')
+    expect(url).toBe('https://maps.google.com/?q=40,-104')
   })
 
-  it('returns maps:// URL for iPad user agent', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot', 'Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X)')
-    expect(url).toBe('maps://?daddr=40,-104')
-  })
-
-  it('returns maps:// URL for iPod user agent', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot', 'Mozilla/5.0 (iPod touch; CPU iPhone OS 9_3_5 like Mac OS X)')
-    expect(url).toBe('maps://?daddr=40,-104')
-  })
-
-  it('returns geo:// URL for Android user agent', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot', 'Mozilla/5.0 (Linux; Android 13; Pixel 7)')
-    expect(url).toContain('geo:40,-104')
-    expect(url).toContain('q=40,-104')
-  })
-
-  it('URI-encodes pin name in Android geo URL', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot With Spaces', 'Mozilla/5.0 (Linux; Android 13)')
-    expect(url).toContain('Test%20Spot%20With%20Spaces')
-  })
-
-  it('returns Google Maps HTTPS URL for desktop user agent', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
-    expect(url).toBe('https://www.google.com/maps/dir/?api=1&destination=40,-104')
-  })
-
-  it('returns Google Maps HTTPS URL for macOS Safari desktop', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')
-    expect(url).toBe('https://www.google.com/maps/dir/?api=1&destination=40,-104')
-  })
-
-  it('embeds coordinates correctly in all platforms', () => {
-    const lat = 37.7749
-    const lng = -122.4194
-    const iosUrl = buildMapsUrl(lat, lng, 'SF', 'iPhone')
-    const androidUrl = buildMapsUrl(lat, lng, 'SF', 'Android')
-    const desktopUrl = buildMapsUrl(lat, lng, 'SF', 'Desktop')
-    expect(iosUrl).toContain(`${lat},${lng}`)
-    expect(androidUrl).toContain(`${lat},${lng}`)
-    expect(desktopUrl).toContain(`${lat},${lng}`)
+  it('embeds coordinates correctly', () => {
+    const url = buildMapsUrl(37.7749, -122.4194, 'SF')
+    expect(url).toContain('37.7749')
+    expect(url).toContain('-122.4194')
   })
 })
 
@@ -288,45 +252,44 @@ describe('PinDetailSheet Get Directions button', () => {
 
   it('renders "Get Directions" button when pin is found', () => {
     renderSheet('pin-1')
-    expect(screen.getByRole('button', { name: /get directions/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /get directions/i })).toBeInTheDocument()
   })
 
   it('does not render "Get Directions" button when loading', () => {
     mockUsePinsQuery.mockReturnValue({ data: [], isLoading: true, error: null })
     renderSheet('pin-1')
-    expect(screen.queryByRole('button', { name: /get directions/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /get directions/i })).not.toBeInTheDocument()
   })
 
   it('does not render "Get Directions" button when pin not found', () => {
     mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
     renderSheet('nonexistent-id')
-    expect(screen.queryByRole('button', { name: /get directions/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /get directions/i })).not.toBeInTheDocument()
   })
 
   it('does not render "Get Directions" button when error state', () => {
     mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: new Error('Network error') })
     renderSheet('pin-1')
-    expect(screen.queryByRole('button', { name: /get directions/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /get directions/i })).not.toBeInTheDocument()
   })
 
-  it('clicking "Get Directions" calls window.open with a maps URL containing pin coordinates', () => {
-    const mockOpen = vi.spyOn(window, 'open').mockImplementation(() => null)
+  it('"Get Directions" link has href with Google Maps URL containing pin coordinates', () => {
     renderSheet('pin-1')
-    fireEvent.click(screen.getByRole('button', { name: /get directions/i }))
-    expect(mockOpen).toHaveBeenCalledTimes(1)
-    const [url, target, features] = mockOpen.mock.calls[0] as [string, string, string]
-    // STUB_PIN has latitude: 40, longitude: -104 — verify coordinates reach window.open
-    expect(url).toContain('40')
-    expect(url).toContain('-104')
-    expect(target).toBe('_blank')
-    expect(features).toBe('noopener,noreferrer')
+    const link = screen.getByRole('link', { name: /get directions/i })
+    const href = link.getAttribute('href') ?? ''
+    // STUB_PIN has latitude: 40, longitude: -104
+    expect(href).toContain('maps.google.com')
+    expect(href).toContain('40')
+    expect(href).toContain('-104')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toContain('noopener')
   })
 
   it('"Get Directions" button renders even when badge is stale (red) — warn never block', () => {
     const stalePin: Pin = { ...STUB_PIN, id: 'stale', badgeState: 'red' }
     mockUsePinsQuery.mockReturnValue({ data: [stalePin], isLoading: false, error: null })
     renderSheet('stale')
-    expect(screen.getByRole('button', { name: /get directions/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /get directions/i })).toBeInTheDocument()
   })
 })
 
