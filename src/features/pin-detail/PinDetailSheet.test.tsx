@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import PinDetailSheet, { buildMapsUrl } from './PinDetailSheet'
 import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
+import { useSpotsStore } from '@/store/spotsStore'
 import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
@@ -67,6 +68,7 @@ describe('PinDetailSheet', () => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
     useUIStore.setState({ selectedPinId: null })
+    useSpotsStore.setState({ savedSpots: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
   })
 
@@ -272,6 +274,7 @@ describe('PinDetailSheet Get Directions button', () => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
     useUIStore.setState({ selectedPinId: null })
+    useSpotsStore.setState({ savedSpots: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
   })
 
@@ -321,5 +324,71 @@ describe('PinDetailSheet Get Directions button', () => {
     mockUsePinsQuery.mockReturnValue({ data: [stalePin], isLoading: false, error: null })
     renderSheet('stale')
     expect(screen.getByRole('button', { name: /get directions/i })).toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Bookmark button tests — Story 3.3
+// ---------------------------------------------------------------------------
+
+describe('PinDetailSheet bookmark button', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear()
+    useRigStore.getState().clearRigProfile()
+    useUIStore.setState({ selectedPinId: null })
+    useSpotsStore.setState({ savedSpots: [] })
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+  })
+
+  afterEach(() => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+    vi.restoreAllMocks()
+  })
+
+  it('renders bookmark button when pin is found', () => {
+    renderSheet('pin-1')
+    expect(screen.getByRole('button', { name: /save spot/i })).toBeInTheDocument()
+  })
+
+  it('does not render bookmark button when loading', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: true, error: null })
+    renderSheet('pin-1')
+    expect(screen.queryByRole('button', { name: /save spot|remove saved spot/i })).not.toBeInTheDocument()
+  })
+
+  it('does not render bookmark button when pin not found', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+    renderSheet('nonexistent-id')
+    expect(screen.queryByRole('button', { name: /save spot|remove saved spot/i })).not.toBeInTheDocument()
+  })
+
+  it('does not render bookmark button when error state', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: new Error('Network error') })
+    renderSheet('pin-1')
+    expect(screen.queryByRole('button', { name: /save spot|remove saved spot/i })).not.toBeInTheDocument()
+  })
+
+  it('bookmark button has aria-pressed="false" when pin is not saved', () => {
+    renderSheet('pin-1')
+    expect(screen.getByRole('button', { name: /save spot/i })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('bookmark button has aria-pressed="true" when pin is already saved', () => {
+    useSpotsStore.setState({ savedSpots: [STUB_PIN] })
+    renderSheet('pin-1')
+    expect(screen.getByRole('button', { name: /remove saved spot/i })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('clicking bookmark button saves the pin', () => {
+    renderSheet('pin-1')
+    fireEvent.click(screen.getByRole('button', { name: /save spot/i }))
+    expect(useSpotsStore.getState().isSaved('pin-1')).toBe(true)
+  })
+
+  it('clicking active bookmark button removes the pin', () => {
+    useSpotsStore.setState({ savedSpots: [STUB_PIN] })
+    renderSheet('pin-1')
+    fireEvent.click(screen.getByRole('button', { name: /remove saved spot/i }))
+    expect(useSpotsStore.getState().isSaved('pin-1')).toBe(false)
   })
 })

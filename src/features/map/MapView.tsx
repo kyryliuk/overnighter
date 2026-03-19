@@ -30,6 +30,8 @@ export default function MapView() {
   )
 
   const selectedPinId = useUIStore((state) => state.selectedPinId)
+  const pendingMapCenter = useUIStore((state) => state.pendingMapCenter)
+  const setPendingMapCenter = useUIStore((state) => state.setPendingMapCenter)
   const location = useLocation()
 
   useEffect(() => {
@@ -44,6 +46,13 @@ export default function MapView() {
   useEffect(() => {
     if (selectedPinId) navigate('/pin/' + selectedPinId)
   }, [selectedPinId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (pendingMapCenter && mapRef.current) {
+      mapRef.current.setView([pendingMapCenter.lat, pendingMapCenter.lng], 14)
+      setPendingMapCenter(null)
+    }
+  }, [pendingMapCenter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleDismissTooltip() {
     localStorage.setItem('badge_tooltip_seen', '1')

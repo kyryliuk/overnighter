@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
+import { useSpotsStore } from '@/store/spotsStore'
 import type { Pin, PinAmenities, PinSource } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
-import RecencyBadge from './RecencyBadge'
+import RecencyBadge from '@/components/RecencyBadge'
 
 // Named export so it can be unit-tested directly without stubbing navigator globals (Story 3.2)
 export function buildMapsUrl(
@@ -62,6 +63,18 @@ export default function PinDetailSheet() {
   const { data: pins = [], isLoading, error } = usePinsQuery({ enabled: true })
   const rigProfile = useRigStore((state) => state.rigProfile)
   const pin = pins.find((p) => p.id === id)
+  const isSaved = useSpotsStore((state) => state.isSaved(id ?? ''))
+  const saveSpot = useSpotsStore((state) => state.saveSpot)
+  const removeSpot = useSpotsStore((state) => state.removeSpot)
+
+  function handleBookmark() {
+    if (!pin) return
+    if (isSaved) {
+      removeSpot(pin.id)
+    } else {
+      saveSpot(pin)
+    }
+  }
 
   // M1 fix: clear selectedPinId on unmount so the same pin can be re-tapped after
   // browser back navigation (which doesn't call handleDismiss)
@@ -112,6 +125,18 @@ export default function PinDetailSheet() {
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-9 h-1 rounded-full bg-muted-foreground/40" aria-hidden="true" />
         </div>
+        {/* Bookmark button — only when pin is loaded and found */}
+        {!isLoading && !error && pin && (
+          <button
+            onClick={handleBookmark}
+            aria-label={isSaved ? 'Remove saved spot' : 'Save spot'}
+            aria-pressed={isSaved}
+            className="absolute top-4 right-14 p-1 min-h-[44px] min-w-[44px] flex items-center justify-center text-xl"
+            style={{ color: isSaved ? '#0ea5e9' : undefined }}
+          >
+            {isSaved ? '★' : '☆'}
+          </button>
+        )}
         {/* Close button */}
         <button
           onClick={handleDismiss}
