@@ -3,14 +3,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
-const { mockInsert, mockGte, mockCountEq, mockSelect, mockUpdateEq, mockUpdate } = vi.hoisted(() => {
+const { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate } = vi.hoisted(() => {
   const mockInsert = vi.fn().mockResolvedValue({ error: null })
   const mockGte = vi.fn().mockResolvedValue({ count: 1, error: null })
   const mockCountEq = vi.fn().mockReturnValue({ gte: mockGte })
   const mockSelect = vi.fn().mockReturnValue({ eq: mockCountEq })
   const mockUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const mockUpdate = vi.fn().mockReturnValue({ eq: mockUpdateEq })
-  return { mockInsert, mockGte, mockCountEq, mockSelect, mockUpdateEq, mockUpdate }
+  return { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate }
 })
 
 vi.mock('./_supabase', () => ({
