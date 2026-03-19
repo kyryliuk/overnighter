@@ -6,6 +6,7 @@ import MapView from './MapView'
 import { useRigStore } from '@/store/rigStore'
 import { useAmenityFilterStore } from '@/store/amenityFilterStore'
 import { useUIStore } from '@/store/uiStore'
+import { useCheckInPromptStore } from '@/store/checkInPromptStore'
 import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
@@ -41,6 +42,17 @@ const { mockUseGeolocation } = vi.hoisted(() => ({
   ]),
 }))
 vi.mock('@/hooks/useGeolocation', () => ({ useGeolocation: mockUseGeolocation }))
+
+// Mock DeparturePrompt to isolate MapView departure-prompt integration
+vi.mock('./DeparturePrompt', () => ({
+  default: vi.fn(({ pinName, onSkip, onCheckIn }: { pinName: string; onSkip: () => void; onCheckIn: () => void }) => (
+    <div data-testid="departure-prompt">
+      <span>{pinName}</span>
+      <button onClick={onSkip} aria-label="Skip check-in">Skip</button>
+      <button onClick={onCheckIn} aria-label="Submit check-in">Check In</button>
+    </div>
+  )),
+}))
 
 // Mock BadgeTooltip to isolate MapView integration concerns
 vi.mock('./BadgeTooltip', () => ({
@@ -372,5 +384,114 @@ describe('MapView Near Me FAB', () => {
     ])
     render(<MapView />, { wrapper: Wrapper })
     expect(screen.getByRole('alert')).toHaveTextContent('Location access denied')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MapView departure check-in prompt integration — Story 4.2
+// ---------------------------------------------------------------------------
+
+const FAR_COORDS = {
+  latitude: 38.0, longitude: -122.0,
+  accuracy: 10, altitude: null, altitudeAccuracy: null, heading: null, speed: null,
+} as GeolocationCoordinates
+
+const NEAR_COORDS = {
+  latitude: 37.001, longitude: -122.0,
+  accuracy: 10, altitude: null, altitudeAccuracy: null, heading: null, speed: null,
+} as GeolocationCoordinates
+
+const VISIT_RECORD = {
+  pinId: 'p1', pinName: 'Desert Springs',
+  latitude: 37.0, longitude: -122.0,
+  visitKey: 'p1:2026-03-19',
+}
+
+describe('MapView departure check-in prompt (Story 4.2)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    useRigStore.getState().setRigProfile({ rigType: 'Class A', lengthFt: 35, heightFt: 12.5 })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null, pendingCheckIn: null })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
+    mockNavigate.mockClear()
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: null as GeolocationCoordinates | null, error: null as null },
+      vi.fn(),
+    ])
+  })
+
+  it('shows DeparturePrompt when GPS coords place user >0.5 miles from a visited spot (AC1)', () => {
+    useCheckInPromptStore.setState({ visitRecords: [VISIT_RECORD], dismissedKeys: [] })
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: FAR_COORDS, error: null as null },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByTestId('departure-prompt')).toBeInTheDocument()
+    expect(screen.getByText('Desert Springs')).toBeInTheDocument()
+  })
+
+  it('does not show DeparturePrompt when user is within 0.5 miles of visited spot (AC2)', () => {
+    useCheckInPromptStore.setState({ visitRecords: [VISIT_RECORD], dismissedKeys: [] })
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: NEAR_COORDS, error: null as null },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByTestId('departure-prompt')).not.toBeInTheDocument()
+  })
+
+  it('does not show DeparturePrompt when no visit records exist', () => {
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: FAR_COORDS, error: null as null },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByTestId('departure-prompt')).not.toBeInTheDocument()
+  })
+
+  it('does not show DeparturePrompt when visit is already dismissed (AC3)', () => {
+    useCheckInPromptStore.setState({ visitRecords: [VISIT_RECORD], dismissedKeys: [VISIT_RECORD.visitKey] })
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: FAR_COORDS, error: null as null },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByTestId('departure-prompt')).not.toBeInTheDocument()
+  })
+
+  it('does not show DeparturePrompt when GPS coords are null — GPS denied or unavailable (AC4)', () => {
+    useCheckInPromptStore.setState({ visitRecords: [VISIT_RECORD], dismissedKeys: [] })
+    // coords remain null (default beforeEach) — simulates GPS denied / unavailable
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.queryByTestId('departure-prompt')).not.toBeInTheDocument()
+  })
+
+  it('Skip button dismisses the visit and hides the prompt (AC5)', () => {
+    useCheckInPromptStore.setState({ visitRecords: [VISIT_RECORD], dismissedKeys: [] })
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: FAR_COORDS, error: null as null },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    expect(screen.getByTestId('departure-prompt')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Skip check-in'))
+    expect(screen.queryByTestId('departure-prompt')).not.toBeInTheDocument()
+    expect(useCheckInPromptStore.getState().isDismissed(VISIT_RECORD.visitKey)).toBe(true)
+  })
+
+  it('Check In button dismisses visit, sets pendingCheckIn, and hides prompt (AC6)', () => {
+    useCheckInPromptStore.setState({ visitRecords: [VISIT_RECORD], dismissedKeys: [] })
+    mockUseGeolocation.mockReturnValue([
+      { isLoading: false, coords: FAR_COORDS, error: null as null },
+      vi.fn(),
+    ])
+    render(<MapView />, { wrapper: Wrapper })
+    fireEvent.click(screen.getByLabelText('Submit check-in'))
+    expect(screen.queryByTestId('departure-prompt')).not.toBeInTheDocument()
+    expect(useCheckInPromptStore.getState().isDismissed(VISIT_RECORD.visitKey)).toBe(true)
+    expect(useUIStore.getState().pendingCheckIn).toEqual({ pinId: VISIT_RECORD.pinId })
   })
 })

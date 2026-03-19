@@ -6,6 +6,7 @@ import PinDetailSheet, { buildMapsUrl } from './PinDetailSheet'
 import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
 import { useSpotsStore } from '@/store/spotsStore'
+import { useCheckInPromptStore } from '@/store/checkInPromptStore'
 import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
@@ -69,6 +70,7 @@ describe('PinDetailSheet', () => {
     useRigStore.getState().clearRigProfile()
     useUIStore.setState({ selectedPinId: null })
     useSpotsStore.setState({ savedSpots: [] })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
   })
 
@@ -275,6 +277,7 @@ describe('PinDetailSheet Get Directions button', () => {
     useRigStore.getState().clearRigProfile()
     useUIStore.setState({ selectedPinId: null })
     useSpotsStore.setState({ savedSpots: [] })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
   })
 
@@ -337,6 +340,7 @@ describe('PinDetailSheet bookmark button', () => {
     useRigStore.getState().clearRigProfile()
     useUIStore.setState({ selectedPinId: null })
     useSpotsStore.setState({ savedSpots: [] })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
   })
 
@@ -390,5 +394,51 @@ describe('PinDetailSheet bookmark button', () => {
     renderSheet('pin-1')
     fireEvent.click(screen.getByRole('button', { name: /remove saved spot/i }))
     expect(useSpotsStore.getState().isSaved('pin-1')).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Visit recording tests — Story 4.2
+// ---------------------------------------------------------------------------
+
+describe('PinDetailSheet visit recording', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear()
+    useRigStore.getState().clearRigProfile()
+    useUIStore.setState({ selectedPinId: null })
+    useSpotsStore.setState({ savedSpots: [] })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
+  })
+
+  afterEach(() => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+  })
+
+  it('records a visit in checkInPromptStore when pin is found', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+    renderSheet('pin-1')
+    expect(useCheckInPromptStore.getState().visitRecords).toHaveLength(1)
+  })
+
+  it('recorded visit has correct pinId, pinName, latitude, longitude', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+    renderSheet('pin-1')
+    const record = useCheckInPromptStore.getState().visitRecords[0]
+    expect(record.pinId).toBe('pin-1')
+    expect(record.pinName).toBe('Test Spot')
+    expect(record.latitude).toBe(40)
+    expect(record.longitude).toBe(-104)
+  })
+
+  it('does not record a visit when in loading state', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: true, error: null })
+    renderSheet('pin-1')
+    expect(useCheckInPromptStore.getState().visitRecords).toHaveLength(0)
+  })
+
+  it('does not record a visit when pin is not found', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+    renderSheet('nonexistent-id')
+    expect(useCheckInPromptStore.getState().visitRecords).toHaveLength(0)
   })
 })

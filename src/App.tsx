@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+import { useDeviceId } from '@/hooks/useDeviceId'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,7 @@ const SavedSpotsScreen = lazy(() => import('@/features/saved-spots/SavedSpotsScr
 const AdminDashboard = lazy(() => import('@/features/admin/AdminDashboard'))
 
 export default function App() {
+  useDeviceId() // Initialize anonymous device ID on first app load (Story 4.1)
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

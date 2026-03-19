@@ -4,6 +4,7 @@ import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
 import { useSpotsStore } from '@/store/spotsStore'
+import { useCheckInPromptStore } from '@/store/checkInPromptStore'
 import type { Pin, PinAmenities, PinSource } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
 import RecencyBadge from '@/components/RecencyBadge'
@@ -81,6 +82,13 @@ export default function PinDetailSheet() {
   useEffect(() => {
     return () => { useUIStore.getState().setSelectedPin(null) }
   }, [])
+
+  // Record this pin as visited so departure check-in prompt can fire later (Story 4.2)
+  useEffect(() => {
+    if (pin) {
+      useCheckInPromptStore.getState().recordVisit(pin)
+    }
+  }, [pin?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleDismiss() {
     useUIStore.getState().setSelectedPin(null)
