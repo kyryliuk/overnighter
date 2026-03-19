@@ -52,7 +52,7 @@ describe('DELETE /api/pins/:id', () => {
     mockUpdate.mockReturnValue({ eq: mockEq })
   })
 
-  it('returns 405 for non-DELETE methods (9.2)', async () => {
+  it('returns 405 for methods that are neither DELETE nor PATCH (9.2)', async () => {
     const { res, ctx } = mockRes()
     await handler(mockReq('GET'), res)
     expect(ctx.statusCode).toBe(405)
@@ -85,6 +85,78 @@ describe('DELETE /api/pins/:id', () => {
     mockEq.mockResolvedValueOnce({ error: new Error('DB write failed') })
     const { res, ctx } = mockRes()
     await handler(mockReq('DELETE'), res)
+    expect(ctx.statusCode).toBe(500)
+    expect((ctx.body as { error: string }).error).toBe('INTERNAL_ERROR')
+  })
+})
+
+describe('PATCH /api/pins/:id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRequireAdminAuth.mockReturnValue(true)
+    mockEq.mockResolvedValue({ error: null })
+    mockUpdate.mockReturnValue({ eq: mockEq })
+  })
+
+  it('returns 405 for methods that are neither DELETE nor PATCH (10.1)', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST'), res)
+    expect(ctx.statusCode).toBe(405)
+    expect((ctx.body as { error: string }).error).toBe('METHOD_NOT_ALLOWED')
+  })
+
+  it('returns 401 when unauthorized (10.2)', async () => {
+    mockRequireAdminAuth.mockImplementationOnce((req: VercelRequest, res: VercelResponse) => {
+      res.status(401).json({ error: 'UNAUTHORIZED', status: 401 })
+      return false
+    })
+    const { res, ctx } = mockRes()
+    await handler(mockReq('PATCH'), res)
+    expect(ctx.statusCode).toBe(401)
+    expect((ctx.body as { error: string }).error).toBe('UNAUTHORIZED')
+  })
+
+  it('returns 400 for out-of-bounds coordinates (10.3)', async () => {
+    const { res, ctx } = mockRes()
+    const req = { method: 'PATCH', query: { id: 'pin-abc-123' }, body: { latitude: 0 } } as unknown as VercelRequest
+    await handler(req, res)
+    expect(ctx.statusCode).toBe(400)
+    expect((ctx.body as { error: string }).error).toBe('INVALID_BODY')
+  })
+
+  it('returns 400 for invalid pin_type (10.4)', async () => {
+    const { res, ctx } = mockRes()
+    const req = { method: 'PATCH', query: { id: 'pin-abc-123' }, body: { pin_type: 'invalid' } } as unknown as VercelRequest
+    await handler(req, res)
+    expect(ctx.statusCode).toBe(400)
+    expect((ctx.body as { error: string }).error).toBe('INVALID_BODY')
+  })
+
+  it('returns 200 { ok: true } and calls update with body fields + updated_at (10.5)', async () => {
+    const { res, ctx } = mockRes()
+    const req = { method: 'PATCH', query: { id: 'pin-abc-123' }, body: { name: 'Updated Name' } } as unknown as VercelRequest
+    await handler(req, res)
+    expect(ctx.statusCode).toBe(200)
+    expect((ctx.body as { ok: boolean }).ok).toBe(true)
+    const updateArg = mockUpdate.mock.calls[0][0] as Record<string, unknown>
+    expect(updateArg.name).toBe('Updated Name')
+    expect(typeof updateArg.updated_at).toBe('string')
+    expect(mockEq).toHaveBeenCalledWith('id', 'pin-abc-123')
+  })
+
+  it('returns 400 for empty PATCH body {} (10.5b)', async () => {
+    const { res, ctx } = mockRes()
+    const req = { method: 'PATCH', query: { id: 'pin-abc-123' }, body: {} } as unknown as VercelRequest
+    await handler(req, res)
+    expect(ctx.statusCode).toBe(400)
+    expect((ctx.body as { error: string }).error).toBe('INVALID_BODY')
+  })
+
+  it('returns 500 when Supabase update returns error (10.6)', async () => {
+    mockEq.mockResolvedValueOnce({ error: new Error('DB write failed') })
+    const { res, ctx } = mockRes()
+    const req = { method: 'PATCH', query: { id: 'pin-abc-123' }, body: { name: 'Updated Name' } } as unknown as VercelRequest
+    await handler(req, res)
     expect(ctx.statusCode).toBe(500)
     expect((ctx.body as { error: string }).error).toBe('INTERNAL_ERROR')
   })

@@ -174,6 +174,49 @@ describe('FlaggedPinList', () => {
     })
   })
 
+  it('shows error message when fetch fails (L1)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) }),
+    )
+    await act(async () => {
+      renderList()
+    })
+    await waitFor(() => {
+      expect(screen.getByText(/failed to load flagged pins/i)).toBeInTheDocument()
+    })
+  })
+
+  it('action buttons are disabled while mutation is pending for that pin (L2)', async () => {
+    let resolveArchive!: (value: unknown) => void
+    const fetchMock = vi.fn()
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => STUB_PINS }) // initial load
+      .mockReturnValueOnce(new Promise((resolve) => { resolveArchive = resolve })) // archive — never resolves
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await act(async () => {
+      renderList()
+    })
+    await waitFor(() => expect(screen.getByText('Dirty Dump')).toBeInTheDocument())
+
+    // Click archive on pin-1 — mutation is now pending
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: /archive pin dirty dump/i })[0])
+    })
+
+    // While pending, all three buttons for pin-1 should be disabled
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /archive pin dirty dump/i })[0]).toBeDisabled()
+    })
+
+    // Resolve the pending fetch to prevent act() warnings on teardown
+    await act(async () => {
+      resolveArchive({ ok: true, json: async () => [] })
+    })
+  })
+
   it('action buttons have min-h-[44px] class (NFR-A4) (13.9)', async () => {
     vi.stubGlobal(
       'fetch',

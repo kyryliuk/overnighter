@@ -18,7 +18,7 @@ export default function FlaggedPinList({ adminToken }: FlaggedPinListProps) {
   const queryClient = useQueryClient()
 
   const { data: pins = [], isLoading, isError } = useQuery({
-    queryKey: ['admin', 'flagged-pins'],
+    queryKey: ['admin', 'flagged-pins', adminToken],
     queryFn: async () => {
       const res = await fetch('/api/admin/flagged-pins', {
         headers: { Authorization: `Bearer ${adminToken}` },

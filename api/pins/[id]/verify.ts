@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const pinId = req.query.id as string
+  const pinId = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id
   const { action } = parsed.data
   const supabase = createServiceClient()
 
