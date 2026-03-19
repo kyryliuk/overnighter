@@ -1,6 +1,7 @@
 import { useEffect, useRef, lazy, Suspense, useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import { useRigStore } from '@/store/rigStore'
+import { useUIStore } from '@/store/uiStore'
 import { useAmenityFilterStore } from '@/store/amenityFilterStore'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import type * as L from 'leaflet'
@@ -28,11 +29,21 @@ export default function MapView() {
     () => !localStorage.getItem('badge_tooltip_seen'),
   )
 
+  const selectedPinId = useUIStore((state) => state.selectedPinId)
+  const location = useLocation()
+
   useEffect(() => {
-    if (!hasRigProfile() && !onboardingDismissed) {
+    // M2 fix: skip onboarding redirect on deep-linked pin routes (/pin/:id)
+    // so new users can view a shared pin URL without being bounced to onboarding
+    const isOnPinRoute = location.pathname.startsWith('/pin/')
+    if (!hasRigProfile() && !onboardingDismissed && !isOnPinRoute) {
       navigate('/onboarding', { replace: true })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (selectedPinId) navigate('/pin/' + selectedPinId)
+  }, [selectedPinId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleDismissTooltip() {
     localStorage.setItem('badge_tooltip_seen', '1')
@@ -99,6 +110,8 @@ export default function MapView() {
       {showBadgeTooltip && pins.length > 0 && !isLoading && (
         <BadgeTooltip onDismiss={handleDismissTooltip} />
       )}
+      {/* Pin detail sheet overlay — rendered via nested route /pin/:id */}
+      <Outlet />
     </div>
   )
 }

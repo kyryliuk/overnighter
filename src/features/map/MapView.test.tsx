@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import MapView from './MapView'
 import { useRigStore } from '@/store/rigStore'
 import { useAmenityFilterStore } from '@/store/amenityFilterStore'
+import { useUIStore } from '@/store/uiStore'
 import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
@@ -50,12 +51,24 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
+function WrapperAtPath(path: string) {
+  return function({ children }: { children: React.ReactNode }) {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    return (
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={[path]}>{children}</MemoryRouter>
+      </QueryClientProvider>
+    )
+  }
+}
+
 describe('MapView redirect guard', () => {
   beforeEach(() => {
     localStorage.clear()
     useRigStore.getState().clearRigProfile()
     useRigStore.setState({ onboardingDismissed: false })
     useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
     mockNavigate.mockClear()
   })
 
@@ -75,6 +88,13 @@ describe('MapView redirect guard', () => {
     render(<MapView />, { wrapper: Wrapper })
     expect(mockNavigate).not.toHaveBeenCalled()
   })
+
+  // M2: deep-link fix — new user should not be redirected when on /pin/:id
+  it('does not redirect to /onboarding when new user lands on deep-linked /pin/:id route', () => {
+    // no rig profile, onboarding not dismissed — but URL is /pin/:id
+    render(<MapView />, { wrapper: WrapperAtPath('/pin/some-shared-pin') })
+    expect(mockNavigate).not.toHaveBeenCalledWith('/onboarding', { replace: true })
+  })
 })
 
 describe('MapView rig context indicator', () => {
@@ -83,6 +103,7 @@ describe('MapView rig context indicator', () => {
     useRigStore.getState().clearRigProfile()
     useRigStore.setState({ onboardingDismissed: false })
     useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
     mockNavigate.mockClear()
   })
 
@@ -154,6 +175,7 @@ describe('MapView BadgeTooltip integration', () => {
     localStorage.clear()
     useRigStore.setState({ onboardingDismissed: true })
     useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
     mockNavigate.mockClear()
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
   })
@@ -214,6 +236,7 @@ describe('MapView AmenityFilterBar integration', () => {
     localStorage.clear()
     useRigStore.setState({ onboardingDismissed: true })
     useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
     mockNavigate.mockClear()
   })
 
@@ -258,5 +281,35 @@ describe('MapView AmenityFilterBar integration', () => {
     useAmenityFilterStore.setState({ activeFilters: ['water'] })
     render(<MapView />, { wrapper: Wrapper })
     expect(screen.queryByText(/no matching spots/i)).not.toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// MapView pin selection navigation — Story 3.1
+// ---------------------------------------------------------------------------
+
+describe('MapView pin selection navigation', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
+    mockNavigate.mockClear()
+  })
+
+  afterEach(() => {
+    useUIStore.setState({ selectedPinId: null })
+  })
+
+  it('navigates to /pin/:id when selectedPinId is set in UIStore', () => {
+    useUIStore.setState({ selectedPinId: 'abc-123' })
+    render(<MapView />, { wrapper: Wrapper })
+    expect(mockNavigate).toHaveBeenCalledWith('/pin/abc-123')
+  })
+
+  it('does not navigate to /pin/:id when selectedPinId is null', () => {
+    render(<MapView />, { wrapper: Wrapper })
+    // Only the onboarding redirect may fire (but dismissed=true so it won't)
+    expect(mockNavigate).not.toHaveBeenCalledWith(expect.stringContaining('/pin/'))
   })
 })

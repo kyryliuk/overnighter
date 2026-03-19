@@ -29,10 +29,11 @@ export default function App() {
       <BrowserRouter>
         <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
           <Routes>
-            <Route path="/" element={<MapView />} />
+            <Route path="/" element={<MapView />}>
+              <Route path="pin/:id" element={<PinDetailSheet />} />
+            </Route>
             <Route path="/onboarding" element={<OnboardingScreen />} />
             <Route path="/rig-edit" element={<RigEditScreen />} />
-            <Route path="/pin/:id" element={<PinDetailSheet />} />
             <Route path="/saved" element={<SavedSpotsScreen />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
