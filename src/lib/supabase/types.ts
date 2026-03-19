@@ -18,6 +18,7 @@ export interface DbPin {
   recent_check_in_count: number
   is_verified: boolean
   is_flagged: boolean
+  is_archived: boolean
   created_at: string
   updated_at: string
 }

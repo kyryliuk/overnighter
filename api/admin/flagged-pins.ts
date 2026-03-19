@@ -3,26 +3,20 @@ import { requireAdminAuth } from '../_middleware'
 import { createServiceClient } from '../_supabase'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'DELETE') {
-    return res.status(405).json({ error: 'METHOD_NOT_ALLOWED', message: 'DELETE only', status: 405 })
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'METHOD_NOT_ALLOWED', message: 'GET only', status: 405 })
   }
 
   if (!requireAdminAuth(req, res)) return
 
-  const pinId = req.query.id as string
   const supabase = createServiceClient()
 
   try {
-    const { error } = await supabase
-      .from('pins')
-      .update({ is_archived: true, is_flagged: false, updated_at: new Date().toISOString() })
-      .eq('id', pinId)
-
+    const { data, error } = await supabase.rpc('get_flagged_pins')
     if (error) throw error
-
-    return res.status(200).json({ ok: true })
+    return res.status(200).json(data)
   } catch (error) {
-    console.error('[api/pins/[id]]', error)
+    console.error('[api/admin/flagged-pins]', error)
     return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Something went wrong', status: 500 })
   }
 }

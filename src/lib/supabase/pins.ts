@@ -25,7 +25,7 @@ export function dbPinToPin(db: DbPin): Pin {
 }
 
 export async function getAllPins(): Promise<Pin[]> {
-  const { data, error } = await supabase.from('pins').select('*')
+  const { data, error } = await supabase.from('pins').select('*').eq('is_archived', false)
   if (error) throw new Error(`Failed to fetch pins: ${error.message}`)
   return (data as DbPin[]).map(dbPinToPin)
 }
