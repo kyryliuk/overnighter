@@ -95,6 +95,19 @@ describe('computeBadgeState — red (stale)', () => {
 })
 
 // ---------------------------------------------------------------------------
+// computeBadgeState — malformed input
+// ---------------------------------------------------------------------------
+describe('computeBadgeState — malformed input', () => {
+  it('returns "red" for an invalid date string (NaN guard)', () => {
+    expect(computeBadgeState('not-a-date')).toBe('red')
+  })
+
+  it('returns "red" for a partially valid date string', () => {
+    expect(computeBadgeState('2024-99-99')).toBe('red')
+  })
+})
+
+// ---------------------------------------------------------------------------
 // computeBadgeState — boundary precision
 // ---------------------------------------------------------------------------
 describe('computeBadgeState — boundary precision', () => {

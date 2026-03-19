@@ -59,10 +59,12 @@ describe('BadgeTooltip — conditional rendering pattern', () => {
     unmount()
   })
 
-  it('is NOT in DOM when not rendered by parent', () => {
-    // When showBadgeTooltip is false, MapView does not render <BadgeTooltip> at all
-    const { container } = render(<div>{false && <BadgeTooltip onDismiss={vi.fn()} />}</div>)
-    expect(container.querySelector('span')).toBeNull()
+  it('calls onDismiss when Enter key is pressed on the overlay', () => {
+    const onDismiss = vi.fn()
+    render(<BadgeTooltip onDismiss={onDismiss} />)
+    const overlay = screen.getByRole('button', { hidden: true })
+    fireEvent.keyDown(overlay, { key: 'Enter' })
+    expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -91,12 +93,12 @@ describe('BadgeTooltip — localStorage dismiss pattern', () => {
     expect(localStorageMock['badge_tooltip_seen']).toBe('1')
   })
 
-  it('tooltip is not shown when badge_tooltip_seen is already set (lazy state init pattern)', () => {
-    // This tests the MapView lazy initializer pattern:
-    // useState(() => !localStorage.getItem('badge_tooltip_seen'))
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('1')
-    const shouldShow = !localStorage.getItem('badge_tooltip_seen')
-    expect(shouldShow).toBe(false)
+  it('calls onDismiss when Space key is pressed on the overlay', () => {
+    const onDismiss = vi.fn()
+    render(<BadgeTooltip onDismiss={onDismiss} />)
+    const overlay = screen.getByRole('button', { hidden: true })
+    fireEvent.keyDown(overlay, { key: ' ' })
+    expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
   it('tooltip is shown when badge_tooltip_seen is not set', () => {

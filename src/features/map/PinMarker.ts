@@ -85,6 +85,9 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
   const recency = BADGE_LABELS[badge] ?? 'unknown'
   const ariaLabel = `${escapeHtml(pin.name)}: ${label}, verified ${recency}`
 
+  // NFR-A6 (4.5:1 contrast) applies to fit pins. Unfit pins are intentionally dimmed —
+  // grayscale+opacity signals "rig won't fit here" at a glance; contrast is secondary.
+  // Applied to the outer wrapper so a single style controls the whole marker.
   const unfitStyles = fits ? '' : 'filter:grayscale(1);opacity:0.5;'
 
   // Pill text color: dark text on colored backgrounds for green/yellow/red;
@@ -92,16 +95,16 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
   const pillTextColor = fits ? (PILL_TEXT_COLORS[badge] ?? '#ffffff') : '#ffffff'
 
   const html =
-    `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">` +
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;${unfitStyles}">` +
       `<div ` +
         `style="width:36px;height:36px;border-radius:50%;border:3px solid ${ringColor};` +
         `background:${fillColor};display:flex;align-items:center;justify-content:center;` +
-        `font-size:16px;cursor:pointer;${unfitStyles}" ` +
+        `font-size:16px;cursor:pointer;" ` +
         `role="img" ` +
         `aria-label="${ariaLabel}"` +
       `>${emoji}</div>` +
       `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;` +
-        `background:${ringColor};color:${pillTextColor};line-height:1.2;cursor:pointer;${unfitStyles}"` +
+        `background:${ringColor};color:${pillTextColor};line-height:1.2;cursor:pointer;"` +
       `>${recency}</span>` +
     `</div>`
 

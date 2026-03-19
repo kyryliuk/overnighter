@@ -19,7 +19,10 @@ export const BADGE_THRESHOLDS = {
 export function computeBadgeState(lastCheckInAt: string | null): BadgeColor {
   if (!lastCheckInAt) return 'grey'
 
-  const ageMs = Date.now() - new Date(lastCheckInAt).getTime()
+  const date = new Date(lastCheckInAt)
+  // Malformed timestamp (NaN) treated as maximally stale — 'red' is the safest fallback
+  if (isNaN(date.getTime())) return 'red'
+  const ageMs = Date.now() - date.getTime()
   const ageDays = ageMs / (1000 * 60 * 60 * 24)
 
   if (ageDays < BADGE_THRESHOLDS.FRESH_DAYS)  return 'green'

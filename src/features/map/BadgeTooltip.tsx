@@ -18,7 +18,7 @@ export default function BadgeTooltip({ onDismiss }: BadgeTooltipProps) {
       tabIndex={0}
       aria-label="Dismiss badge tooltip"
       onClick={onDismiss}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onDismiss() }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onDismiss() } }}
     >
       {/* Tooltip card — pointer-events-none so clicks bubble to parent overlay */}
       <div className="absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none">
