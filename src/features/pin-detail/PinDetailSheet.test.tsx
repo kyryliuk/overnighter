@@ -15,7 +15,7 @@ vi.mock('react-router-dom', async () => {
 })
 
 const { mockUsePinsQuery } = vi.hoisted(() => ({
-  mockUsePinsQuery: vi.fn(() => ({ data: [] as Pin[], isLoading: false, error: null as null })),
+  mockUsePinsQuery: vi.fn(() => ({ data: [] as Pin[], isLoading: false, error: null as Error | null })),
 }))
 vi.mock('@/hooks/usePinsQuery', () => ({
   usePinsQuery: mockUsePinsQuery,
