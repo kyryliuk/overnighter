@@ -18,6 +18,9 @@ export interface DbPinInsert {
   source_id: string
   max_length_ft: number | null
   max_height_ft: number | null
+  website: string | null
+  phone: string | null
+  elevation_m: number | null
   amenities: Record<string, boolean>
   badge_state: 'green' | 'yellow' | 'red' | 'grey'
   last_check_in_at: null
@@ -80,6 +83,9 @@ export interface RidbFacility {
   FacilityLatitude: number
   FacilityLongitude: number
   FacilityDescription?: string
+  FacilityPhone?: string
+  FacilityWebURL?: string
+  FacilityElevation?: number
   ParentOrgID: string
   ACTIVITY?: Array<{ ActivityName: string }>
 }
@@ -98,15 +104,20 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
   const activities = (facility.ACTIVITY ?? []).map((a) => a.ActivityName.toLowerCase())
 
   const amenities: Record<string, boolean> = {
-    overnight: hasActivity(activities, 'camping', 'overnight', 'rv camping', 'tent camping'),
-    dump:      hasActivity(activities, 'dump station', 'dump'),
-    water:     hasActivity(activities, 'drinking water', 'water hookup', 'water'),
-    electric:  hasActivity(activities, 'electricity hookup', 'electrical hookup', 'electric hookup', 'electric'),
-    shower:    hasActivity(activities, 'shower'),
-    fuel:      hasActivity(activities, 'gas station', 'fuel'),
-    propane:   hasActivity(activities, 'propane'),
-    toilets:   hasActivity(activities, 'flush toilet', 'vault toilet', 'pit toilet', 'toilet', 'restroom'),
-    pets:      hasActivity(activities, 'pets allowed', 'pet friendly', 'leashed pets', 'dogs allowed'),
+    overnight:  hasActivity(activities, 'camping', 'overnight', 'rv camping', 'tent camping'),
+    dump:       hasActivity(activities, 'dump station', 'dump'),
+    water:      hasActivity(activities, 'drinking water', 'water hookup', 'water'),
+    electric:   hasActivity(activities, 'electricity hookup', 'electrical hookup', 'electric hookup', 'electric'),
+    shower:     hasActivity(activities, 'shower'),
+    fuel:       hasActivity(activities, 'gas station', 'fuel'),
+    propane:    hasActivity(activities, 'propane'),
+    toilets:    hasActivity(activities, 'flush toilet', 'vault toilet', 'pit toilet', 'toilet', 'restroom'),
+    pets:       hasActivity(activities, 'pets allowed', 'pet friendly', 'leashed pets', 'dogs allowed'),
+    wifi:       hasActivity(activities, 'wifi', 'wireless internet', 'internet'),
+    kitchen:    hasActivity(activities, 'kitchen'),
+    restaurant: hasActivity(activities, 'restaurant', 'food service', 'dining'),
+    big_rig:    hasActivity(activities, 'rv camping', 'rv park', 'rv hookup'),
+    tent:       hasActivity(activities, 'tent camping', 'tent only'),
   }
 
   return {
@@ -118,6 +129,9 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
     source_id:             facility.FacilityID,
     max_length_ft:         null,
     max_height_ft:         null,
+    website:               facility.FacilityWebURL ?? null,
+    phone:                 facility.FacilityPhone ?? null,
+    elevation_m:           facility.FacilityElevation ?? null,
     amenities,
     badge_state:           'green',
     last_check_in_at:      null,
@@ -151,15 +165,20 @@ export function normalizeOverpassElement(el: OverpassElement): DbPinInsert | nul
   const tourism = tags['tourism'] ?? ''
 
   const amenities: Record<string, boolean> = {
-    overnight: tourism === 'camp_site' || tourism === 'caravan_site',
-    dump:      amenity === 'waste_disposal',
-    water:     amenity === 'drinking_water' || tags['drinking_water'] === 'yes',
-    fuel:      amenity === 'fuel',
-    propane:   false,
-    electric:  tags['electric_hookup'] === 'yes' || tags['electricity'] === 'yes',
-    shower:    amenity === 'shower' || tags['shower'] === 'yes',
-    toilets:   amenity === 'toilets' || tags['toilets'] === 'yes' || tags['toilets:disposal'] !== undefined,
-    pets:      tags['dogs'] === 'yes' || tags['dog'] === 'yes' || tags['pets'] === 'yes',
+    overnight:  tourism === 'camp_site' || tourism === 'caravan_site',
+    dump:       amenity === 'waste_disposal',
+    water:      amenity === 'drinking_water' || tags['drinking_water'] === 'yes',
+    fuel:       amenity === 'fuel',
+    propane:    false,
+    electric:   tags['electric_hookup'] === 'yes' || tags['electricity'] === 'yes',
+    shower:     amenity === 'shower' || tags['shower'] === 'yes',
+    toilets:    amenity === 'toilets' || tags['toilets'] === 'yes' || tags['toilets:disposal'] !== undefined,
+    pets:       tags['dogs'] === 'yes' || tags['dog'] === 'yes' || tags['pets'] === 'yes',
+    wifi:       tags['internet_access'] === 'wlan' || tags['wifi'] === 'yes',
+    kitchen:    false,
+    restaurant: false,
+    big_rig:    tourism === 'caravan_site',
+    tent:       tourism === 'camp_site',
   }
 
   const name = tags['name'] ?? tags['operator'] ?? `OSM ${el.id}`
@@ -173,6 +192,9 @@ export function normalizeOverpassElement(el: OverpassElement): DbPinInsert | nul
     source_id:             String(el.id),
     max_length_ft:         null,
     max_height_ft:         null,
+    website:               tags['website'] ?? tags['url'] ?? null,
+    phone:                 tags['phone'] ?? tags['contact:phone'] ?? null,
+    elevation_m:           null,
     amenities,
     badge_state:           'grey',
     last_check_in_at:      null,

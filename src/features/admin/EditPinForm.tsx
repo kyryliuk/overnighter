@@ -19,18 +19,28 @@ type AmenitiesState = {
   overnight: boolean
   toilets: boolean
   pets: boolean
+  wifi: boolean
+  kitchen: boolean
+  restaurant: boolean
+  big_rig: boolean
+  tent: boolean
 }
 
 const AMENITY_LABELS: { key: keyof AmenitiesState; label: string }[] = [
-  { key: 'overnight', label: 'Overnight' },
-  { key: 'water', label: 'Water' },
-  { key: 'dump', label: 'Dump' },
-  { key: 'toilets', label: 'Toilets' },
-  { key: 'shower', label: 'Shower' },
-  { key: 'electric', label: 'Electric' },
-  { key: 'fuel', label: 'Fuel' },
-  { key: 'propane', label: 'Propane' },
-  { key: 'pets', label: 'Pets OK' },
+  { key: 'overnight',  label: 'Overnight' },
+  { key: 'tent',       label: 'Tent' },
+  { key: 'big_rig',   label: 'Big Rig OK' },
+  { key: 'water',      label: 'Water' },
+  { key: 'dump',       label: 'Dump Station' },
+  { key: 'toilets',    label: 'Toilets' },
+  { key: 'shower',     label: 'Shower' },
+  { key: 'electric',   label: 'Electric' },
+  { key: 'wifi',       label: 'WiFi' },
+  { key: 'fuel',       label: 'Fuel' },
+  { key: 'propane',    label: 'Propane' },
+  { key: 'kitchen',    label: 'Kitchen' },
+  { key: 'restaurant', label: 'Restaurant' },
+  { key: 'pets',       label: 'Pets OK' },
 ]
 
 const PIN_TYPES = ['blm', 'usfs', 'nps', 'overpass', 'community'] as const
@@ -56,6 +66,11 @@ export default function EditPinForm({ pin, adminToken, onSuccess, onCancel }: Ed
     overnight: pin.amenities.overnight ?? false,
     toilets: pin.amenities.toilets ?? false,
     pets: pin.amenities.pets ?? false,
+    wifi: pin.amenities.wifi ?? false,
+    kitchen: pin.amenities.kitchen ?? false,
+    restaurant: pin.amenities.restaurant ?? false,
+    big_rig: pin.amenities.big_rig ?? false,
+    tent: pin.amenities.tent ?? false,
   })
   const [maxLengthFt, setMaxLengthFt] = useState(pin.maxLengthFt != null ? String(pin.maxLengthFt) : '')
   const [maxHeightFt, setMaxHeightFt] = useState(pin.maxHeightFt != null ? String(pin.maxHeightFt) : '')

@@ -17,6 +17,11 @@ export interface PinAmenities {
   overnight: boolean
   toilets: boolean
   pets: boolean
+  wifi: boolean
+  kitchen: boolean
+  restaurant: boolean
+  big_rig: boolean
+  tent: boolean
 }
 
 export interface Pin {
@@ -29,6 +34,9 @@ export interface Pin {
   sourceId: string | null
   maxLengthFt: number | null
   maxHeightFt: number | null
+  website: string | null
+  phone: string | null
+  elevationM: number | null
   amenities: PinAmenities
   badgeState: BadgeColor
   lastCheckInAt: string | null

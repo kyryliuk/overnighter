@@ -12,6 +12,9 @@ export interface DbPin {
   source_id: string | null
   max_length_ft: number | null
   max_height_ft: number | null
+  website: string | null
+  phone: string | null
+  elevation_m: number | null
   amenities: Record<string, boolean>
   badge_state: string
   last_check_in_at: string | null

@@ -44,15 +44,20 @@ const PIN_TYPE_LABELS: Record<PinSource, string> = {
 }
 
 const AMENITY_CHIPS: Array<{ key: keyof PinAmenities; label: string; emoji: string }> = [
-  { key: 'overnight', label: 'Overnight', emoji: '🏕' },
-  { key: 'water',     label: 'Water',     emoji: '💧' },
-  { key: 'dump',      label: 'Dump',      emoji: '🗑' },
-  { key: 'toilets',   label: 'Toilets',   emoji: '🚻' },
-  { key: 'shower',    label: 'Shower',    emoji: '🚿' },
-  { key: 'electric',  label: 'Electric',  emoji: '⚡' },
-  { key: 'fuel',      label: 'Fuel',      emoji: '⛽' },
-  { key: 'propane',   label: 'Propane',   emoji: '🔵' },
-  { key: 'pets',      label: 'Pets OK',   emoji: '🐾' },
+  { key: 'overnight',   label: 'Overnight',   emoji: '🏕' },
+  { key: 'tent',        label: 'Tent',         emoji: '⛺' },
+  { key: 'big_rig',     label: 'Big Rig OK',   emoji: '🚐' },
+  { key: 'water',       label: 'Water',        emoji: '💧' },
+  { key: 'dump',        label: 'Dump Station', emoji: '🗑' },
+  { key: 'toilets',     label: 'Toilets',      emoji: '🚻' },
+  { key: 'shower',      label: 'Shower',       emoji: '🚿' },
+  { key: 'electric',    label: 'Electric',     emoji: '⚡' },
+  { key: 'wifi',        label: 'WiFi',         emoji: '📶' },
+  { key: 'fuel',        label: 'Fuel',         emoji: '⛽' },
+  { key: 'propane',     label: 'Propane',      emoji: '🔵' },
+  { key: 'kitchen',     label: 'Kitchen',      emoji: '🍳' },
+  { key: 'restaurant',  label: 'Restaurant',   emoji: '🍽' },
+  { key: 'pets',        label: 'Pets OK',      emoji: '🐾' },
 ]
 
 export default function PinDetailSheet() {
@@ -237,6 +242,34 @@ export default function PinDetailSheet() {
                   {pin.latitude.toFixed(6)}, {pin.longitude.toFixed(6)}
                 </p>
               </div>
+              {/* Elevation */}
+              {pin.elevationM !== null && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Elevation</p>
+                  <p className="text-sm text-foreground">{pin.elevationM.toFixed(1)} masl</p>
+                </div>
+              )}
+              {/* Website */}
+              {pin.website && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Website</p>
+                  <a
+                    href={pin.website.startsWith('http') ? pin.website : `https://${pin.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-sky-400 underline break-all"
+                  >
+                    {pin.website}
+                  </a>
+                </div>
+              )}
+              {/* Phone */}
+              {pin.phone && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Phone</p>
+                  <a href={`tel:${pin.phone}`} className="text-sm text-foreground">{pin.phone}</a>
+                </div>
+              )}
               {/* Last verified */}
               <p className="text-sm text-muted-foreground">Verified: {lastVerified}</p>
               {/* Description / community notes */}

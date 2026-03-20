@@ -3,13 +3,17 @@ import { useSourceFilterStore, type SourceGroup } from '@/store/sourceFilterStor
 import type { PinAmenities } from '@/types/pin'
 
 const AMENITY_CHIPS: Array<{ key: keyof PinAmenities; label: string; emoji: string }> = [
-  { key: 'water',     label: 'Water',    emoji: '💧' },
-  { key: 'dump',      label: 'Dump',     emoji: '🚽' },
-  { key: 'overnight', label: 'Overnight',emoji: '🏕' },
-  { key: 'fuel',      label: 'Fuel',     emoji: '⛽' },
-  { key: 'propane',   label: 'Propane',  emoji: '🔵' },
-  { key: 'electric',  label: 'Electric', emoji: '⚡' },
-  { key: 'shower',    label: 'Shower',   emoji: '🚿' },
+  { key: 'overnight',  label: 'Overnight',  emoji: '🏕' },
+  { key: 'tent',       label: 'Tent',       emoji: '⛺' },
+  { key: 'big_rig',   label: 'Big Rig',    emoji: '🚐' },
+  { key: 'water',      label: 'Water',      emoji: '💧' },
+  { key: 'dump',       label: 'Dump',       emoji: '🗑' },
+  { key: 'electric',   label: 'Electric',   emoji: '⚡' },
+  { key: 'wifi',       label: 'WiFi',       emoji: '📶' },
+  { key: 'shower',     label: 'Shower',     emoji: '🚿' },
+  { key: 'fuel',       label: 'Fuel',       emoji: '⛽' },
+  { key: 'propane',    label: 'Propane',    emoji: '🔵' },
+  { key: 'pets',       label: 'Pets OK',    emoji: '🐾' },
 ]
 
 const SOURCE_CHIPS: Array<{ key: SourceGroup; label: string; emoji: string }> = [
