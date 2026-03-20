@@ -48,6 +48,9 @@ const PILL_TEXT_COLORS: Record<BadgeColor, string> = {
 }
 
 function getCategoryEmoji(pin: Pin): { emoji: string; label: string } {
+  if (pin.pinType === 'blm' || pin.pinType === 'usfs' || pin.pinType === 'nps') {
+    return { emoji: '🏛', label: 'gov campground' }
+  }
   const a = pin.amenities
   // Priority: overnight > dump > water > fuel > propane > electric > shower > fallback
   if (a.overnight) return { emoji: '🏕', label: 'overnight' }
