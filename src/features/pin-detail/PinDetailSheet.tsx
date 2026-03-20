@@ -238,9 +238,18 @@ export default function PinDetailSheet() {
               {/* GPS coordinates */}
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">GPS</p>
-                <p className="text-sm text-foreground font-mono">
-                  {pin.latitude.toFixed(6)}, {pin.longitude.toFixed(6)}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-foreground font-mono">
+                    {pin.latitude.toFixed(6)}, {pin.longitude.toFixed(6)}
+                  </p>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(`${pin.latitude.toFixed(6)}, ${pin.longitude.toFixed(6)}`)}
+                    aria-label="Copy GPS coordinates"
+                    className="text-xs text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-border hover:border-foreground/40 transition-colors"
+                  >
+                    copy
+                  </button>
+                </div>
               </div>
               {/* Elevation */}
               {pin.elevationM !== null && (
@@ -267,11 +276,13 @@ export default function PinDetailSheet() {
               {pin.phone && (
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Phone</p>
-                  <a href={`tel:${pin.phone}`} className="text-sm text-foreground">{pin.phone}</a>
+                  <a href={`tel:${pin.phone}`} className="text-sm text-sky-400 underline">{pin.phone}</a>
                 </div>
               )}
-              {/* Last verified */}
-              <p className="text-sm text-muted-foreground">Verified: {lastVerified}</p>
+              {/* Last verified — hidden for gov pins (always green from sync, not user-verified) */}
+              {pin.pinType !== 'blm' && pin.pinType !== 'usfs' && pin.pinType !== 'nps' && (
+                <p className="text-sm text-muted-foreground">Verified: {lastVerified}</p>
+              )}
               {/* Description / community notes */}
               {pin.description && (
                 <div>
