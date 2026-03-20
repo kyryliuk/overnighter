@@ -43,13 +43,15 @@ const PIN_TYPE_LABELS: Record<PinSource, string> = {
 }
 
 const AMENITY_CHIPS: Array<{ key: keyof PinAmenities; label: string; emoji: string }> = [
-  { key: 'water',     label: 'Water',    emoji: '💧' },
-  { key: 'dump',      label: 'Dump',     emoji: '🚽' },
-  { key: 'overnight', label: 'Overnight',emoji: '🏕' },
-  { key: 'fuel',      label: 'Fuel',     emoji: '⛽' },
-  { key: 'propane',   label: 'Propane',  emoji: '🔵' },
-  { key: 'electric',  label: 'Electric', emoji: '⚡' },
-  { key: 'shower',    label: 'Shower',   emoji: '🚿' },
+  { key: 'overnight', label: 'Overnight', emoji: '🏕' },
+  { key: 'water',     label: 'Water',     emoji: '💧' },
+  { key: 'dump',      label: 'Dump',      emoji: '🗑' },
+  { key: 'toilets',   label: 'Toilets',   emoji: '🚻' },
+  { key: 'shower',    label: 'Shower',    emoji: '🚿' },
+  { key: 'electric',  label: 'Electric',  emoji: '⚡' },
+  { key: 'fuel',      label: 'Fuel',      emoji: '⛽' },
+  { key: 'propane',   label: 'Propane',   emoji: '🔵' },
+  { key: 'pets',      label: 'Pets OK',   emoji: '🐾' },
 ]
 
 export default function PinDetailSheet() {

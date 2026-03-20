@@ -15,16 +15,20 @@ type AmenitiesState = {
   fuel: boolean
   propane: boolean
   overnight: boolean
+  toilets: boolean
+  pets: boolean
 }
 
 const AMENITY_LABELS: { key: keyof AmenitiesState; label: string }[] = [
+  { key: 'overnight', label: 'Overnight' },
   { key: 'water', label: 'Water' },
   { key: 'dump', label: 'Dump' },
-  { key: 'electric', label: 'Electric' },
+  { key: 'toilets', label: 'Toilets' },
   { key: 'shower', label: 'Shower' },
+  { key: 'electric', label: 'Electric' },
   { key: 'fuel', label: 'Fuel' },
   { key: 'propane', label: 'Propane' },
-  { key: 'overnight', label: 'Overnight' },
+  { key: 'pets', label: 'Pets OK' },
 ]
 
 const PIN_TYPES = ['blm', 'usfs', 'nps', 'overpass', 'community'] as const
@@ -42,7 +46,7 @@ export default function CreatePinForm({ adminToken, onSuccess, onCancel }: Creat
   const [lng, setLng] = useState('')
   const [amenities, setAmenities] = useState<AmenitiesState>({
     water: false, dump: false, electric: false, shower: false,
-    fuel: false, propane: false, overnight: false,
+    fuel: false, propane: false, overnight: false, toilets: false, pets: false,
   })
   const [maxLengthFt, setMaxLengthFt] = useState('')
   const [maxHeightFt, setMaxHeightFt] = useState('')

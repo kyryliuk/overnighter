@@ -27,6 +27,15 @@ export interface DbPinInsert {
 }
 
 // ---------------------------------------------------------------------------
+// Shared amenity detection helpers — reusable across all sync sources
+// ---------------------------------------------------------------------------
+
+/** Returns true if any activity name contains one of the given substrings (case-insensitive). */
+export function hasActivity(activities: string[], ...terms: string[]): boolean {
+  return activities.some((a) => terms.some((t) => a.includes(t)))
+}
+
+// ---------------------------------------------------------------------------
 // RIDB (recreation.gov) normalization
 // ---------------------------------------------------------------------------
 
@@ -50,6 +59,7 @@ export interface RidbFacility {
 /**
  * Normalize a single RIDB facility record to a Supabase insert row.
  * Returns null if the facility lacks coordinates or has an unknown org.
+ * Pins from official government sources (BLM/USFS/NPS) are marked is_verified=true.
  */
 export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | null {
   if (!facility.FacilityLatitude || !facility.FacilityLongitude) return null
@@ -60,13 +70,15 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
   const activities = (facility.ACTIVITY ?? []).map((a) => a.ActivityName.toLowerCase())
 
   const amenities: Record<string, boolean> = {
-    overnight: activities.some((a) => a.includes('camping') || a.includes('overnight')),
-    dump:      activities.some((a) => a.includes('dump')),
-    water:     activities.some((a) => a.includes('water')),
-    fuel:      false,
-    propane:   false,
-    electric:  activities.some((a) => a.includes('electric')),
-    shower:    activities.some((a) => a.includes('shower')),
+    overnight: hasActivity(activities, 'camping', 'overnight', 'rv camping', 'tent camping'),
+    dump:      hasActivity(activities, 'dump station', 'dump'),
+    water:     hasActivity(activities, 'drinking water', 'water hookup', 'water'),
+    electric:  hasActivity(activities, 'electricity hookup', 'electrical hookup', 'electric hookup', 'electric'),
+    shower:    hasActivity(activities, 'shower'),
+    fuel:      hasActivity(activities, 'gas station', 'fuel'),
+    propane:   hasActivity(activities, 'propane'),
+    toilets:   hasActivity(activities, 'flush toilet', 'vault toilet', 'pit toilet', 'toilet', 'restroom'),
+    pets:      hasActivity(activities, 'pets allowed', 'pet friendly', 'leashed pets', 'dogs allowed'),
   }
 
   return {
@@ -82,7 +94,7 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
     badge_state:           'grey',
     last_check_in_at:      null,
     recent_check_in_count: 0,
-    is_verified:           false,
+    is_verified:           true,
     is_flagged:            false,
   }
 }
@@ -113,11 +125,13 @@ export function normalizeOverpassElement(el: OverpassElement): DbPinInsert | nul
   const amenities: Record<string, boolean> = {
     overnight: tourism === 'camp_site' || tourism === 'caravan_site',
     dump:      amenity === 'waste_disposal',
-    water:     amenity === 'drinking_water',
+    water:     amenity === 'drinking_water' || tags['drinking_water'] === 'yes',
     fuel:      amenity === 'fuel',
     propane:   false,
-    electric:  false,
-    shower:    amenity === 'shower',
+    electric:  tags['electric_hookup'] === 'yes' || tags['electricity'] === 'yes',
+    shower:    amenity === 'shower' || tags['shower'] === 'yes',
+    toilets:   amenity === 'toilets' || tags['toilets'] === 'yes' || tags['toilets:disposal'] !== undefined,
+    pets:      tags['dogs'] === 'yes' || tags['dog'] === 'yes' || tags['pets'] === 'yes',
   }
 
   const name = tags['name'] ?? tags['operator'] ?? `OSM ${el.id}`

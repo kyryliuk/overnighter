@@ -15,6 +15,8 @@ export interface PinAmenities {
   fuel: boolean
   propane: boolean
   overnight: boolean
+  toilets: boolean
+  pets: boolean
 }
 
 export interface Pin {
