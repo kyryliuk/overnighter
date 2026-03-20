@@ -20,7 +20,7 @@ export default function AdminAuth({ onAuthenticated }: AdminAuthProps) {
       const res = await fetch('/api/admin/auth', {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store', // prevent cached 200 OK surviving token rotation
+        cache: 'no-store',
       })
 
       if (res.ok) {
@@ -39,24 +39,42 @@ export default function AdminAuth({ onAuthenticated }: AdminAuthProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="password"
-        aria-label="Admin token"
-        placeholder="Enter admin token"
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-        className="min-h-[44px] min-w-[44px]"
-        autoComplete="off"
-      />
-      <button
-        type="submit"
-        disabled={!token || isLoading}
-        className="min-h-[44px] min-w-[44px]"
-      >
-        {isLoading ? 'Verifying…' : 'Sign In'}
-      </button>
-      {errorMsg && <p role="alert">{errorMsg}</p>}
-    </form>
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Overnighter Admin</h1>
+          <p className="text-sm text-muted-foreground mt-1">Enter your admin token to continue</p>
+        </div>
+        <form onSubmit={handleSubmit} className="bg-secondary border border-border rounded-xl p-6 space-y-4">
+          <div>
+            <label htmlFor="admin-token" className="block text-sm font-medium text-foreground mb-1">
+              Admin Token
+            </label>
+            <input
+              id="admin-token"
+              type="password"
+              aria-label="Admin token"
+              placeholder="••••••••••••••••"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              autoComplete="off"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
+            />
+          </div>
+          {errorMsg && (
+            <p role="alert" className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+              {errorMsg}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={!token || isLoading}
+            className="w-full min-h-[44px] bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? 'Verifying…' : 'Sign In'}
+          </button>
+        </form>
+      </div>
+    </div>
   )
 }

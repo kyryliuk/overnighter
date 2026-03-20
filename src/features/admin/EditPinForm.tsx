@@ -31,6 +31,10 @@ const AMENITY_LABELS: { key: keyof AmenitiesState; label: string }[] = [
 
 const PIN_TYPES = ['blm', 'usfs', 'nps', 'overpass', 'community'] as const
 
+const inputCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]'
+const labelCls = 'block text-sm font-medium text-foreground mb-1'
+const errorCls = 'text-xs text-red-400 mt-1'
+
 export default function EditPinForm({ pin, adminToken, onSuccess, onCancel }: EditPinFormProps) {
   const queryClient = useQueryClient()
 
@@ -53,29 +57,14 @@ export default function EditPinForm({ pin, adminToken, onSuccess, onCancel }: Ed
 
   function validate(): Record<string, string> {
     const errs: Record<string, string> = {}
-
-    if (!name.trim()) {
-      errs.name = 'Name is required'
-    }
-
+    if (!name.trim()) errs.name = 'Name is required'
     const latNum = parseFloat(lat)
-    if (!lat || isNaN(latNum)) {
-      errs.latitude = 'Latitude is required'
-    } else if (latNum < 24 || latNum > 49) {
-      errs.latitude = 'Coordinates appear to be outside the supported region'
-    }
-
+    if (!lat || isNaN(latNum)) errs.latitude = 'Latitude is required'
+    else if (latNum < 24 || latNum > 49) errs.latitude = 'Coordinates appear to be outside the supported region'
     const lngNum = parseFloat(lng)
-    if (!lng || isNaN(lngNum)) {
-      errs.longitude = 'Longitude is required'
-    } else if (lngNum < -125 || lngNum > -66) {
-      errs.longitude = 'Coordinates appear to be outside the supported region'
-    }
-
-    if (!Object.values(amenities).some(Boolean)) {
-      errs.amenities = 'At least one amenity is required'
-    }
-
+    if (!lng || isNaN(lngNum)) errs.longitude = 'Longitude is required'
+    else if (lngNum < -125 || lngNum > -66) errs.longitude = 'Coordinates appear to be outside the supported region'
+    if (!Object.values(amenities).some(Boolean)) errs.amenities = 'At least one amenity is required'
     return errs
   }
 
@@ -83,10 +72,7 @@ export default function EditPinForm({ pin, adminToken, onSuccess, onCancel }: Ed
     mutationFn: async (body: object) => {
       const res = await fetch(`/api/pins/${pin.id}`, {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       if (!res.ok) throw new Error('Failed to update pin')
@@ -101,22 +87,14 @@ export default function EditPinForm({ pin, adminToken, onSuccess, onCancel }: Ed
 
   function handleSubmit() {
     const errs = validate()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setErrors({})
-
-    const payload = {
-      name: name.trim(),
-      pin_type: pinType,
-      latitude: parseFloat(lat),
-      longitude: parseFloat(lng),
-      amenities,
+    updateMutation.mutate({
+      name: name.trim(), pin_type: pinType,
+      latitude: parseFloat(lat), longitude: parseFloat(lng), amenities,
       max_length_ft: maxLengthFt ? parseInt(maxLengthFt, 10) : null,
       max_height_ft: maxHeightFt ? parseFloat(maxHeightFt) : null,
-    }
-    updateMutation.mutate(payload)
+    })
   }
 
   function handleAmenityChange(key: keyof AmenitiesState) {
@@ -124,132 +102,120 @@ export default function EditPinForm({ pin, adminToken, onSuccess, onCancel }: Ed
   }
 
   return (
-    <div>
-      <h2>Edit Pin</h2>
+    <div className="bg-secondary border border-border rounded-xl p-6">
+      <h2 className="text-base font-semibold text-foreground mb-1">Edit Pin</h2>
+      <p className="text-xs text-muted-foreground mb-6 font-mono">{pin.id}</p>
 
-      <div>
-        <label htmlFor="edit-pin-name">Name *</label>
-        <input
-          id="edit-pin-name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          aria-describedby={errors.name ? 'edit-name-error' : undefined}
-        />
-        {errors.name && <span id="edit-name-error" role="alert">{errors.name}</span>}
+      <div className="space-y-5">
+        {/* Name + Type row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="edit-pin-name" className={labelCls}>Name *</label>
+            <input id="edit-pin-name" type="text" value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-describedby={errors.name ? 'edit-name-error' : undefined}
+              className={inputCls} />
+            {errors.name && <p id="edit-name-error" role="alert" className={errorCls}>{errors.name}</p>}
+          </div>
+          <div>
+            <label htmlFor="edit-pin-type" className={labelCls}>Stop Type</label>
+            <select id="edit-pin-type" value={pinType}
+              onChange={(e) => setPinType(e.target.value as typeof pinType)}
+              className={inputCls}>
+              {PIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Coordinates */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="edit-pin-lat" className={labelCls}>Latitude *</label>
+            <input id="edit-pin-lat" type="number" value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              aria-describedby={errors.latitude ? 'edit-lat-error' : undefined}
+              className={inputCls} />
+            {errors.latitude && <p id="edit-lat-error" role="alert" className={errorCls}>{errors.latitude}</p>}
+          </div>
+          <div>
+            <label htmlFor="edit-pin-lng" className={labelCls}>Longitude *</label>
+            <input id="edit-pin-lng" type="number" value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              aria-describedby={errors.longitude ? 'edit-lng-error' : undefined}
+              className={inputCls} />
+            {errors.longitude && <p id="edit-lng-error" role="alert" className={errorCls}>{errors.longitude}</p>}
+          </div>
+        </div>
+
+        {/* Amenities */}
+        <fieldset>
+          <legend className={labelCls}>Amenities * <span className="text-muted-foreground font-normal">(select at least one)</span></legend>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+            {AMENITY_LABELS.map(({ key, label }) => (
+              <label key={key} className="flex items-center gap-2 min-h-[44px] px-3 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                <input type="checkbox" checked={amenities[key]}
+                  onChange={() => handleAmenityChange(key)}
+                  aria-label={label}
+                  className="accent-primary w-4 h-4 flex-shrink-0" />
+                <span className="text-sm text-foreground">{label}</span>
+              </label>
+            ))}
+          </div>
+          {errors.amenities && <p role="alert" className={errorCls}>{errors.amenities}</p>}
+        </fieldset>
+
+        {/* Rig limits */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="edit-pin-max-length" className={labelCls}>Max Rig Length (ft)</label>
+            <input id="edit-pin-max-length" type="number" value={maxLengthFt}
+              onChange={(e) => setMaxLengthFt(e.target.value)}
+              className={inputCls} placeholder="Optional" />
+          </div>
+          <div>
+            <label htmlFor="edit-pin-max-height" className={labelCls}>Max Rig Height (ft)</label>
+            <input id="edit-pin-max-height" type="number" value={maxHeightFt}
+              onChange={(e) => setMaxHeightFt(e.target.value)}
+              className={inputCls} placeholder="Optional" />
+          </div>
+        </div>
+
+        {/* Display-only fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-50">
+          <div>
+            <label htmlFor="edit-pin-fee" className={labelCls}>Fee <span className="text-muted-foreground font-normal">(not stored)</span></label>
+            <input id="edit-pin-fee" type="text" disabled placeholder="Not stored in database" className={inputCls} />
+          </div>
+          <div>
+            <label htmlFor="edit-pin-notes" className={labelCls}>Notes <span className="text-muted-foreground font-normal">(not stored)</span></label>
+            <textarea id="edit-pin-notes" disabled placeholder="Not stored in database"
+              className={`${inputCls} resize-none`} />
+          </div>
+        </div>
+
+        {updateMutation.isError && (
+          <p role="alert" className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+            Failed to update pin. Please try again.
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button
+            className="min-h-[44px] px-6 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            onClick={handleSubmit}
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+          </button>
+          <button
+            className="min-h-[44px] px-6 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 disabled:opacity-50 transition-colors"
+            onClick={onCancel}
+            disabled={updateMutation.isPending}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
-
-      <div>
-        <label htmlFor="edit-pin-type">Stop Type</label>
-        <select
-          id="edit-pin-type"
-          value={pinType}
-          onChange={(e) => setPinType(e.target.value as typeof pinType)}
-        >
-          {PIN_TYPES.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="edit-pin-lat">Latitude *</label>
-        <input
-          id="edit-pin-lat"
-          type="number"
-          value={lat}
-          onChange={(e) => setLat(e.target.value)}
-          aria-describedby={errors.latitude ? 'edit-lat-error' : undefined}
-        />
-        {errors.latitude && <span id="edit-lat-error" role="alert">{errors.latitude}</span>}
-      </div>
-
-      <div>
-        <label htmlFor="edit-pin-lng">Longitude *</label>
-        <input
-          id="edit-pin-lng"
-          type="number"
-          value={lng}
-          onChange={(e) => setLng(e.target.value)}
-          aria-describedby={errors.longitude ? 'edit-lng-error' : undefined}
-        />
-        {errors.longitude && <span id="edit-lng-error" role="alert">{errors.longitude}</span>}
-      </div>
-
-      <fieldset>
-        <legend>Amenities * (select at least one)</legend>
-        {AMENITY_LABELS.map(({ key, label }) => (
-          <label key={key} className="min-h-[44px]" style={{ display: 'flex', alignItems: 'center' }}>
-            <input
-              type="checkbox"
-              checked={amenities[key]}
-              onChange={() => handleAmenityChange(key)}
-              aria-label={label}
-            />
-            {label}
-          </label>
-        ))}
-        {errors.amenities && <span role="alert">{errors.amenities}</span>}
-      </fieldset>
-
-      <div>
-        <label htmlFor="edit-pin-max-length">Max Rig Length (ft)</label>
-        <input
-          id="edit-pin-max-length"
-          type="number"
-          value={maxLengthFt}
-          onChange={(e) => setMaxLengthFt(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="edit-pin-max-height">Max Rig Height (ft)</label>
-        <input
-          id="edit-pin-max-height"
-          type="number"
-          value={maxHeightFt}
-          onChange={(e) => setMaxHeightFt(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="edit-pin-fee">Fee (display-only, not persisted)</label>
-        <input
-          id="edit-pin-fee"
-          type="text"
-          disabled
-          placeholder="Not stored in database"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="edit-pin-notes">Notes (display-only, not persisted)</label>
-        <textarea
-          id="edit-pin-notes"
-          disabled
-          placeholder="Not stored in database"
-        />
-      </div>
-
-      {updateMutation.isError && (
-        <p role="alert">Failed to update pin. Please try again.</p>
-      )}
-
-      <button
-        className="min-h-[44px] min-w-[44px]"
-        onClick={handleSubmit}
-        disabled={updateMutation.isPending}
-      >
-        Save Changes
-      </button>
-
-      <button
-        className="min-h-[44px] min-w-[44px]"
-        onClick={onCancel}
-        disabled={updateMutation.isPending}
-      >
-        Cancel
-      </button>
     </div>
   )
 }
