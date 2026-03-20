@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react'
 import * as L from 'leaflet'
+import 'leaflet.markercluster'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import type { Pin, PinAmenities } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
 import { type SourceGroup, GROUP_SOURCES } from '@/store/sourceFilterStore'
@@ -23,7 +26,7 @@ export function doesPinMatchSourceFilter(pin: Pin, activeGroups: SourceGroup[]):
 }
 
 export function doesPinFitRig(pin: Pin, rigProfile: RigProfile): boolean {
-  if (!rigProfile.rigType) return true // No profile → all pins fit (no greying)
+  if (!rigProfile.rigType) return true
 
   const lengthOk =
     pin.maxLengthFt === null ||
@@ -39,26 +42,51 @@ export function doesPinFitRig(pin: Pin, rigProfile: RigProfile): boolean {
 }
 
 export default function PinLayer({ map, pins, rigProfile, isLoading }: PinLayerProps) {
-  const markersRef = useRef<L.Marker[]>([])
+  const clusterRef = useRef<L.MarkerClusterGroup | null>(null)
 
   useEffect(() => {
-    markersRef.current.forEach((m) => m.remove())
-    markersRef.current = []
-
-    if (isLoading) {
-      // Map tiles still load; markers deferred until data ready
-      return
+    if (clusterRef.current) {
+      clusterRef.current.remove()
+      clusterRef.current = null
     }
+
+    if (isLoading) return
+
+    const cluster = L.markerClusterGroup({
+      maxClusterRadius: 60,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      iconCreateFunction(c) {
+        const count = c.getChildCount()
+        return L.divIcon({
+          html:
+            `<div style="` +
+              `width:36px;height:36px;border-radius:50%;` +
+              `background:#0ea5e9;border:3px solid #0284c7;` +
+              `box-shadow:0 1px 4px rgba(0,0,0,0.25);` +
+              `display:flex;align-items:center;justify-content:center;` +
+              `font-size:12px;font-weight:700;color:#ffffff;` +
+              `cursor:pointer;` +
+            `">${count}</div>`,
+          className: '',
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        })
+      },
+    })
 
     pins.forEach((pin) => {
       const marker = createPinMarker(pin, rigProfile)
-      marker.addTo(map)
-      markersRef.current.push(marker)
+      cluster.addLayer(marker)
     })
 
+    cluster.addTo(map)
+    clusterRef.current = cluster
+
     return () => {
-      markersRef.current.forEach((m) => m.remove())
-      markersRef.current = []
+      cluster.remove()
+      clusterRef.current = null
     }
   }, [map, pins, rigProfile, isLoading])
 
