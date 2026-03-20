@@ -91,6 +91,10 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
   const pillTextColor = fits ? (PILL_TEXT_COLORS[badge] ?? '#ffffff') : '#ffffff'
 
   const isGovPin = pin.pinType === 'blm' || pin.pinType === 'usfs' || pin.pinType === 'nps'
+
+  const circleRing  = isGovPin ? '#9ca3af' : ringColor   // grey border for gov
+  const circleBg    = isGovPin ? '#f3f4f6' : '#ffffff'   // light grey fill so emoji shows
+
   const pill = isGovPin
     ? ''
     : `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;` +
@@ -100,9 +104,9 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
   const html =
     `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;${unfitStyles}">` +
       `<div ` +
-        `style="width:36px;height:36px;border-radius:50%;border:3px solid ${ringColor};` +
-        `background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;` +
-        `font-size:16px;cursor:pointer;" ` +
+        `style="width:36px;height:36px;border-radius:50%;border:3px solid ${circleRing};` +
+        `background:${circleBg};box-shadow:0 1px 4px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;` +
+        `font-size:18px;cursor:pointer;" ` +
         `role="img" ` +
         `aria-label="${ariaLabel}"` +
       `>${emoji}</div>` +

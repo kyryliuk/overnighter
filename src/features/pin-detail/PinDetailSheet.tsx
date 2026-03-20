@@ -192,9 +192,9 @@ export default function PinDetailSheet() {
               <RecencyBadge badgeState={pin.badgeState} />
               {/* Amenities */}
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-2">
                   Amenities
-                </p>
+                </span>
                 {activeAmenities.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {activeAmenities.map(({ key, label, emoji }) => (
@@ -213,9 +213,9 @@ export default function PinDetailSheet() {
               </div>
               {/* Rig restrictions */}
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">
                   Size Restrictions
-                </p>
+                </span>
                 {pin.maxLengthFt !== null || pin.maxHeightFt !== null ? (
                   <p className="text-sm text-foreground">
                     {[
@@ -237,7 +237,7 @@ export default function PinDetailSheet() {
               )}
               {/* GPS coordinates */}
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">GPS</p>
+                <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">GPS</span>
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-foreground font-mono">
                     {pin.latitude.toFixed(6)}, {pin.longitude.toFixed(6)}
@@ -254,14 +254,14 @@ export default function PinDetailSheet() {
               {/* Elevation */}
               {pin.elevationM !== null && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Elevation</p>
+                  <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">Elevation</span>
                   <p className="text-sm text-foreground">{pin.elevationM.toFixed(1)} masl</p>
                 </div>
               )}
               {/* Website */}
               {pin.website && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Website</p>
+                  <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">Website</span>
                   <a
                     href={pin.website.startsWith('http') ? pin.website : `https://${pin.website}`}
                     target="_blank"
@@ -275,7 +275,7 @@ export default function PinDetailSheet() {
               {/* Phone */}
               {pin.phone && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Phone</p>
+                  <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">Phone</span>
                   <a href={`tel:${pin.phone}`} className="text-sm text-sky-400 underline">{pin.phone}</a>
                 </div>
               )}
@@ -286,10 +286,11 @@ export default function PinDetailSheet() {
               {/* Description / community notes */}
               {pin.description && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-2">
                     About this spot
-                  </p>
+                  </span>
                   <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none
+                    [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-4 [&_h1]:mb-2
                     [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-3 [&_h2]:mb-1
                     [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-foreground [&_h3]:mt-2 [&_h3]:mb-1
                     [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-2
