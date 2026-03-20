@@ -3,6 +3,7 @@ import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
 import { useAmenityFilterStore } from '@/store/amenityFilterStore'
+import { useSourceFilterStore } from '@/store/sourceFilterStore'
 import { useCheckInPromptStore, type VisitRecord } from '@/store/checkInPromptStore'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -18,7 +19,7 @@ import DeparturePrompt from './DeparturePrompt'
 import RigFilterOverlay from './RigFilterOverlay'
 import BadgeTooltip from './BadgeTooltip'
 import AmenityFilterBar from './AmenityFilterBar'
-import { doesPinMatchFilters, doesPinFitRig } from './PinLayer'
+import { doesPinMatchFilters, doesPinFitRig, doesPinMatchSourceFilter } from './PinLayer'
 
 const LeafletMap = lazy(() => import('./LeafletMap'))
 
@@ -41,6 +42,7 @@ export default function MapView() {
   const { data: pins = [], isLoading } = usePinsQuery({ enabled: shouldShowMap })
   const mapRef = useRef<L.Map | null>(null)
   const activeFilters = useAmenityFilterStore((state) => state.activeFilters)
+  const activeGroups = useSourceFilterStore((state) => state.activeGroups)
 
   // Lazy initializer avoids reading localStorage on every render.
   // Set to false immediately when badge_tooltip_seen is already in storage.
@@ -127,16 +129,27 @@ export default function MapView() {
   // Rig-greyed pins (don't fit rig) remain visible regardless of amenity filter.
   // Only rig-fit pins that don't match amenity filters are hidden.
   const visiblePins = useMemo(() => {
-    if (activeFilters.length === 0) return pins
-    return pins.filter(
-      (pin) => doesPinMatchFilters(pin, activeFilters) || !doesPinFitRig(pin, rigProfile),
-    )
-  }, [pins, activeFilters, rigProfile])
+    if (activeFilters.length === 0 && activeGroups.length === 0) return pins
+    return pins.filter((pin) => {
+      const fitsRig = doesPinFitRig(pin, rigProfile)
+      const matchesSource = doesPinMatchSourceFilter(pin, activeGroups)
+      const matchesAmenity = doesPinMatchFilters(pin, activeFilters)
+      // Rig-greyed pins remain visible regardless of filters
+      if (!fitsRig) return matchesSource
+      return matchesSource && matchesAmenity
+    })
+  }, [pins, activeFilters, activeGroups, rigProfile])
 
   // Show empty state when filters are active but no rig-fit pins match
   const hasAnyMatch = useMemo(
-    () => activeFilters.length === 0 || pins.some((pin) => doesPinMatchFilters(pin, activeFilters)),
-    [pins, activeFilters],
+    () =>
+      (activeFilters.length === 0 && activeGroups.length === 0) ||
+      pins.some(
+        (pin) =>
+          doesPinMatchSourceFilter(pin, activeGroups) &&
+          doesPinMatchFilters(pin, activeFilters),
+      ),
+    [pins, activeFilters, activeGroups],
   )
 
   return (

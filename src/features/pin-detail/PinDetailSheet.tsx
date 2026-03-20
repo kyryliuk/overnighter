@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import Markdown from 'react-markdown'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useRigStore } from '@/store/rigStore'
@@ -229,15 +230,31 @@ export default function PinDetailSheet() {
                   This spot may not fit your {rigProfile.rigType}, {rigProfile.lengthFt}ft rig
                 </div>
               )}
+              {/* GPS coordinates */}
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">GPS</p>
+                <p className="text-sm text-foreground font-mono">
+                  {pin.latitude.toFixed(6)}, {pin.longitude.toFixed(6)}
+                </p>
+              </div>
               {/* Last verified */}
               <p className="text-sm text-muted-foreground">Verified: {lastVerified}</p>
               {/* Description / community notes */}
               {pin.description && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                    Community notes
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                    About this spot
                   </p>
-                  <p className="text-sm text-foreground">{pin.description}</p>
+                  <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none
+                    [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-3 [&_h2]:mb-1
+                    [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-foreground [&_h3]:mt-2 [&_h3]:mb-1
+                    [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-2
+                    [&_a]:text-sky-400 [&_a]:underline
+                    [&_strong]:text-foreground [&_strong]:font-semibold
+                    [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:text-muted-foreground
+                    [&_li]:mb-0.5">
+                    <Markdown>{pin.description}</Markdown>
+                  </div>
                 </div>
               )}
               {/* Get Directions — primary CTA (AC1, AC5). Visible even on stale pins: warn never block */}

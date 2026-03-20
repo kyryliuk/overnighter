@@ -39,11 +39,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .filter((r): r is NonNullable<ReturnType<typeof normalizeRidbFacility>> => r !== null)
 
       if (rows.length > 0) {
-        // Strip community-managed fields so upsert doesn't overwrite badge/check-in data.
-        // is_verified is kept (set to true by normalizer for official gov sources).
+        // Strip only user-activity fields so upsert doesn't overwrite check-in counts.
+        // badge_state and is_verified are kept — official gov sources are always green/verified.
         // updated_at is set explicitly so stale detection works correctly after each sync.
         const now = new Date().toISOString()
-        const syncRows = rows.map(({ badge_state: _b, last_check_in_at: _l, recent_check_in_count: _r, is_flagged: _f, ...data }) => ({
+        const syncRows = rows.map(({ last_check_in_at: _l, recent_check_in_count: _r, is_flagged: _f, ...data }) => ({
           ...data,
           updated_at: now,
         }))

@@ -9,7 +9,7 @@ const BADGE_CONFIG: Record<BadgeColor, { bg: string; color: string; icon: string
     bg: 'rgba(34,197,94,0.15)',
     color: '#22c55e',
     icon: '✓',
-    label: 'Verified recently',
+    label: 'Verified',
   },
   yellow: {
     bg: 'rgba(234,179,8,0.15)',

@@ -35,6 +35,34 @@ export function hasActivity(activities: string[], ...terms: string[]): boolean {
   return activities.some((a) => terms.some((t) => a.includes(t)))
 }
 
+/**
+ * Convert a simple HTML string (as returned by RIDB) to Markdown.
+ * Handles the subset of tags RIDB actually uses: h1-h3, p, strong, em, a, br, ul/ol/li.
+ */
+export function htmlToMarkdown(html: string): string {
+  return html
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+    .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+    .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+    .replace(/<\/?(ul|ol)[^>]*>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<p[^>]*>(.*?)<\/p>/gis, '$1\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 // ---------------------------------------------------------------------------
 // RIDB (recreation.gov) normalization
 // ---------------------------------------------------------------------------
@@ -83,7 +111,7 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
 
   return {
     name:                  facility.FacilityName,
-    description:           facility.FacilityDescription ?? null,
+    description:           facility.FacilityDescription ? htmlToMarkdown(facility.FacilityDescription) : null,
     latitude:              facility.FacilityLatitude,
     longitude:             facility.FacilityLongitude,
     pin_type:              pinType,
@@ -91,7 +119,7 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
     max_length_ft:         null,
     max_height_ft:         null,
     amenities,
-    badge_state:           'grey',
+    badge_state:           'green',
     last_check_in_at:      null,
     recent_check_in_count: 0,
     is_verified:           true,
