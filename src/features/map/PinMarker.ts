@@ -41,20 +41,27 @@ const PILL_TEXT_COLORS: Record<BadgeColor, string> = {
   grey: '#ffffff',
 }
 
-function getCategoryEmoji(pin: Pin): { emoji: string; label: string } {
+// SVG tree icon for gov pins — renders identically on all OS/browsers (no emoji font variance)
+const GOV_SVG =
+  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">` +
+    `<polygon points="12,2 3,13 21,13" fill="#15803d"/>` +
+    `<polygon points="12,8 4,17 20,17" fill="#166534"/>` +
+    `<rect x="10" y="17" width="4" height="5" rx="1" fill="#92400e"/>` +
+  `</svg>`
+
+function getCategoryEmoji(pin: Pin): { icon: string; label: string } {
   if (pin.pinType === 'blm' || pin.pinType === 'usfs' || pin.pinType === 'nps') {
-    return { emoji: '🏛', label: 'gov campground' }
+    return { icon: GOV_SVG, label: 'gov campground' }
   }
   const a = pin.amenities
-  // Priority: overnight > dump > water > fuel > propane > electric > shower > fallback
-  if (a.overnight) return { emoji: '🏕', label: 'overnight' }
-  if (a.dump)      return { emoji: '🚽', label: 'dump' }
-  if (a.water)     return { emoji: '💧', label: 'water' }
-  if (a.fuel)      return { emoji: '⛽', label: 'fuel' }
-  if (a.propane)   return { emoji: '🔵', label: 'propane' }
-  if (a.electric)  return { emoji: '⚡', label: 'electric' }
-  if (a.shower)    return { emoji: '🚿', label: 'shower' }
-  return { emoji: '📍', label: 'stop' }
+  if (a.overnight) return { icon: '🏕', label: 'overnight' }
+  if (a.dump)      return { icon: '🚽', label: 'dump' }
+  if (a.water)     return { icon: '💧', label: 'water' }
+  if (a.fuel)      return { icon: '⛽', label: 'fuel' }
+  if (a.propane)   return { icon: '🔵', label: 'propane' }
+  if (a.electric)  return { icon: '⚡', label: 'electric' }
+  if (a.shower)    return { icon: '🚿', label: 'shower' }
+  return { icon: '📍', label: 'stop' }
 }
 
 /** HTML-escape a string to prevent XSS injection via pin names from the database */
@@ -77,7 +84,7 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
 
   const ringColor = fits ? (RING_COLORS[badge] ?? RING_COLORS.grey) : RING_COLORS.grey
 
-  const { emoji, label } = getCategoryEmoji(pin)
+  const { icon, label } = getCategoryEmoji(pin)
   const recency = BADGE_LABELS[badge] ?? 'unknown'
   const ariaLabel = `${escapeHtml(pin.name)}: ${label}, verified ${recency}`
 
@@ -109,7 +116,7 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
         `font-size:18px;cursor:pointer;" ` +
         `role="img" ` +
         `aria-label="${ariaLabel}"` +
-      `>${emoji}</div>` +
+      `>${icon}</div>` +
       pill +
     `</div>`
 
