@@ -36,7 +36,7 @@ export default function IssueReportSheet({ pinId, onClose }: IssueReportSheetPro
       { pinId, deviceId, type: selectedType, note: note || undefined },
       {
         onSuccess: () => { onClose() },
-        onError: () => { setErrorMsg("Couldn't save report. Tap to retry.") },
+        onError: (error) => { setErrorMsg(error.message || "Couldn't save report. Tap to retry.") },
       },
     )
   }
