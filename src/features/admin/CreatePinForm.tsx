@@ -8,37 +8,42 @@ interface CreatePinFormProps {
 }
 
 type AmenitiesState = {
-  water: boolean
-  dump: boolean
-  electric: boolean
-  shower: boolean
-  fuel: boolean
-  propane: boolean
-  overnight: boolean
-  toilets: boolean
-  pets: boolean
-  wifi: boolean
-  kitchen: boolean
-  restaurant: boolean
-  big_rig: boolean
-  tent: boolean
+  water: boolean; dump: boolean; electric: boolean; shower: boolean
+  fuel: boolean; propane: boolean; overnight: boolean; toilets: boolean
+  pets: boolean; wifi: boolean; kitchen: boolean; restaurant: boolean
+  big_rig: boolean; tent: boolean
+  hiking: boolean; fishing: boolean; swimming: boolean; boating: boolean
+  biking: boolean; ohv: boolean; climbing: boolean; winter_sports: boolean
+  hunting: boolean; wildlife: boolean; horseback: boolean; hot_springs: boolean
 }
 
-const AMENITY_LABELS: { key: keyof AmenitiesState; label: string }[] = [
-  { key: 'overnight',  label: 'Overnight' },
-  { key: 'tent',       label: 'Tent' },
-  { key: 'big_rig',   label: 'Big Rig OK' },
-  { key: 'water',      label: 'Water' },
-  { key: 'dump',       label: 'Dump Station' },
-  { key: 'toilets',    label: 'Toilets' },
-  { key: 'shower',     label: 'Shower' },
-  { key: 'electric',   label: 'Electric' },
-  { key: 'wifi',       label: 'WiFi' },
-  { key: 'fuel',       label: 'Fuel' },
-  { key: 'propane',    label: 'Propane' },
-  { key: 'kitchen',    label: 'Kitchen' },
-  { key: 'restaurant', label: 'Restaurant' },
-  { key: 'pets',       label: 'Pets OK' },
+const AMENITY_LABELS: { key: keyof AmenitiesState; label: string; group: 'infra' | 'activity' }[] = [
+  { key: 'overnight',     label: 'Overnight',      group: 'infra' },
+  { key: 'tent',          label: 'Tent',            group: 'infra' },
+  { key: 'big_rig',       label: 'Big Rig OK',      group: 'infra' },
+  { key: 'water',         label: 'Water',           group: 'infra' },
+  { key: 'dump',          label: 'Dump Station',    group: 'infra' },
+  { key: 'toilets',       label: 'Toilets',         group: 'infra' },
+  { key: 'shower',        label: 'Shower',          group: 'infra' },
+  { key: 'electric',      label: 'Electric',        group: 'infra' },
+  { key: 'wifi',          label: 'WiFi',            group: 'infra' },
+  { key: 'fuel',          label: 'Fuel',            group: 'infra' },
+  { key: 'propane',       label: 'Propane',         group: 'infra' },
+  { key: 'kitchen',       label: 'Kitchen',         group: 'infra' },
+  { key: 'restaurant',    label: 'Restaurant',      group: 'infra' },
+  { key: 'pets',          label: 'Pets OK',         group: 'infra' },
+  { key: 'hiking',        label: 'Hiking',          group: 'activity' },
+  { key: 'fishing',       label: 'Fishing',         group: 'activity' },
+  { key: 'swimming',      label: 'Swimming',        group: 'activity' },
+  { key: 'boating',       label: 'Boating',         group: 'activity' },
+  { key: 'biking',        label: 'Biking',          group: 'activity' },
+  { key: 'ohv',           label: 'OHV / ATV',       group: 'activity' },
+  { key: 'climbing',      label: 'Climbing',        group: 'activity' },
+  { key: 'winter_sports', label: 'Winter Sports',   group: 'activity' },
+  { key: 'hunting',       label: 'Hunting',         group: 'activity' },
+  { key: 'wildlife',      label: 'Wildlife',        group: 'activity' },
+  { key: 'horseback',     label: 'Horseback',       group: 'activity' },
+  { key: 'hot_springs',   label: 'Hot Springs',     group: 'activity' },
 ]
 
 const PIN_TYPES = ['blm', 'usfs', 'nps', 'overpass', 'community'] as const
@@ -58,6 +63,9 @@ export default function CreatePinForm({ adminToken, onSuccess, onCancel }: Creat
     water: false, dump: false, electric: false, shower: false,
     fuel: false, propane: false, overnight: false, toilets: false, pets: false,
     wifi: false, kitchen: false, restaurant: false, big_rig: false, tent: false,
+    hiking: false, fishing: false, swimming: false, boating: false,
+    biking: false, ohv: false, climbing: false, winter_sports: false,
+    hunting: false, wildlife: false, horseback: false, hot_springs: false,
   })
   const [maxLengthFt, setMaxLengthFt] = useState('')
   const [maxHeightFt, setMaxHeightFt] = useState('')
@@ -158,17 +166,24 @@ export default function CreatePinForm({ adminToken, onSuccess, onCancel }: Creat
         {/* Amenities */}
         <fieldset>
           <legend className={labelCls}>Amenities * <span className="text-muted-foreground font-normal">(select at least one)</span></legend>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-            {AMENITY_LABELS.map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 min-h-[44px] px-3 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
-                <input type="checkbox" checked={amenities[key]}
-                  onChange={() => handleAmenityChange(key)}
-                  aria-label={label}
-                  className="accent-primary w-4 h-4 flex-shrink-0" />
-                <span className="text-sm text-foreground">{label}</span>
-              </label>
-            ))}
-          </div>
+          {(['infra', 'activity'] as const).map((group) => (
+            <div key={group} className="mt-3">
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 mb-2">
+                {group === 'infra' ? 'Infrastructure' : 'Activities'}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {AMENITY_LABELS.filter((a) => a.group === group).map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-2 min-h-[44px] px-3 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                    <input type="checkbox" checked={amenities[key]}
+                      onChange={() => handleAmenityChange(key)}
+                      aria-label={label}
+                      className="accent-primary w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm text-foreground">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
           {errors.amenities && <p role="alert" className={errorCls}>{errors.amenities}</p>}
         </fieldset>
 

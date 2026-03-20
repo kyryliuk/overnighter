@@ -38,6 +38,57 @@ export function hasActivity(activities: string[], ...terms: string[]): boolean {
   return activities.some((a) => terms.some((t) => a.includes(t)))
 }
 
+/** Returns true if the plain-text description contains one of the given substrings (case-insensitive). */
+export function hasText(text: string, ...terms: string[]): boolean {
+  const lower = text.toLowerCase()
+  return terms.some((t) => lower.includes(t.toLowerCase()))
+}
+
+/**
+ * Detect entertainment/outdoor activities from both an activities array and
+ * a free-text description. Used for RIDB sync where descriptions are rich.
+ */
+export function detectEntertainmentAmenities(
+  activities: string[],
+  descriptionText: string,
+): Record<string, boolean> {
+  const a = (acts: string[], ...terms: string[]) => hasActivity(acts, ...terms)
+  const t = (...terms: string[]) => hasText(descriptionText, ...terms)
+
+  return {
+    hiking:       a(activities, 'hiking', 'backpacking', 'hiking trail', 'trail running', 'difficult hiking', 'trails')
+                  || t('hiking', 'backpacking', 'trail', 'trekking'),
+    fishing:      a(activities, 'fishing', 'fly fishing', 'ice fishing', 'crawfishing')
+                  || t('fishing', 'angling', 'trout', 'bass fishing'),
+    swimming:     a(activities, 'swimming', 'accessible swimming', 'beach camping', 'beachcombing', 'clam digging', 'swimming site')
+                  || t('swimming', 'swim beach', 'swimming hole'),
+    boating:      a(activities, 'boating', 'kayaking', 'canoeing', 'paddling', 'rafting', 'motor boat',
+                    'non-motorized boating', 'sailing', 'paddle boating', 'sea kayaking',
+                    'jet skiing', 'water skiing', 'windsurfing', 'surfing', 'tubing', 'whitewater rafting',
+                    'river trips', 'water activities', 'water sports', 'marina', 'boat rental')
+                  || t('kayak', 'canoe', 'boat ramp', 'boat launch', 'paddling', 'rafting'),
+    biking:       a(activities, 'biking', 'mountain biking', 'e-biking', 'fat tire biking')
+                  || t('biking', 'cycling', 'bike trail', 'mountain bike'),
+    ohv:          a(activities, 'off highway vehicle', 'off road vehicle', 'all terrain', 'ohv use', 'snowmobile')
+                  || t('ohv', 'atv', 'off-road', 'off highway', 'dirt bike'),
+    climbing:     a(activities, 'climbing', 'rock climbing', 'mountain climbing', 'ice climbing', 'bouldering', 'canyoneering')
+                  || t('rock climbing', 'bouldering', 'canyoneering', 'rappelling'),
+    winter_sports: a(activities, 'skiing', 'snowboarding', 'snowshoeing', 'snowmobile', 'snow tubing',
+                     'sledding', 'ice skating', 'cross country skiing', 'downhill skiing', 'skate skiing',
+                     'skijoring', 'snow fat tire biking', 'dog mushing', 'winter sports')
+                  || t('ski', 'snowboard', 'snowshoe', 'cross-country skiing', 'nordic'),
+    hunting:      a(activities, 'hunting', 'trapping', 'recreational shooting', 'shooting range', 'archery')
+                  || t('hunting', 'deer hunting', 'elk hunting', 'waterfowl'),
+    wildlife:     a(activities, 'wildlife viewing', 'bird watching', 'birding', 'wild horse viewing',
+                    'whale watching', 'fish viewing site', 'star gazing', 'stargazing')
+                  || t('wildlife', 'birding', 'birdwatch', 'nature viewing', 'stargazing'),
+    horseback:    a(activities, 'horseback riding', 'horse camping')
+                  || t('horseback', 'equestrian', 'horse trail', 'horse camp'),
+    hot_springs:  a(activities, 'hot springs soaking', 'hot springs')
+                  || t('hot spring', 'hot springs', 'thermal'),
+  }
+}
+
 /**
  * Convert a simple HTML string (as returned by RIDB) to Markdown.
  * Handles the subset of tags RIDB actually uses: h1-h3, p, strong, em, a, br, ul/ol/li.
@@ -103,7 +154,10 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
 
   const activities = (facility.ACTIVITY ?? []).map((a) => a.ActivityName.toLowerCase())
 
+  const descText = facility.FacilityDescription ?? ''
+
   const amenities: Record<string, boolean> = {
+    // Infrastructure
     overnight:  hasActivity(activities, 'camping', 'overnight', 'rv camping', 'tent camping'),
     dump:       hasActivity(activities, 'dump station', 'dump'),
     water:      hasActivity(activities, 'drinking water', 'water hookup', 'water'),
@@ -112,12 +166,14 @@ export function normalizeRidbFacility(facility: RidbFacility): DbPinInsert | nul
     fuel:       hasActivity(activities, 'gas station', 'fuel'),
     propane:    hasActivity(activities, 'propane'),
     toilets:    hasActivity(activities, 'flush toilet', 'vault toilet', 'pit toilet', 'toilet', 'restroom'),
-    pets:       hasActivity(activities, 'pets allowed', 'pet friendly', 'leashed pets', 'dogs allowed'),
+    pets:       hasActivity(activities, 'pets allowed', 'pet friendly', 'leashed pets', 'dogs allowed', 'dogs on leash'),
     wifi:       hasActivity(activities, 'wifi', 'wireless internet', 'internet'),
     kitchen:    hasActivity(activities, 'kitchen'),
     restaurant: hasActivity(activities, 'restaurant', 'food service', 'dining'),
-    big_rig:    hasActivity(activities, 'rv camping', 'rv park', 'rv hookup'),
-    tent:       hasActivity(activities, 'tent camping', 'tent only'),
+    big_rig:    hasActivity(activities, 'rv camping', 'rv park', 'rv hookup', 'recreational vehicles', 'long term visitor area'),
+    tent:       hasActivity(activities, 'tent camping', 'tent only', 'dispersed camping', 'beach camping'),
+    // Entertainment — detected from both activities list and description text
+    ...detectEntertainmentAmenities(activities, descText),
   }
 
   return {
@@ -165,20 +221,34 @@ export function normalizeOverpassElement(el: OverpassElement): DbPinInsert | nul
   const tourism = tags['tourism'] ?? ''
 
   const amenities: Record<string, boolean> = {
-    overnight:  tourism === 'camp_site' || tourism === 'caravan_site',
-    dump:       amenity === 'waste_disposal',
-    water:      amenity === 'drinking_water' || tags['drinking_water'] === 'yes',
-    fuel:       amenity === 'fuel',
-    propane:    false,
-    electric:   tags['electric_hookup'] === 'yes' || tags['electricity'] === 'yes',
-    shower:     amenity === 'shower' || tags['shower'] === 'yes',
-    toilets:    amenity === 'toilets' || tags['toilets'] === 'yes' || tags['toilets:disposal'] !== undefined,
-    pets:       tags['dogs'] === 'yes' || tags['dog'] === 'yes' || tags['pets'] === 'yes',
-    wifi:       tags['internet_access'] === 'wlan' || tags['wifi'] === 'yes',
-    kitchen:    false,
-    restaurant: false,
-    big_rig:    tourism === 'caravan_site',
-    tent:       tourism === 'camp_site',
+    // Infrastructure
+    overnight:     tourism === 'camp_site' || tourism === 'caravan_site',
+    dump:          amenity === 'waste_disposal',
+    water:         amenity === 'drinking_water' || tags['drinking_water'] === 'yes',
+    fuel:          amenity === 'fuel',
+    propane:       false,
+    electric:      tags['electric_hookup'] === 'yes' || tags['electricity'] === 'yes',
+    shower:        amenity === 'shower' || tags['shower'] === 'yes',
+    toilets:       amenity === 'toilets' || tags['toilets'] === 'yes' || tags['toilets:disposal'] !== undefined,
+    pets:          tags['dogs'] === 'yes' || tags['dog'] === 'yes' || tags['pets'] === 'yes',
+    wifi:          tags['internet_access'] === 'wlan' || tags['wifi'] === 'yes',
+    kitchen:       false,
+    restaurant:    amenity === 'restaurant' || amenity === 'cafe' || amenity === 'fast_food',
+    big_rig:       tourism === 'caravan_site',
+    tent:          tourism === 'camp_site',
+    // Entertainment — OSM tags
+    hiking:        tags['hiking'] === 'yes' || tags['route'] === 'hiking',
+    fishing:       tags['fishing'] === 'yes',
+    swimming:      tags['swimming'] === 'yes' || amenity === 'swimming_pool' || tags['leisure'] === 'swimming_area',
+    boating:       tags['boat'] === 'yes' || tags['leisure'] === 'marina' || tags['leisure'] === 'slipway',
+    biking:        tags['bicycle'] === 'yes' || tags['mtb'] === 'yes',
+    ohv:           tags['atv'] === 'yes' || tags['4wd_only'] === 'yes',
+    climbing:      tags['climbing'] === 'yes' || tags['sport'] === 'climbing',
+    winter_sports: tags['ski'] === 'yes' || tags['sport'] === 'skiing',
+    hunting:       tags['hunting'] === 'yes',
+    wildlife:      tags['wildlife'] === 'yes' || tags['bird_watching'] === 'yes',
+    horseback:     tags['horse'] === 'yes' || tags['equestrian'] === 'yes',
+    hot_springs:   tags['natural'] === 'hot_spring' || tags['amenity'] === 'hot_spring',
   }
 
   const name = tags['name'] ?? tags['operator'] ?? `OSM ${el.id}`

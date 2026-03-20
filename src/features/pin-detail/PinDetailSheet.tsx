@@ -60,6 +60,21 @@ const AMENITY_CHIPS: Array<{ key: keyof PinAmenities; label: string; emoji: stri
   { key: 'pets',        label: 'Pets OK',      emoji: '🐾' },
 ]
 
+const ACTIVITY_CHIPS: Array<{ key: keyof PinAmenities; label: string; emoji: string }> = [
+  { key: 'hiking',        label: 'Hiking',         emoji: '🥾' },
+  { key: 'fishing',       label: 'Fishing',        emoji: '🎣' },
+  { key: 'swimming',      label: 'Swimming',       emoji: '🏊' },
+  { key: 'boating',       label: 'Boating',        emoji: '🚤' },
+  { key: 'biking',        label: 'Biking',         emoji: '🚴' },
+  { key: 'ohv',           label: 'OHV / ATV',      emoji: '🏍' },
+  { key: 'climbing',      label: 'Climbing',       emoji: '🧗' },
+  { key: 'winter_sports', label: 'Winter Sports',  emoji: '⛷' },
+  { key: 'hunting',       label: 'Hunting',        emoji: '🦌' },
+  { key: 'wildlife',      label: 'Wildlife',       emoji: '🦅' },
+  { key: 'horseback',     label: 'Horseback',      emoji: '🐴' },
+  { key: 'hot_springs',   label: 'Hot Springs',    emoji: '♨' },
+]
+
 export default function PinDetailSheet() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -103,6 +118,10 @@ export default function PinDetailSheet() {
 
   const activeAmenities = pin
     ? AMENITY_CHIPS.filter(({ key }) => pin.amenities[key])
+    : []
+
+  const activeActivities = pin
+    ? ACTIVITY_CHIPS.filter(({ key }) => pin.amenities[key])
     : []
 
   const lastVerified = pin?.lastCheckInAt
@@ -211,6 +230,25 @@ export default function PinDetailSheet() {
                   <p className="text-sm text-muted-foreground">No amenity data</p>
                 )}
               </div>
+              {/* Activities */}
+              {activeActivities.length > 0 && (
+                <div>
+                  <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-2">
+                    Activities
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {activeActivities.map(({ key, label, emoji }) => (
+                      <span
+                        key={key}
+                        className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-sm text-foreground"
+                      >
+                        <span aria-hidden="true">{emoji}</span>
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Rig restrictions */}
               <div>
                 <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">
