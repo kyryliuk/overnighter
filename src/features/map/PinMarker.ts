@@ -23,12 +23,6 @@ const RING_COLORS: Record<BadgeColor, string> = {
   grey: '#6b7280',
 }
 
-const FILL_COLORS: Record<BadgeColor, string> = {
-  green: 'rgba(34,197,94,0.15)',
-  yellow: 'rgba(234,179,8,0.15)',
-  red: 'rgba(239,68,68,0.15)',
-  grey: 'rgba(107,114,128,0.1)',
-}
 
 const BADGE_LABELS: Record<BadgeColor, string> = {
   green: 'fresh',
@@ -82,7 +76,6 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
   const badge = pin.badgeState as BadgeColor
 
   const ringColor = fits ? (RING_COLORS[badge] ?? RING_COLORS.grey) : RING_COLORS.grey
-  const fillColor = fits ? (FILL_COLORS[badge] ?? FILL_COLORS.grey) : FILL_COLORS.grey
 
   const { emoji, label } = getCategoryEmoji(pin)
   const recency = BADGE_LABELS[badge] ?? 'unknown'
@@ -97,18 +90,23 @@ export function createPinIconConfig(pin: Pin, rigProfile: RigProfile): PinIconCo
   // white text on grey — all meet NFR-A6 4.5:1 contrast requirement
   const pillTextColor = fits ? (PILL_TEXT_COLORS[badge] ?? '#ffffff') : '#ffffff'
 
+  const isGovPin = pin.pinType === 'blm' || pin.pinType === 'usfs' || pin.pinType === 'nps'
+  const pill = isGovPin
+    ? ''
+    : `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;` +
+        `background:${ringColor};color:${pillTextColor};line-height:1.2;cursor:pointer;"` +
+      `>${recency}</span>`
+
   const html =
     `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;${unfitStyles}">` +
       `<div ` +
         `style="width:36px;height:36px;border-radius:50%;border:3px solid ${ringColor};` +
-        `background:${fillColor};display:flex;align-items:center;justify-content:center;` +
+        `background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;` +
         `font-size:16px;cursor:pointer;" ` +
         `role="img" ` +
         `aria-label="${ariaLabel}"` +
       `>${emoji}</div>` +
-      `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;` +
-        `background:${ringColor};color:${pillTextColor};line-height:1.2;cursor:pointer;"` +
-      `>${recency}</span>` +
+      pill +
     `</div>`
 
   return {
