@@ -19,7 +19,7 @@ export interface DbPinInsert {
   max_length_ft: number | null
   max_height_ft: number | null
   amenities: Record<string, boolean>
-  badge_state: 'grey'
+  badge_state: 'green' | 'yellow' | 'red' | 'grey'
   last_check_in_at: null
   recent_check_in_count: number
   is_verified: boolean
