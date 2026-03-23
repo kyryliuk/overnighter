@@ -1,0 +1,63 @@
+import type { PinAmenities } from '@/types/pin'
+
+export const EMPTY_PIN_AMENITIES: PinAmenities = {
+  water: false,
+  dump: false,
+  electric: false,
+  shower: false,
+  fuel: false,
+  propane: false,
+  overnight: false,
+  toilets: false,
+  pets: false,
+  wifi: false,
+  kitchen: false,
+  restaurant: false,
+  big_rig: false,
+  tent: false,
+  hiking: false,
+  fishing: false,
+  swimming: false,
+  boating: false,
+  biking: false,
+  ohv: false,
+  climbing: false,
+  winter_sports: false,
+  hunting: false,
+  wildlife: false,
+  horseback: false,
+  hot_springs: false,
+}
+
+export const SPOT_AMENITY_LABELS: Array<{
+  key: keyof PinAmenities
+  label: string
+  group: 'infra' | 'activity'
+}> = [
+  { key: 'overnight', label: 'Overnight', group: 'infra' },
+  { key: 'tent', label: 'Tent', group: 'infra' },
+  { key: 'big_rig', label: 'Big Rig OK', group: 'infra' },
+  { key: 'water', label: 'Water', group: 'infra' },
+  { key: 'dump', label: 'Dump Station', group: 'infra' },
+  { key: 'toilets', label: 'Toilets', group: 'infra' },
+  { key: 'shower', label: 'Shower', group: 'infra' },
+  { key: 'electric', label: 'Electric', group: 'infra' },
+  { key: 'wifi', label: 'WiFi', group: 'infra' },
+  { key: 'fuel', label: 'Fuel', group: 'infra' },
+  { key: 'propane', label: 'Propane', group: 'infra' },
+  { key: 'kitchen', label: 'Kitchen', group: 'infra' },
+  { key: 'restaurant', label: 'Restaurant', group: 'infra' },
+  { key: 'pets', label: 'Pets OK', group: 'infra' },
+  { key: 'hiking', label: 'Hiking', group: 'activity' },
+  { key: 'fishing', label: 'Fishing', group: 'activity' },
+  { key: 'swimming', label: 'Swimming', group: 'activity' },
+  { key: 'boating', label: 'Boating', group: 'activity' },
+  { key: 'biking', label: 'Biking', group: 'activity' },
+  { key: 'ohv', label: 'OHV / ATV', group: 'activity' },
+  { key: 'climbing', label: 'Climbing', group: 'activity' },
+  { key: 'winter_sports', label: 'Winter Sports', group: 'activity' },
+  { key: 'hunting', label: 'Hunting', group: 'activity' },
+  { key: 'wildlife', label: 'Wildlife', group: 'activity' },
+  { key: 'horseback', label: 'Horseback', group: 'activity' },
+  { key: 'hot_springs', label: 'Hot Springs', group: 'activity' },
+]

@@ -1,7 +1,7 @@
 import * as L from 'leaflet'
 import type { Pin, BadgeColor } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
-import { doesPinFitRig } from './PinLayer'
+import { doesPinFitRig } from './pinFilters'
 import { useUIStore } from '@/store/uiStore'
 
 // ---------------------------------------------------------------------------

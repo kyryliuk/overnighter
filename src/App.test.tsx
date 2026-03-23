@@ -5,11 +5,15 @@ import { DEVICE_ID_KEY } from '@/hooks/useDeviceId'
 import { useUIStore } from '@/store/uiStore'
 
 // Mock all lazy-loaded routes — prevents dynamic import resolution in jsdom
+vi.mock('@/features/account/AuthProvider', () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}))
 vi.mock('@/features/map/MapView', () => ({ default: () => null }))
 vi.mock('@/features/rig-profile/OnboardingScreen', () => ({ default: () => null }))
 vi.mock('@/features/rig-profile/RigEditScreen', () => ({ default: () => null }))
 vi.mock('@/features/pin-detail/PinDetailSheet', () => ({ default: () => null }))
 vi.mock('@/features/saved-spots/SavedSpotsScreen', () => ({ default: () => null }))
+vi.mock('@/features/route-planning/RoutePlanningScreen', () => ({ default: () => null }))
 vi.mock('@/features/admin/AdminDashboard', () => ({ default: () => null }))
 vi.mock('@/features/check-in/CheckInForm', () => ({
   default: ({ pinId }: { pinId: string }) => (

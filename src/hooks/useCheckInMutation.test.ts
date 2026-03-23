@@ -38,7 +38,6 @@ const PAYLOAD: CheckInPayload = {
 }
 
 function makeWrapper(queryClient: QueryClient) {
-  // eslint-disable-next-line react/display-name
   return ({ children }: { children: React.ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children)
 }

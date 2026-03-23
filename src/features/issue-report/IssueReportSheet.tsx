@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useDeviceId } from '@/hooks/useDeviceId'
 import { useReportMutation, type IssueReportType } from '@/hooks/useReportMutation'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 interface IssueReportSheetProps {
   pinId: string
@@ -27,16 +28,21 @@ export default function IssueReportSheet({ pinId, onClose }: IssueReportSheetPro
 
   const deviceId = useDeviceId()
   const mutation = useReportMutation()
+  const isOnline = useOnlineStatus()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedType) return
+    if (!isOnline) {
+      setErrorMsg("You're offline. Reconnect to save this report.")
+      return
+    }
     setErrorMsg(null)
     mutation.mutate(
       { pinId, deviceId, type: selectedType, note: note || undefined },
       {
         onSuccess: () => { onClose() },
-        onError: (error) => { setErrorMsg(error.message || "Couldn't save report. Tap to retry.") },
+        onError: () => { setErrorMsg("Couldn't save report. Tap to retry.") },
       },
     )
   }
@@ -96,10 +102,16 @@ export default function IssueReportSheet({ pinId, onClose }: IssueReportSheetPro
             aria-label="Optional note"
           />
 
+          {!isOnline && (
+            <p role="status" className="text-sm text-amber-400 text-center mb-4">
+              Offline mode: reports require a connection.
+            </p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={selectedType === null || mutation.isPending}
+            disabled={selectedType === null || mutation.isPending || !isOnline}
             className="w-full min-h-[44px] rounded-lg text-white text-sm font-medium disabled:opacity-50"
             style={{ backgroundColor: '#ef4444' }}
           >

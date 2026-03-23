@@ -70,7 +70,7 @@ describe('EditPinForm', () => {
     expect((screen.getByLabelText(/longitude \*/i) as HTMLInputElement).value).toBe('-107.5')
     expect((screen.getByLabelText('Water') as HTMLInputElement).checked).toBe(true)
     expect((screen.getByLabelText('Overnight') as HTMLInputElement).checked).toBe(true)
-    expect((screen.getByLabelText('Dump') as HTMLInputElement).checked).toBe(false)
+    expect((screen.getByLabelText('Dump Station') as HTMLInputElement).checked).toBe(false)
   })
 
   it('shows required error when name is cleared on submit (6.5)', () => {
@@ -177,13 +177,15 @@ describe('EditPinForm', () => {
       renderForm()
     })
 
+    const saveButton = screen.getByRole('button', { name: /save changes/i })
+    const cancelButton = screen.getByRole('button', { name: /cancel/i })
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
+      fireEvent.click(saveButton)
     })
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled()
-      expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled()
+      expect(saveButton).toBeDisabled()
+      expect(cancelButton).toBeDisabled()
     })
 
     await act(async () => {

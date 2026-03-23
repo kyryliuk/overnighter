@@ -105,7 +105,7 @@ describe('SavedSpotsScreen', () => {
     useSpotsStore.setState({ savedSpots: [STUB_PIN] })
     renderScreen()
     expect(screen.getByRole('status')).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('Verified recently')
+    expect(screen.getByRole('status')).toHaveTextContent('Verified')
   })
 
   it('shows distance in miles when GPS coords are available', () => {

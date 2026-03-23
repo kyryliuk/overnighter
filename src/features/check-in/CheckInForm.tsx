@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useDeviceId } from '@/hooks/useDeviceId'
 import { useCheckInMutation, type CheckInStatus } from '@/hooks/useCheckInMutation'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 interface CheckInFormProps {
   pinId: string
@@ -25,10 +26,15 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
 
   const deviceId = useDeviceId()
   const mutation = useCheckInMutation()
+  const isOnline = useOnlineStatus()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!status) return
+    if (!isOnline) {
+      setErrorMsg("You're offline. Reconnect to save this check-in.")
+      return
+    }
     setErrorMsg(null)
     mutation.mutate(
       { pinId, deviceId, status, note: note || undefined },
@@ -94,10 +100,16 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
             aria-label="Optional note"
           />
 
+          {!isOnline && (
+            <p role="status" className="text-sm text-amber-400 text-center mb-4">
+              Offline mode: check-ins require a connection.
+            </p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={status === null || mutation.isPending}
+            disabled={status === null || mutation.isPending || !isOnline}
             className="w-full min-h-[44px] rounded-lg text-white text-sm font-medium disabled:opacity-50"
             style={{ backgroundColor: '#0ea5e9' }}
           >

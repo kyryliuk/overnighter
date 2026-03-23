@@ -62,6 +62,7 @@ const defaultProps = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: true })
 })
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -159,5 +160,17 @@ describe('CheckInForm', () => {
     render(<CheckInForm {...defaultProps} />)
     const dialog = screen.getByRole('dialog')
     expect(dialog).toHaveAttribute('aria-modal', 'true')
+  })
+
+  it('disables submission and shows offline guidance when the user is offline', () => {
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: false })
+    window.dispatchEvent(new Event('offline'))
+
+    render(<CheckInForm {...defaultProps} />)
+    fireEvent.click(screen.getByText('Still Open'))
+
+    expect(screen.getByRole('status')).toHaveTextContent(/offline mode: check-ins require a connection/i)
+    expect(screen.getByRole('button', { name: /submit check-in/i })).toBeDisabled()
+    expect(mockMutate).not.toHaveBeenCalled()
   })
 })

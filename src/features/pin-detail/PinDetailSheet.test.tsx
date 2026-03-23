@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import PinDetailSheet, { buildMapsUrl } from './PinDetailSheet'
+import PinDetailSheet from './PinDetailSheet'
+import { buildMapsUrl } from './mapLinks'
 import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
 import { useSpotsStore } from '@/store/spotsStore'
@@ -105,7 +106,7 @@ describe('PinDetailSheet', () => {
     renderSheet('pin-1')
     // STUB_PIN: overnight, dump, water = true; fuel, propane, electric, shower = false
     expect(screen.getByText('Overnight')).toBeInTheDocument()
-    expect(screen.getByText('Dump')).toBeInTheDocument()
+    expect(screen.getByText('Dump Station')).toBeInTheDocument()
     expect(screen.getByText('Water')).toBeInTheDocument()
     expect(screen.queryByText('Fuel')).not.toBeInTheDocument()
     expect(screen.queryByText('Propane')).not.toBeInTheDocument()
@@ -170,7 +171,7 @@ describe('PinDetailSheet', () => {
   it('renders description when not null', () => {
     renderSheet('pin-1')
     expect(screen.getByText('Great camping spot')).toBeInTheDocument()
-    expect(screen.getByText(/community notes/i)).toBeInTheDocument()
+    expect(screen.getByText(/about this spot/i)).toBeInTheDocument()
   })
 
   it('calls navigate("/") when "Back to map" button clicked in not-found state', () => {
@@ -210,7 +211,7 @@ describe('PinDetailSheet', () => {
     renderSheet('pin-1')
     const badge = screen.getByRole('status')
     expect(badge).toBeInTheDocument()
-    expect(badge).toHaveTextContent('Verified recently')
+    expect(badge).toHaveTextContent('Verified')
   })
 })
 
@@ -220,12 +221,12 @@ describe('PinDetailSheet', () => {
 
 describe('buildMapsUrl', () => {
   it('returns a Google Maps URL with coordinates embedded', () => {
-    const url = buildMapsUrl(40, -104, 'Test Spot')
+    const url = buildMapsUrl(40, -104)
     expect(url).toBe('https://maps.google.com/?q=40,-104')
   })
 
   it('embeds coordinates correctly', () => {
-    const url = buildMapsUrl(37.7749, -122.4194, 'SF')
+    const url = buildMapsUrl(37.7749, -122.4194)
     expect(url).toContain('37.7749')
     expect(url).toContain('-122.4194')
   })

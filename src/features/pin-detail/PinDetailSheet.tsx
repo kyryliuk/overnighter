@@ -6,34 +6,10 @@ import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useCheckInPromptStore } from '@/store/checkInPromptStore'
-import type { Pin, PinAmenities, PinSource } from '@/types/pin'
-import type { RigProfile } from '@/types/rigProfile'
+import type { PinAmenities, PinSource } from '@/types/pin'
 import RecencyBadge from '@/components/RecencyBadge'
-
-// Named export so it can be unit-tested directly without stubbing navigator globals (Story 3.2)
-export function buildMapsUrl(
-  lat: number,
-  lng: number,
-  _name: string,
-  _userAgent = navigator.userAgent,
-): string {
-  return `https://maps.google.com/?q=${lat},${lng}`
-}
-
-// Inline to avoid cross-feature import (architecture: features must not import from other features)
-// Logic mirrors PinLayer.tsx:doesPinFitRig exactly — must stay in sync if that logic changes
-function doesPinFitRig(pin: Pin, rigProfile: RigProfile): boolean {
-  if (!rigProfile.rigType) return true
-  const lengthOk =
-    pin.maxLengthFt === null ||
-    rigProfile.lengthFt === null ||
-    rigProfile.lengthFt <= pin.maxLengthFt
-  const heightOk =
-    pin.maxHeightFt === null ||
-    rigProfile.heightFt === null ||
-    rigProfile.heightFt <= pin.maxHeightFt
-  return lengthOk && heightOk
-}
+import { buildMapsUrl } from './mapLinks'
+import { doesPinFitRig } from '@/lib/pins/doesPinFitRig'
 
 const PIN_TYPE_LABELS: Record<PinSource, string> = {
   blm: 'BLM Land',
@@ -290,7 +266,7 @@ export default function PinDetailSheet() {
                 </div>
               </div>
               {/* Elevation */}
-              {pin.elevationM !== null && (
+              {pin.elevationM != null && (
                 <div>
                   <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">Elevation</span>
                   <p className="text-sm text-foreground">{pin.elevationM.toFixed(1)} masl</p>
@@ -342,7 +318,7 @@ export default function PinDetailSheet() {
               )}
               {/* Get Directions — primary CTA (AC1, AC5). Visible even on stale pins: warn never block */}
               <a
-                href={buildMapsUrl(pin.latitude, pin.longitude, pin.name)}
+                href={buildMapsUrl(pin.latitude, pin.longitude)}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Get Directions"

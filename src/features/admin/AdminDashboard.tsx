@@ -4,6 +4,7 @@ import FlaggedPinList from './FlaggedPinList'
 import CreatePinForm from './CreatePinForm'
 import AdminPinList from './AdminPinList'
 import EditPinForm from './EditPinForm'
+import SpotSubmissionList from './SpotSubmissionList'
 import type { Pin } from '@/types/pin'
 
 export default function AdminDashboard() {
@@ -77,6 +78,13 @@ export default function AdminDashboard() {
             onCancel={() => setSelectedPin(null)}
           />
         )}
+
+        <section>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Spot Submissions
+          </h2>
+          <SpotSubmissionList adminToken={adminToken} />
+        </section>
 
         <section>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">

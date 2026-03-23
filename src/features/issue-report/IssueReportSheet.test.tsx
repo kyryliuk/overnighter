@@ -62,6 +62,7 @@ const defaultProps = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: true })
 })
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -161,5 +162,17 @@ describe('IssueReportSheet', () => {
   it('shows "this spot" in heading when pin is not in cache (8.12)', () => {
     render(<IssueReportSheet pinId="unknown-pin" onClose={vi.fn()} />)
     expect(screen.getByText('Report issue at this spot')).toBeInTheDocument()
+  })
+
+  it('disables submission and shows offline guidance when the user is offline', () => {
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: false })
+    window.dispatchEvent(new Event('offline'))
+
+    render(<IssueReportSheet {...defaultProps} />)
+    fireEvent.click(screen.getByText('Other'))
+
+    expect(screen.getByRole('status')).toHaveTextContent(/offline mode: reports require a connection/i)
+    expect(screen.getByRole('button', { name: /submit report/i })).toBeDisabled()
+    expect(mockMutate).not.toHaveBeenCalled()
   })
 })

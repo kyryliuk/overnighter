@@ -1,50 +1,13 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { EMPTY_PIN_AMENITIES, SPOT_AMENITY_LABELS } from '@/features/spots/spotFormConfig'
+import type { PinAmenities } from '@/types/pin'
 
 interface CreatePinFormProps {
   adminToken: string
   onSuccess: () => void
   onCancel: () => void
 }
-
-type AmenitiesState = {
-  water: boolean; dump: boolean; electric: boolean; shower: boolean
-  fuel: boolean; propane: boolean; overnight: boolean; toilets: boolean
-  pets: boolean; wifi: boolean; kitchen: boolean; restaurant: boolean
-  big_rig: boolean; tent: boolean
-  hiking: boolean; fishing: boolean; swimming: boolean; boating: boolean
-  biking: boolean; ohv: boolean; climbing: boolean; winter_sports: boolean
-  hunting: boolean; wildlife: boolean; horseback: boolean; hot_springs: boolean
-}
-
-const AMENITY_LABELS: { key: keyof AmenitiesState; label: string; group: 'infra' | 'activity' }[] = [
-  { key: 'overnight',     label: 'Overnight',      group: 'infra' },
-  { key: 'tent',          label: 'Tent',            group: 'infra' },
-  { key: 'big_rig',       label: 'Big Rig OK',      group: 'infra' },
-  { key: 'water',         label: 'Water',           group: 'infra' },
-  { key: 'dump',          label: 'Dump Station',    group: 'infra' },
-  { key: 'toilets',       label: 'Toilets',         group: 'infra' },
-  { key: 'shower',        label: 'Shower',          group: 'infra' },
-  { key: 'electric',      label: 'Electric',        group: 'infra' },
-  { key: 'wifi',          label: 'WiFi',            group: 'infra' },
-  { key: 'fuel',          label: 'Fuel',            group: 'infra' },
-  { key: 'propane',       label: 'Propane',         group: 'infra' },
-  { key: 'kitchen',       label: 'Kitchen',         group: 'infra' },
-  { key: 'restaurant',    label: 'Restaurant',      group: 'infra' },
-  { key: 'pets',          label: 'Pets OK',         group: 'infra' },
-  { key: 'hiking',        label: 'Hiking',          group: 'activity' },
-  { key: 'fishing',       label: 'Fishing',         group: 'activity' },
-  { key: 'swimming',      label: 'Swimming',        group: 'activity' },
-  { key: 'boating',       label: 'Boating',         group: 'activity' },
-  { key: 'biking',        label: 'Biking',          group: 'activity' },
-  { key: 'ohv',           label: 'OHV / ATV',       group: 'activity' },
-  { key: 'climbing',      label: 'Climbing',        group: 'activity' },
-  { key: 'winter_sports', label: 'Winter Sports',   group: 'activity' },
-  { key: 'hunting',       label: 'Hunting',         group: 'activity' },
-  { key: 'wildlife',      label: 'Wildlife',        group: 'activity' },
-  { key: 'horseback',     label: 'Horseback',       group: 'activity' },
-  { key: 'hot_springs',   label: 'Hot Springs',     group: 'activity' },
-]
 
 const PIN_TYPES = ['blm', 'usfs', 'nps', 'overpass', 'community'] as const
 
@@ -59,14 +22,7 @@ export default function CreatePinForm({ adminToken, onSuccess, onCancel }: Creat
   const [pinType, setPinType] = useState<string>('community')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
-  const [amenities, setAmenities] = useState<AmenitiesState>({
-    water: false, dump: false, electric: false, shower: false,
-    fuel: false, propane: false, overnight: false, toilets: false, pets: false,
-    wifi: false, kitchen: false, restaurant: false, big_rig: false, tent: false,
-    hiking: false, fishing: false, swimming: false, boating: false,
-    biking: false, ohv: false, climbing: false, winter_sports: false,
-    hunting: false, wildlife: false, horseback: false, hot_springs: false,
-  })
+  const [amenities, setAmenities] = useState<PinAmenities>(EMPTY_PIN_AMENITIES)
   const [maxLengthFt, setMaxLengthFt] = useState('')
   const [maxHeightFt, setMaxHeightFt] = useState('')
   const [fee, setFee] = useState('')
@@ -114,7 +70,7 @@ export default function CreatePinForm({ adminToken, onSuccess, onCancel }: Creat
     })
   }
 
-  function handleAmenityChange(key: keyof AmenitiesState) {
+  function handleAmenityChange(key: keyof PinAmenities) {
     setAmenities((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
@@ -172,7 +128,7 @@ export default function CreatePinForm({ adminToken, onSuccess, onCancel }: Creat
                 {group === 'infra' ? 'Infrastructure' : 'Activities'}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {AMENITY_LABELS.filter((a) => a.group === group).map(({ key, label }) => (
+                {SPOT_AMENITY_LABELS.filter((a) => a.group === group).map(({ key, label }) => (
                   <label key={key} className="flex items-center gap-2 min-h-[44px] px-3 bg-background border border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
                     <input type="checkbox" checked={amenities[key]}
                       onChange={() => handleAmenityChange(key)}

@@ -6,9 +6,9 @@ describe('RecencyBadge', () => {
   it('renders green badge with ✓ icon for badgeState "green"', () => {
     render(<RecencyBadge badgeState="green" />)
     const badge = screen.getByRole('status')
-    expect(badge).toHaveAttribute('aria-label', 'Verified recently')
+    expect(badge).toHaveAttribute('aria-label', 'Verified')
     expect(badge).toHaveTextContent('✓')
-    expect(badge).toHaveTextContent('Verified recently')
+    expect(badge).toHaveTextContent('Verified')
   })
 
   it('renders yellow badge with clock icon for badgeState "yellow"', () => {

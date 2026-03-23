@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // Mock at the module path level — use the exact specifier _supabase.ts uses
 vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn((_url: string, _key: string) => ({ _mocked: true, from: vi.fn() })),
+  createClient: vi.fn((url: string, key: string) => {
+    void url
+    void key
+    return { _mocked: true, from: vi.fn() }
+  }),
 }))
 
 import { createServiceClient } from './_supabase'

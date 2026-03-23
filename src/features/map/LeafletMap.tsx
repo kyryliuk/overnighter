@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import PinLayer from './PinLayer'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
+import { readMapViewportSnapshot, saveMapViewportSnapshot } from '@/lib/offline/mapViewport'
 
 const CARTO_VOYAGER_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 const OSM_FALLBACK_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -24,14 +25,15 @@ export default function LeafletMap({ pins, isLoading, rigProfile, onMapReady, on
 
   useEffect(() => {
     if (!containerRef.current || mapInstance) return
+    const savedViewport = readMapViewportSnapshot()
 
     const prefersReduced =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const map = L.map(containerRef.current, {
-      center: DEFAULT_CENTER,
-      zoom: DEFAULT_ZOOM,
+      center: savedViewport?.center ?? DEFAULT_CENTER,
+      zoom: savedViewport?.zoom ?? DEFAULT_ZOOM,
       // tap exists in Leaflet 1.9.x runtime but is absent from @types/leaflet
       tap: false,
       // Respect prefers-reduced-motion (NFR-A5)
@@ -60,20 +62,30 @@ export default function LeafletMap({ pins, isLoading, rigProfile, onMapReady, on
 
     cartoTile.addTo(map)
 
-    navigator.geolocation?.getCurrentPosition(
-      (position) => {
-        map.setView([position.coords.latitude, position.coords.longitude], 10)
-      },
-      () => {
-        // GPS denied or unavailable — keep default US center (silent failure)
-      },
-      { timeout: 5000 },
-    )
+    const persistViewport = () => {
+      const center = map.getCenter()
+      saveMapViewportSnapshot([center.lat, center.lng], map.getZoom())
+    }
+
+    map.on('moveend zoomend', persistViewport)
+
+    if (!savedViewport) {
+      navigator.geolocation?.getCurrentPosition(
+        (position) => {
+          map.setView([position.coords.latitude, position.coords.longitude], 10)
+        },
+        () => {
+          // GPS denied or unavailable — keep default US center (silent failure)
+        },
+        { timeout: 5000 },
+      )
+    }
 
     setMapInstance(map)
     onMapReady?.(map)
 
     return () => {
+      map.off('moveend zoomend', persistViewport)
       map.remove()
       setMapInstance(null)
       onMapRemove?.()

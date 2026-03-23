@@ -50,7 +50,7 @@ describe('CreatePinForm', () => {
     expect(screen.getByLabelText(/longitude/i)).toBeInTheDocument()
     // Amenity checkboxes
     expect(screen.getByLabelText('Water')).toBeInTheDocument()
-    expect(screen.getByLabelText('Dump')).toBeInTheDocument()
+    expect(screen.getByLabelText('Dump Station')).toBeInTheDocument()
     expect(screen.getByLabelText('Overnight')).toBeInTheDocument()
     // Buttons
     expect(screen.getByRole('button', { name: /publish pin/i })).toBeInTheDocument()
@@ -149,12 +149,13 @@ describe('CreatePinForm', () => {
 
     fillValidForm()
 
+    const publishButton = screen.getByRole('button', { name: /publish pin/i })
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /publish pin/i }))
+      fireEvent.click(publishButton)
     })
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /publish pin/i })).toBeDisabled()
+      expect(publishButton).toBeDisabled()
     })
 
     await act(async () => {

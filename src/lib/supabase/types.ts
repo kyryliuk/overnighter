@@ -45,3 +45,39 @@ export interface DbIssueReport {
   created_at: string
   resolved_at: string | null
 }
+
+export interface DbRigProfile {
+  user_id: string
+  rig_type: string | null
+  length_ft: number | null
+  height_ft: number | null
+  onboarding_dismissed: boolean
+  updated_at: string
+}
+
+export interface DbSavedSpot {
+  user_id: string
+  pin_id: string
+  pin_snapshot: Record<string, unknown>
+  updated_at: string
+}
+
+export interface DbSpotSubmission {
+  id: string
+  user_id: string
+  name: string
+  description: string | null
+  latitude: number
+  longitude: number
+  amenities: Record<string, boolean>
+  max_length_ft: number | null
+  max_height_ft: number | null
+  website: string | null
+  phone: string | null
+  status: string
+  admin_notes: string | null
+  reviewed_at: string | null
+  published_pin_id: string | null
+  created_at: string
+  updated_at: string
+}

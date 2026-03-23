@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react'
 import * as L from 'leaflet'
 import Supercluster from 'supercluster'
-import type { Pin, PinAmenities } from '@/types/pin'
+import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
-import { type SourceGroup, GROUP_SOURCES } from '@/store/sourceFilterStore'
 import { createPinMarker } from './PinMarker'
 
 interface PinLayerProps {
@@ -11,29 +10,6 @@ interface PinLayerProps {
   pins: Pin[]
   rigProfile: RigProfile
   isLoading: boolean
-}
-
-export function doesPinMatchFilters(pin: Pin, activeFilters: Array<keyof PinAmenities>): boolean {
-  if (activeFilters.length === 0) return true
-  return activeFilters.every((amenity) => pin.amenities[amenity])
-}
-
-export function doesPinMatchSourceFilter(pin: Pin, activeGroups: SourceGroup[]): boolean {
-  if (activeGroups.length === 0) return true
-  return activeGroups.some((group) => GROUP_SOURCES[group].includes(pin.pinType))
-}
-
-export function doesPinFitRig(pin: Pin, rigProfile: RigProfile): boolean {
-  if (!rigProfile.rigType) return true
-  const lengthOk =
-    pin.maxLengthFt === null ||
-    rigProfile.lengthFt === null ||
-    rigProfile.lengthFt <= pin.maxLengthFt
-  const heightOk =
-    pin.maxHeightFt === null ||
-    rigProfile.heightFt === null ||
-    rigProfile.heightFt <= pin.maxHeightFt
-  return lengthOk && heightOk
 }
 
 function createClusterIcon(count: number): L.DivIcon {

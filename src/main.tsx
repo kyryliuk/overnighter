@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import { inject } from '@vercel/analytics'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App'
 
@@ -14,6 +15,10 @@ Sentry.init({
 
 // Vercel Analytics — no-op in local dev
 inject()
+
+if (import.meta.env.PROD) {
+  registerSW({ immediate: true })
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

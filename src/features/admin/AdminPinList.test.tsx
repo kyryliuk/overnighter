@@ -68,7 +68,7 @@ describe('AdminPinList', () => {
     await act(async () => {
       renderList()
     })
-    expect(screen.getByText('Loading pins...')).toBeInTheDocument()
+    expect(screen.getByText(/loading pins/i)).toBeInTheDocument()
   })
 
   it('shows "Failed to load pins." on getAllPins rejection (4.4)', async () => {

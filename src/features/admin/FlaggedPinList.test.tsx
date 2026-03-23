@@ -89,8 +89,8 @@ describe('FlaggedPinList', () => {
       expect(screen.getByText('Dirty Dump')).toBeInTheDocument()
     })
     expect(screen.getByText('No Overnight')).toBeInTheDocument()
-    expect(screen.getByText(/flags: 4/i)).toBeInTheDocument()
-    expect(screen.getByText(/dump_closed/i)).toBeInTheDocument()
+    expect(screen.getByText(/4 flags/i)).toBeInTheDocument()
+    expect(screen.getByText(/dump closed/i)).toBeInTheDocument()
   })
 
   it('clicking "Archive Pin" calls DELETE /api/pins/:id with Bearer header (13.6)', async () => {

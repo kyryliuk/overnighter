@@ -10,10 +10,18 @@ import type { Pin } from '@/types/pin'
 const mockMapRemove = vi.fn()
 const mockMapSetView = vi.fn()
 const mockMapHasLayer = vi.fn().mockReturnValue(true)
+const mockMapOn = vi.fn()
+const mockMapOff = vi.fn()
+const mockMapGetCenter = vi.fn(() => ({ lat: 39.5, lng: -98.35 }))
+const mockMapGetZoom = vi.fn(() => 4)
 const mockMap = {
   remove: mockMapRemove,
   setView: mockMapSetView,
   hasLayer: mockMapHasLayer,
+  on: mockMapOn,
+  off: mockMapOff,
+  getCenter: mockMapGetCenter,
+  getZoom: mockMapGetZoom,
 }
 
 const mockTileLayerOn = vi.fn().mockReturnThis()
@@ -78,6 +86,7 @@ function makePin(overrides: Partial<Pin> = {}): Pin {
 // ---------------------------------------------------------------------------
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   // jsdom does not implement matchMedia — provide a minimal stub
   Object.defineProperty(window, 'matchMedia', {
     writable: true,

@@ -8,6 +8,7 @@ import { useCheckInPromptStore, type VisitRecord } from '@/store/checkInPromptSt
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type * as L from 'leaflet'
+import { doesPinMatchFilters, doesPinFitRig, doesPinMatchSourceFilter } from './pinFilters'
 
 const GEO_ERROR_MESSAGES: Record<string, string> = {
   denied: 'Location access denied',
@@ -19,7 +20,6 @@ import DeparturePrompt from './DeparturePrompt'
 import RigFilterOverlay from './RigFilterOverlay'
 import BadgeTooltip from './BadgeTooltip'
 import AmenityFilterBar from './AmenityFilterBar'
-import { doesPinMatchFilters, doesPinFitRig, doesPinMatchSourceFilter } from './PinLayer'
 
 const LeafletMap = lazy(() => import('./LeafletMap'))
 
@@ -55,12 +55,12 @@ export default function MapView() {
   const setPendingMapCenter = useUIStore((state) => state.setPendingMapCenter)
   const location = useLocation()
   const [geoState, requestGeo] = useGeolocation()
-  const [geoError, setGeoError] = useState<string | null>(null)
   const [pendingDeparturePin, setPendingDeparturePin] = useState<VisitRecord | null>(null)
-  const [departureChecked, setDepartureChecked] = useState(false)
+  const departureCheckedRef = useRef(false)
   const visitRecords = useCheckInPromptStore((state) => state.visitRecords)
   const isDismissed = useCheckInPromptStore((state) => state.isDismissed)
   const setPendingCheckIn = useUIStore((state) => state.setPendingCheckIn)
+  const geoError = geoState.error ? GEO_ERROR_MESSAGES[geoState.error] ?? 'Location error' : null
 
   useEffect(() => {
     // M2 fix: skip onboarding redirect on deep-linked pin routes (/pin/:id)
@@ -87,23 +87,21 @@ export default function MapView() {
       const { latitude, longitude } = geoState.coords
       const map = mapRef.current as { setView?: (center: [number, number], zoom: number) => void } | null
       map?.setView?.([latitude, longitude], 12)
-      setGeoError(null)
     }
-    if (geoState.error) {
-      setGeoError(GEO_ERROR_MESSAGES[geoState.error] ?? 'Location error')
-    }
-  }, [geoState]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [geoState.coords])
 
   // One-shot departure check: fires when GPS coords first become available this session (AC1, AC3, AC4)
   useEffect(() => {
-    if (!geoState.coords || departureChecked) return
-    setDepartureChecked(true)
+    if (!geoState.coords || departureCheckedRef.current) return
+    departureCheckedRef.current = true
     const { latitude, longitude } = geoState.coords
     const candidates = visitRecords.filter(
       (v) => !isDismissed(v.visitKey) && distanceMiles(latitude, longitude, v.latitude, v.longitude) > 0.5,
     )
+    // Geolocation is an external system; opening the prompt in direct response here is intentional.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (candidates.length > 0) setPendingDeparturePin(candidates[0])
-  }, [geoState.coords]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [geoState.coords, isDismissed, visitRecords])
 
   function handleDepartureSkip() {
     if (pendingDeparturePin) {
@@ -204,12 +202,46 @@ export default function MapView() {
         )}
         <button
           type="button"
-          onClick={() => { setGeoError(null); requestGeo() }}
+          onClick={requestGeo}
           disabled={geoState.isLoading}
           className="bg-surface border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-md disabled:opacity-50 text-lg"
           aria-label={geoState.isLoading ? 'Getting location...' : 'Use my current location'}
         >
           {geoState.isLoading ? '…' : '📍'}
+        </button>
+      </div>
+      <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/plan-route')}
+          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          aria-label="Plan a route"
+        >
+          Plan route
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/suggest-spot')}
+          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          aria-label="Suggest a spot"
+        >
+          Suggest spot
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/saved')}
+          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          aria-label="Open saved spots"
+        >
+          Saved spots
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/account')}
+          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          aria-label="Open account"
+        >
+          Account
         </button>
       </div>
       {/* First-session badge onboarding tooltip (AC7) — shown above all map layers */}

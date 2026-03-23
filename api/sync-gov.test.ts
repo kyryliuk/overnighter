@@ -20,7 +20,7 @@ vi.mock('./_supabase', () => ({
 
 vi.stubGlobal('fetch', vi.fn())
 
-import handler from './sync'
+import handler from './sync-gov'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -114,7 +114,7 @@ describe('POST /api/sync', () => {
     expect((ctx.body as { synced: number }).synced).toBe(3)
   })
 
-  it('upsert rows exclude status fields and include updated_at (AC2/H2/H3)', async () => {
+  it('upsert rows preserve publish fields and include updated_at (AC2/H2/H3)', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ridbPage(1),
@@ -124,10 +124,10 @@ describe('POST /api/sync', () => {
     await handler(mockReq(), res)
 
     const upsertArg = mockUpsert.mock.calls[0][0] as Array<Record<string, unknown>>
-    expect(upsertArg[0]).not.toHaveProperty('badge_state')
+    expect(upsertArg[0]).toHaveProperty('badge_state')
     expect(upsertArg[0]).not.toHaveProperty('last_check_in_at')
     expect(upsertArg[0]).not.toHaveProperty('recent_check_in_count')
-    expect(upsertArg[0]).not.toHaveProperty('is_verified')
+    expect(upsertArg[0]).toHaveProperty('is_verified')
     expect(upsertArg[0]).not.toHaveProperty('is_flagged')
     expect(upsertArg[0]).toHaveProperty('updated_at')
     expect(typeof upsertArg[0].updated_at).toBe('string')

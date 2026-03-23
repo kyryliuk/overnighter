@@ -3,12 +3,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mock setup ──────────────────────────────────────────────────────────────
 
-const { mockRequireAdminAuth, mockSingle, mockSelect, mockInsert } = vi.hoisted(() => {
+const { mockRequireAdminAuth, mockSingle, mockInsert } = vi.hoisted(() => {
   const mockSingle = vi.fn().mockResolvedValue({ data: { id: 'new-pin-uuid' }, error: null })
   const mockSelect = vi.fn().mockReturnValue({ single: mockSingle })
   const mockInsert = vi.fn().mockReturnValue({ select: mockSelect })
   const mockRequireAdminAuth = vi.fn().mockReturnValue(true)
-  return { mockRequireAdminAuth, mockSingle, mockSelect, mockInsert }
+  return { mockRequireAdminAuth, mockSingle, mockInsert }
 })
 
 vi.mock('../_middleware', () => ({
@@ -114,7 +114,8 @@ describe('POST /api/admin/pins', () => {
 
   it('returns 400 when amenities object is missing (L2)', async () => {
     const { res, ctx } = mockRes()
-    const { amenities: _, ...bodyWithoutAmenities } = VALID_BODY
+    const { amenities, ...bodyWithoutAmenities } = VALID_BODY
+    void amenities
     await handler(mockReq('POST', bodyWithoutAmenities), res)
     expect(ctx.statusCode).toBe(400)
     expect((ctx.body as { error: string }).error).toBe('INVALID_BODY')

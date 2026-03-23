@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import React from 'react'
-import { doesPinFitRig, doesPinMatchFilters } from './PinLayer'
+import { doesPinFitRig, doesPinMatchFilters } from './pinFilters'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
 import type * as L from 'leaflet'
@@ -201,7 +201,18 @@ beforeEach(async () => {
   PinLayer = mod.default
 })
 
-const mockMap = {} as L.Map
+const mockMap = {
+  getZoom: vi.fn(() => 17),
+  getBounds: vi.fn(() => ({
+    getWest: () => -180,
+    getSouth: () => -90,
+    getEast: () => 180,
+    getNorth: () => 90,
+  })),
+  on: vi.fn(),
+  off: vi.fn(),
+  flyTo: vi.fn(),
+} as unknown as L.Map
 
 describe('PinLayer component', () => {
   it('calls createPinMarker (not circleMarker) for each pin when not loading', () => {

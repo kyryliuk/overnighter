@@ -43,10 +43,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // badge_state and is_verified are kept — official gov sources are always green/verified.
         // updated_at is set explicitly so stale detection works correctly after each sync.
         const now = new Date().toISOString()
-        const syncRows = rows.map(({ last_check_in_at: _l, recent_check_in_count: _r, is_flagged: _f, ...data }) => ({
-          ...data,
-          updated_at: now,
-        }))
+        const syncRows = rows.map((row) => {
+          const {
+            last_check_in_at,
+            recent_check_in_count,
+            is_flagged,
+            ...data
+          } = row
+          void last_check_in_at
+          void recent_check_in_count
+          void is_flagged
+
+          return {
+            ...data,
+            updated_at: now,
+          }
+        })
         const { error } = await supabase
           .from('pins')
           .upsert(syncRows, { onConflict: 'pin_type,source_id' })

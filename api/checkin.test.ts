@@ -73,7 +73,8 @@ describe('api/checkin handler', () => {
 
   it('returns 400 when deviceId is missing (M3)', async () => {
     const { res, ctx } = mockRes()
-    const { deviceId: _, ...noDeviceId } = VALID_BODY
+    const { deviceId, ...noDeviceId } = VALID_BODY
+    void deviceId
     await handler(mockReq('POST', noDeviceId), res)
     expect(ctx.statusCode).toBe(400)
     expect(ctx.body).toMatchObject({ error: 'INVALID_BODY' })

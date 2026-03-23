@@ -70,9 +70,9 @@ describe('normalizeRidbFacility', () => {
     expect(result?.source_id).toBe('FAC-9999')
   })
 
-  it('sets badge_state to grey for new synced pins', () => {
+  it('sets badge_state to green for new synced pins', () => {
     const result = normalizeRidbFacility(ridbFacility())
-    expect(result?.badge_state).toBe('grey')
+    expect(result?.badge_state).toBe('green')
   })
 
   it('sets overnight amenity when ACTIVITY contains camping', () => {
