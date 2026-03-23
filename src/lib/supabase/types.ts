@@ -62,6 +62,32 @@ export interface DbSavedSpot {
   updated_at: string
 }
 
+export interface DbTripPlan {
+  user_id: string
+  plan_id: string
+  plan_snapshot: Record<string, unknown>
+  is_public: boolean
+  share_token: string | null
+  updated_at: string
+}
+
+export interface DbTripPlanReaction {
+  share_token: string
+  user_id: string
+  reaction: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DbTripPlanComment {
+  id: string
+  share_token: string
+  user_id: string
+  author_label: string
+  body: string
+  created_at: string
+}
+
 export interface DbSpotSubmission {
   id: string
   user_id: string

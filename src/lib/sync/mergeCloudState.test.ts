@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { mergeRigProfileState, mergeSavedSpots } from './mergeCloudState'
+import { mergeRigProfileState, mergeSavedSpots, mergeTripPlans } from './mergeCloudState'
 import type { Pin } from '@/types/pin'
+import type { TripPlan } from '@/types/tripPlan'
 
 const STUB_PIN: Pin = {
   id: 'pin-1',
@@ -108,5 +109,39 @@ describe('mergeSavedSpots', () => {
 
     expect(merged).toHaveLength(1)
     expect(merged[0].name).toBe('Local spot')
+  })
+})
+
+describe('mergeTripPlans', () => {
+  const LOCAL_PLAN: TripPlan = {
+    id: 'trip-1',
+    title: 'Local trip',
+    notes: 'Leave early for the canyon pass.',
+    destination: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6, longitude: -114.2 },
+    stops: [],
+    isPublic: false,
+    shareToken: null,
+    sourceTrip: null,
+    createdAt: '2026-03-23T10:00:00.000Z',
+    updatedAt: '2026-03-23T12:00:00.000Z',
+  }
+
+  it('returns a set union of local and remote trip plans', () => {
+    const merged = mergeTripPlans(
+      [LOCAL_PLAN],
+      [{ ...LOCAL_PLAN, id: 'trip-2', title: 'Remote trip' }],
+    )
+
+    expect(merged.map((plan) => plan.id)).toEqual(['trip-2', 'trip-1'])
+  })
+
+  it('prefers the newer updated trip plan when the same id exists in both sets', () => {
+    const merged = mergeTripPlans(
+      [LOCAL_PLAN],
+      [{ ...LOCAL_PLAN, title: 'Remote trip', updatedAt: '2026-03-23T11:00:00.000Z' }],
+    )
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0].title).toBe('Local trip')
   })
 })

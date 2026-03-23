@@ -3,9 +3,11 @@ import type { Session } from '@supabase/supabase-js'
 import { getCurrentSession, onAuthSessionChange, requestMagicLink as sendMagicLink, signOut as signOutAuth } from '@/lib/supabase/auth'
 import { getRigProfile, upsertRigProfile, deleteRigProfile } from '@/lib/supabase/rigProfiles'
 import { getSavedSpots, replaceSavedSpots as syncSavedSpots } from '@/lib/supabase/savedSpots'
-import { mergeRigProfileState, mergeSavedSpots } from '@/lib/sync/mergeCloudState'
+import { getTripPlans, replaceTripPlans as syncTripPlans } from '@/lib/supabase/tripPlans'
+import { mergeRigProfileState, mergeSavedSpots, mergeTripPlans } from '@/lib/sync/mergeCloudState'
 import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
+import { useTripPlansStore } from '@/store/tripPlansStore'
 import { AuthContext, type AuthContextValue } from './AuthContext'
 
 function getRigSignature() {
@@ -19,6 +21,10 @@ function getRigSignature() {
 
 function getSavedSpotsSignature() {
   return JSON.stringify(useSpotsStore.getState().savedSpots)
+}
+
+function getTripPlansSignature() {
+  return JSON.stringify(useTripPlansStore.getState().tripPlans)
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -37,11 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const rigHydrated = useRigStore((state) => state.hasHydrated)
   const savedSpots = useSpotsStore((state) => state.savedSpots)
   const spotsHydrated = useSpotsStore((state) => state.hasHydrated)
+  const tripPlans = useTripPlansStore((state) => state.tripPlans)
+  const tripPlansHydrated = useTripPlansStore((state) => state.hasHydrated)
 
   const applyingRemoteStateRef = useRef(false)
   const activeUserIdRef = useRef<string | null>(null)
   const lastRigSignatureRef = useRef('')
   const lastSavedSpotsSignatureRef = useRef('')
+  const lastTripPlansSignatureRef = useRef('')
 
   useEffect(() => {
     let cancelled = false
@@ -83,10 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLastSyncedAt(null)
     lastRigSignatureRef.current = ''
     lastSavedSpotsSignatureRef.current = ''
+    lastTripPlansSignatureRef.current = ''
   }, [session?.user.id])
 
   useEffect(() => {
-    if (!session?.user || !rigHydrated || !spotsHydrated || hasCompletedInitialSync) return
+    if (!session?.user || !rigHydrated || !spotsHydrated || !tripPlansHydrated || hasCompletedInitialSync) return
 
     let cancelled = false
     const userId = session.user.id
@@ -96,9 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSyncError(null)
 
       try {
-        const [remoteRigProfile, remoteSavedSpots] = await Promise.all([
+        const [remoteRigProfile, remoteSavedSpots, remoteTripPlans] = await Promise.all([
           getRigProfile(userId),
           getSavedSpots(userId),
+          getTripPlans(userId),
         ])
 
         if (cancelled) return
@@ -112,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           remoteRigProfile,
         )
         const mergedSavedSpots = mergeSavedSpots(useSpotsStore.getState().savedSpots, remoteSavedSpots)
+        const mergedTripPlans = mergeTripPlans(useTripPlansStore.getState().tripPlans, remoteTripPlans)
 
         applyingRemoteStateRef.current = true
         useRigStore.getState().replaceFromCloud(
@@ -120,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           mergedRigState.updatedAt,
         )
         useSpotsStore.getState().replaceSavedSpots(mergedSavedSpots)
+        useTripPlansStore.getState().replaceTripPlans(mergedTripPlans)
         applyingRemoteStateRef.current = false
 
         if (mergedRigState.rigProfile.rigType || mergedRigState.onboardingDismissed) {
@@ -129,11 +142,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         await syncSavedSpots(userId, mergedSavedSpots)
+        await syncTripPlans(userId, mergedTripPlans)
 
         if (cancelled) return
 
         lastRigSignatureRef.current = getRigSignature()
         lastSavedSpotsSignatureRef.current = JSON.stringify(mergedSavedSpots)
+        lastTripPlansSignatureRef.current = JSON.stringify(mergedTripPlans)
         setLastSyncedAt(new Date().toISOString())
       } catch (error) {
         applyingRemoteStateRef.current = false
@@ -151,10 +166,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [session?.user, rigHydrated, spotsHydrated, hasCompletedInitialSync])
+  }, [session?.user, rigHydrated, spotsHydrated, tripPlansHydrated, hasCompletedInitialSync])
 
   useEffect(() => {
-    if (!session?.user || !hasCompletedInitialSync || !rigHydrated || !spotsHydrated) return
+    if (!session?.user || !hasCompletedInitialSync || !rigHydrated || !spotsHydrated || !tripPlansHydrated) return
     if (applyingRemoteStateRef.current) return
 
     const nextRigSignature = JSON.stringify({
@@ -163,10 +178,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updatedAt: rigUpdatedAt,
     })
     const nextSavedSpotsSignature = JSON.stringify(savedSpots)
+    const nextTripPlansSignature = JSON.stringify(tripPlans)
 
     if (
       nextRigSignature === lastRigSignatureRef.current &&
-      nextSavedSpotsSignature === lastSavedSpotsSignatureRef.current
+      nextSavedSpotsSignature === lastSavedSpotsSignatureRef.current &&
+      nextTripPlansSignature === lastTripPlansSignatureRef.current
     ) {
       return
     }
@@ -191,8 +208,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           await syncSavedSpots(userId, useSpotsStore.getState().savedSpots)
+          await syncTripPlans(userId, useTripPlansStore.getState().tripPlans)
           lastRigSignatureRef.current = getRigSignature()
           lastSavedSpotsSignatureRef.current = getSavedSpotsSignature()
+          lastTripPlansSignatureRef.current = getTripPlansSignature()
           setLastSyncedAt(new Date().toISOString())
         } catch (error) {
           setSyncError(error instanceof Error ? error.message : 'Failed to sync account data')
@@ -210,10 +229,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasCompletedInitialSync,
     rigHydrated,
     spotsHydrated,
+    tripPlansHydrated,
     rigProfile,
     onboardingDismissed,
     rigUpdatedAt,
     savedSpots,
+    tripPlans,
   ])
 
   async function requestMagicLink(email: string) {

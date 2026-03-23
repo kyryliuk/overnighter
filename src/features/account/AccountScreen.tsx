@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
+import { useTripPlansStore } from '@/store/tripPlansStore'
 
 function formatTimestamp(timestamp: string | null) {
   if (!timestamp) return 'Not synced yet'
@@ -20,6 +21,7 @@ export default function AccountScreen() {
   const { session, isLoading, isAuthenticated, isSendingLink, pendingEmail, isSyncing, syncError, lastSyncedAt, requestMagicLink, signOut } = useAuth()
   const rigProfile = useRigStore((state) => state.rigProfile)
   const savedSpots = useSpotsStore((state) => state.savedSpots)
+  const tripPlans = useTripPlansStore((state) => state.tripPlans)
   const [email, setEmail] = useState('')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -60,7 +62,7 @@ export default function AccountScreen() {
           <div>
             <h1 className="text-2xl font-bold">Account & Sync</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Keep your rig profile and saved spots available on every laptop.
+              Keep your rig profile, saved spots, and trip drafts available on every laptop.
             </p>
           </div>
           <button
@@ -92,6 +94,10 @@ export default function AccountScreen() {
             <div className="rounded-xl border border-border bg-background p-3">
               <dt className="text-muted-foreground">Saved spots</dt>
               <dd className="mt-1 font-medium">{savedSpots.length} spot{savedSpots.length === 1 ? '' : 's'}</dd>
+            </div>
+            <div className="rounded-xl border border-border bg-background p-3">
+              <dt className="text-muted-foreground">Trip drafts</dt>
+              <dd className="mt-1 font-medium">{tripPlans.length} draft{tripPlans.length === 1 ? '' : 's'}</dd>
             </div>
             <div className="rounded-xl border border-border bg-background p-3">
               <dt className="text-muted-foreground">Last sync</dt>
@@ -133,7 +139,7 @@ export default function AccountScreen() {
             <div className="space-y-1">
               <h2 className="text-lg font-semibold">Turn on cross-device sync</h2>
               <p className="text-sm text-muted-foreground">
-                We&apos;ll email you a magic link. Your local rig profile and saved spots will migrate to your account on first sign-in.
+                We&apos;ll email you a magic link. Your local rig profile, saved spots, and trip drafts will migrate to your account on first sign-in.
               </p>
             </div>
 
@@ -184,6 +190,13 @@ export default function AccountScreen() {
                 className="min-h-[44px] rounded-lg border border-border bg-background px-4 text-sm"
               >
                 Suggest spot
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/plan-route')}
+                className="min-h-[44px] rounded-lg border border-border bg-background px-4 text-sm"
+              >
+                Trip drafts
               </button>
               <button
                 type="button"

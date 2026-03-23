@@ -1,6 +1,7 @@
 import { doesPinFitRig } from '@/lib/pins/doesPinFitRig'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
+import type { TripPlanPlace } from '@/types/tripPlan'
 
 export interface RoutePoint {
   latitude: number
@@ -13,6 +14,32 @@ export interface RouteSuggestion {
   originDistanceMiles: number
   destinationDistanceMiles: number
   score: number
+}
+
+export function appendUniqueWaypoint(
+  currentWaypoints: TripPlanPlace[],
+  nextWaypoint: TripPlanPlace,
+): TripPlanPlace[] {
+  if (currentWaypoints.some((waypoint) => waypoint.id === nextWaypoint.id)) {
+    return currentWaypoints.filter((waypoint) => waypoint.id !== nextWaypoint.id)
+  }
+
+  return [...currentWaypoints, nextWaypoint]
+}
+
+export function moveWaypoint(
+  currentWaypoints: TripPlanPlace[],
+  index: number,
+  direction: 'up' | 'down',
+): TripPlanPlace[] {
+  const targetIndex = direction === 'up' ? index - 1 : index + 1
+  if (index < 0 || index >= currentWaypoints.length) return currentWaypoints
+  if (targetIndex < 0 || targetIndex >= currentWaypoints.length) return currentWaypoints
+
+  const nextWaypoints = [...currentWaypoints]
+  const [item] = nextWaypoints.splice(index, 1)
+  nextWaypoints.splice(targetIndex, 0, item)
+  return nextWaypoints
 }
 
 interface BuildRouteSuggestionsOptions {

@@ -30,6 +30,7 @@ const SavedSpotsScreen = lazy(() => import('@/features/saved-spots/SavedSpotsScr
 const AccountScreen = lazy(() => import('@/features/account/AccountScreen'))
 const SuggestSpotScreen = lazy(() => import('@/features/spot-submissions/SuggestSpotScreen'))
 const RoutePlanningScreen = lazy(() => import('@/features/route-planning/RoutePlanningScreen'))
+const SharedTripPlanScreen = lazy(() => import('@/features/route-planning/SharedTripPlanScreen'))
 const AdminDashboard = lazy(() => import('@/features/admin/AdminDashboard'))
 
 export default function App() {
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="/account" element={<AccountScreen />} />
               <Route path="/suggest-spot" element={<SuggestSpotScreen />} />
               <Route path="/plan-route" element={<RoutePlanningScreen />} />
+              <Route path="/shared-trip/:shareToken" element={<SharedTripPlanScreen />} />
               <Route path="/admin" element={<AdminDashboard />} />
             </Routes>
           </Suspense>

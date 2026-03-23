@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { buildDirectionsUrl } from '@/lib/maps/googleMaps'
 import type { Pin } from '@/types/pin'
 import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
-import { buildRouteSuggestions } from './routePlanning'
+import type { TripPlanPlace } from '@/types/tripPlan'
+import { appendUniqueWaypoint, buildRouteSuggestions, moveWaypoint } from './routePlanning'
 
 function makePin(overrides: Partial<Pin> = {}): Pin {
   return {
@@ -110,5 +111,28 @@ describe('buildRouteSuggestions', () => {
     })
 
     expect(suggestions).toEqual([])
+  })
+})
+
+describe('trip waypoint helpers', () => {
+  const WAYPOINTS: TripPlanPlace[] = [
+    { id: 'a', name: 'Alpha', latitude: 1, longitude: 1 },
+    { id: 'b', name: 'Bravo', latitude: 2, longitude: 2 },
+    { id: 'c', name: 'Charlie', latitude: 3, longitude: 3 },
+  ]
+
+  it('adds a waypoint when it is not already selected', () => {
+    const next = appendUniqueWaypoint(WAYPOINTS.slice(0, 1), WAYPOINTS[1])
+    expect(next.map((waypoint) => waypoint.id)).toEqual(['a', 'b'])
+  })
+
+  it('removes a waypoint when it is already selected', () => {
+    const next = appendUniqueWaypoint(WAYPOINTS.slice(0, 2), WAYPOINTS[1])
+    expect(next.map((waypoint) => waypoint.id)).toEqual(['a'])
+  })
+
+  it('moves a waypoint up or down while preserving the rest', () => {
+    expect(moveWaypoint(WAYPOINTS, 2, 'up').map((waypoint) => waypoint.id)).toEqual(['a', 'c', 'b'])
+    expect(moveWaypoint(WAYPOINTS, 0, 'down').map((waypoint) => waypoint.id)).toEqual(['b', 'a', 'c'])
   })
 })

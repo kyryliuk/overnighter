@@ -14,6 +14,7 @@ vi.mock('@/features/rig-profile/RigEditScreen', () => ({ default: () => null }))
 vi.mock('@/features/pin-detail/PinDetailSheet', () => ({ default: () => null }))
 vi.mock('@/features/saved-spots/SavedSpotsScreen', () => ({ default: () => null }))
 vi.mock('@/features/route-planning/RoutePlanningScreen', () => ({ default: () => null }))
+vi.mock('@/features/route-planning/SharedTripPlanScreen', () => ({ default: () => null }))
 vi.mock('@/features/admin/AdminDashboard', () => ({ default: () => null }))
 vi.mock('@/features/check-in/CheckInForm', () => ({
   default: ({ pinId }: { pinId: string }) => (
