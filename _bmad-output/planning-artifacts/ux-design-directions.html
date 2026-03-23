@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overnighter — UX Design Directions</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, -apple-system, sans-serif; background: #0f172a; color: #f1f5f9; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 4px; padding: 12px 16px; overflow-x: auto; }
+  nav button { background: none; border: 1px solid #475569; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  nav button.active { background: #0ea5e9; border-color: #0ea5e9; color: white; }
+  nav button:hover:not(.active) { border-color: #94a3b8; color: #f1f5f9; }
+
+  /* SECTIONS */
+  .section { display: none; padding: 72px 0 40px; min-height: 100vh; }
+  .section.active { display: block; }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 6px; }
+  h2 { font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #94a3b8; margin-bottom: 24px; }
+
+  /* TOKENS */
+  .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding: 16px; }
+  .token { border-radius: 8px; overflow: hidden; border: 1px solid #334155; }
+  .token-swatch { height: 48px; }
+  .token-info { padding: 8px; background: #1e293b; }
+  .token-name { font-size: 11px; color: #f1f5f9; font-weight: 600; }
+  .token-hex { font-size: 11px; color: #64748b; font-family: monospace; }
+
+  /* PHONE MOCKUP */
+  .phones { display: flex; gap: 24px; flex-wrap: wrap; padding: 0 16px; justify-content: center; }
+  .phone { width: 320px; flex-shrink: 0; }
+  .phone-frame { border: 2px solid #334155; border-radius: 32px; overflow: hidden; background: #0f172a; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .phone-screen { position: relative; height: 580px; overflow: hidden; }
+  .phone-label { font-size: 13px; color: #94a3b8; text-align: center; margin-top: 12px; }
+  .phone-sublabel { font-size: 11px; color: #475569; text-align: center; margin-top: 4px; }
+
+  /* MAP BACKGROUND */
+  .map-bg { position: absolute; inset: 0; background: #1a2744; }
+  .map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; }
+  .map-road-h { position: absolute; background: #243358; height: 3px; left: 0; right: 0; }
+  .map-road-v { position: absolute; background: #243358; width: 3px; top: 0; bottom: 0; }
+
+  /* PINS */
+  .pin { position: absolute; transform: translate(-50%, -50%); cursor: pointer; }
+  .pin-ring { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid; font-size: 14px; transition: transform 0.15s; }
+  .pin-ring:hover { transform: scale(1.15); }
+  .pin-ring.fresh { border-color: #22c55e; background: rgba(34,197,94,0.15); }
+  .pin-ring.recent { border-color: #eab308; background: rgba(234,179,8,0.15); }
+  .pin-ring.stale { border-color: #ef4444; background: rgba(239,68,68,0.15); }
+  .pin-ring.filtered { border-color: #6b7280; background: rgba(107,114,128,0.1); opacity: 0.5; }
+
+  /* SEARCH BAR */
+  .search-bar { position: absolute; top: 12px; left: 12px; right: 12px; background: #1e293b; border: 1px solid #475569; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #94a3b8; z-index: 10; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .search-icon { font-size: 16px; }
+
+  /* RIG BADGE */
+  .rig-badge { position: absolute; top: 64px; left: 12px; background: #1e293b; border: 1px solid #0ea5e9; border-radius: 8px; padding: 4px 10px; font-size: 11px; color: #0ea5e9; z-index: 10; }
+
+  /* FAB */
+  .fab { position: absolute; bottom: 100px; right: 12px; width: 48px; height: 48px; background: #0ea5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(14,165,233,0.4); z-index: 10; cursor: pointer; }
+  .fab-near-me { position: absolute; bottom: 160px; right: 12px; width: 44px; height: 44px; background: #1e293b; border: 1px solid #475569; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 10; cursor: pointer; }
+
+  /* LAYER TOGGLE */
+  .layer-toggle { position: absolute; bottom: 100px; left: 12px; background: #1e293b; border: 1px solid #475569; border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
+  .layer-btn { padding: 4px 8px; border-radius: 6px; font-size: 10px; cursor: pointer; border: none; font-weight: 600; }
+  .layer-btn.on { background: #0ea5e9; color: white; }
+  .layer-btn.off { background: #334155; color: #94a3b8; }
+
+  /* BOTTOM SHEET */
+  .bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: #1e293b; border-radius: 20px 20px 0 0; padding: 20px 24px; z-index: 20; border-top: 1px solid #334155; }
+  .sheet-handle { width: 36px; height: 4px; background: #475569; border-radius: 2px; margin: 0 auto 16px; }
+  .sheet-name { font-size: 17px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .sheet-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+  .sheet-badge.fresh { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .sheet-badge.recent { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+  .sheet-badge.stale { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .amenities { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .amenity { background: #334155; padding: 4px 10px; border-radius: 6px; font-size: 12px; color: #94a3b8; }
+  .sheet-meta { font-size: 12px; color: #64748b; margin-bottom: 16px; line-height: 1.5; }
+  .sheet-btn { width: 100%; background: #0ea5e9; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .sheet-btn:active { background: #0284c7; }
+
+  /* CHECKIN SHEET */
+  .checkin-prompt { font-size: 13px; color: #94a3b8; margin-bottom: 12px; }
+  .checkin-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .checkin-option { background: #334155; border: 1px solid #475569; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #f1f5f9; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .checkin-option:hover { border-color: #0ea5e9; }
+  .checkin-option.selected { border-color: #22c55e; background: rgba(34,197,94,0.1); }
+
+  /* ONBOARDING */
+  .onboard { position: absolute; inset: 0; background: #0f172a; z-index: 30; padding: 32px 24px; display: flex; flex-direction: column; }
+  .onboard-step { font-size: 12px; color: #0ea5e9; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .onboard-title { font-size: 22px; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; line-height: 1.3; }
+  .onboard-sub { font-size: 14px; color: #94a3b8; margin-bottom: 32px; line-height: 1.5; }
+  .rig-options { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .rig-option { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .rig-option.selected { border-color: #0ea5e9; background: rgba(14,165,233,0.08); }
+  .rig-icon { font-size: 24px; width: 40px; text-align: center; }
+  .rig-info { flex: 1; }
+  .rig-name { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+  .rig-desc { font-size: 12px; color: #64748b; }
+  .onboard-btn { background: #0ea5e9; color: white; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+
+  /* SUGGEST SPOT */
+  .suggest-form { position: absolute; inset: 0; background: #0f172a; z-index: 30; padding: 20px 24px; display: flex; flex-direction: column; }
+  .suggest-title { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .suggest-sub { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .form-label { font-size: 12px; color: #94a3b8; font-weight: 600; margin-bottom: 6px; display: block; }
+  .form-input { width: 100%; background: #1e293b; border: 1px solid #475569; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #f1f5f9; margin-bottom: 14px; }
+  .type-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip { padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 1px solid #475569; color: #94a3b8; background: #1e293b; }
+  .chip.selected { border-color: #0ea5e9; color: #0ea5e9; background: rgba(14,165,233,0.1); }
+  .map-picker { background: #1a2744; border-radius: 10px; height: 100px; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 13px; margin-bottom: 14px; }
+  .suggest-btn { background: #0ea5e9; color: white; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: auto; }
+
+  /* LEGEND */
+  .legend { position: absolute; bottom: 100px; left: 12px; background: rgba(30,41,59,0.95); border: 1px solid #334155; border-radius: 10px; padding: 10px 12px; z-index: 10; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid; flex-shrink: 0; }
+  .legend-dot.fresh { border-color: #22c55e; }
+  .legend-dot.recent { border-color: #eab308; }
+  .legend-dot.stale { border-color: #ef4444; }
+
+  /* TOOLTIP */
+  .tooltip { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 1px solid #0ea5e9; border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #f1f5f9; z-index: 20; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .tooltip::after { content: '✕'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #475569; cursor: pointer; }
+
+  /* STEPPER */
+  .dimension-block { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+  .dim-label { font-size: 12px; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; }
+  .stepper { display: flex; align-items: center; gap: 0; margin-bottom: 8px; }
+  .step-btn { width: 48px; height: 48px; background: #334155; border: none; color: #f1f5f9; font-size: 22px; cursor: pointer; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .step-btn:active { background: #475569; }
+  .step-value { flex: 1; text-align: center; font-size: 26px; font-weight: 700; color: #f1f5f9; }
+  .dim-hint { font-size: 11px; color: #475569; line-height: 1.4; }
+
+  /* FILTER CHIP BAR */
+  .filter-bar { position: absolute; top: 58px; left: 0; right: 0; z-index: 10; padding: 6px 10px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .f-chip { flex-shrink: 0; background: #1e293b; border: 1px solid #475569; border-radius: 20px; padding: 5px 12px; font-size: 12px; color: #94a3b8; cursor: pointer; white-space: nowrap; backdrop-filter: blur(4px); }
+  .f-chip.on { background: #0ea5e9; border-color: #0ea5e9; color: white; font-weight: 600; }
+  .result-count { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 6px 16px; font-size: 12px; color: #94a3b8; z-index: 10; white-space: nowrap; }
+
+  /* DIRECTION HEADER */
+  .dir-header { padding: 16px; border-bottom: 1px solid #1e293b; }
+
+  /* DESCRIPTION CARDS */
+  .desc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px; }
+  .desc-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; }
+  .desc-card h3 { font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 6px; }
+  .desc-card p { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+  .tag { display: inline-block; background: #334155; color: #94a3b8; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-right: 4px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <button class="active" onclick="show('tokens')">Color Tokens</button>
+  <button onclick="show('d1')">Direction 1: Map First</button>
+  <button onclick="show('d2')">Direction 2: Pin Detail</button>
+  <button onclick="show('d3')">Direction 3: Check-In</button>
+  <button onclick="show('d4')">Direction 4: Onboarding</button>
+  <button onclick="show('d5')">Direction 5: Suggest Spot</button>
+  <button onclick="show('d6')">Direction 6: First-Time Tooltip</button>
+  <button onclick="show('d7')">Direction 7: Rig Dimensions</button>
+  <button onclick="show('d8')">Direction 8: Amenity Filters</button>
+</nav>
+
+<!-- TOKENS -->
+<div id="tokens" class="section active">
+  <div class="dir-header">
+    <div class="label">Visual Foundation</div>
+    <h2>Color Design Tokens</h2>
+    <p class="subtitle">The complete color system for Overnighter</p>
+  </div>
+  <div class="token-grid">
+    <div class="token"><div class="token-swatch" style="background:#22c55e"></div><div class="token-info"><div class="token-name">fresh</div><div class="token-hex">#22c55e · green-500</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#eab308"></div><div class="token-info"><div class="token-name">recent</div><div class="token-hex">#eab308 · yellow-500</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#ef4444"></div><div class="token-info"><div class="token-name">stale</div><div class="token-hex">#ef4444 · red-500</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#6b7280"></div><div class="token-info"><div class="token-name">filtered</div><div class="token-hex">#6b7280 · gray-500</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#0ea5e9"></div><div class="token-info"><div class="token-name">primary</div><div class="token-hex">#0ea5e9 · sky-500</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#0284c7"></div><div class="token-info"><div class="token-name">primary-dark</div><div class="token-hex">#0284c7 · sky-600</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#0f172a"></div><div class="token-info"><div class="token-name">background</div><div class="token-hex">#0f172a · slate-900</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#1e293b"></div><div class="token-info"><div class="token-name">surface</div><div class="token-hex">#1e293b · slate-800</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#334155"></div><div class="token-info"><div class="token-name">surface-raised</div><div class="token-hex">#334155 · slate-700</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#475569"></div><div class="token-info"><div class="token-name">border</div><div class="token-hex">#475569 · slate-600</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#f1f5f9"></div><div class="token-info"><div class="token-name">text-primary</div><div class="token-hex">#f1f5f9 · slate-100</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#94a3b8"></div><div class="token-info"><div class="token-name">text-secondary</div><div class="token-hex">#94a3b8 · slate-400</div></div></div>
+    <div class="token"><div class="token-swatch" style="background:#64748b"></div><div class="token-info"><div class="token-name">text-muted</div><div class="token-hex">#64748b · slate-500</div></div></div>
+  </div>
+  <div class="desc-grid">
+    <div class="desc-card"><h3>Recency Ring System</h3><p>Green/yellow/red rings on every map pin are the product's primary visual identity. Color = trust signal. Never use these colors for other UI purposes to preserve signal clarity.</p><span class="tag">Brand-defining</span></div>
+    <div class="desc-card"><h3>Dark Map Aesthetic</h3><p>Dark basemap (slate-900) makes recency rings visually dominant. UI chrome matches — dark surfaces, high-contrast elements. No white backgrounds anywhere in the core map experience.</p><span class="tag">Visual strategy</span></div>
+    <div class="desc-card"><h3>Sky-Blue Primary</h3><p>The single accent color for all interactive elements (buttons, FAB, links, active states). Sky-blue reads as "open sky / open road" — thematically appropriate and distinct from all recency colors.</p><span class="tag">Accent</span></div>
+  </div>
+</div>
+
+<!-- DIRECTION 1: Map First -->
+<div id="d1" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 1</div>
+    <h2>Map First — Default State</h2>
+    <p class="subtitle">Full-screen map with rig filter active. The core daily-use view Marcus sees every travel day.</p>
+  </div>
+  <div class="phones">
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <!-- Map -->
+          <div class="map-bg"></div>
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:40%"></div>
+          <div class="map-road-h" style="top:65%"></div>
+          <div class="map-road-v" style="left:30%"></div>
+          <div class="map-road-v" style="left:70%"></div>
+
+          <!-- Pins -->
+          <div class="pin" style="top:38%;left:28%"><div class="pin-ring fresh">🏕</div></div>
+          <div class="pin" style="top:55%;left:55%"><div class="pin-ring fresh">🚽</div></div>
+          <div class="pin" style="top:30%;left:65%"><div class="pin-ring recent">🏕</div></div>
+          <div class="pin" style="top:70%;left:35%"><div class="pin-ring stale">💧</div></div>
+          <div class="pin" style="top:45%;left:80%"><div class="pin-ring filtered">🏕</div></div>
+          <div class="pin" style="top:60%;left:18%"><div class="pin-ring filtered">🚽</div></div>
+          <div class="pin" style="top:25%;left:42%"><div class="pin-ring fresh">⛽</div></div>
+
+          <!-- Search -->
+          <div class="search-bar"><span class="search-icon">🔍</span>Search destination or "near me"</div>
+
+          <!-- Rig badge -->
+          <div class="rig-badge">🚐 Class A · 35ft · Filtered</div>
+
+          <!-- Legend -->
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot fresh"></div>This week</div>
+            <div class="legend-item"><div class="legend-dot recent"></div>This month</div>
+            <div class="legend-item"><div class="legend-dot stale"></div>Older</div>
+          </div>
+
+          <!-- Layer toggle -->
+          <div class="layer-toggle" style="bottom:160px">
+            <div class="layer-btn on">🏕 Camp</div>
+            <div class="layer-btn on">🚽 Dump</div>
+            <div class="layer-btn on">💧 Water</div>
+            <div class="layer-btn off">⛽ Fuel</div>
+            <div class="layer-btn off">🔵 Propane</div>
+          </div>
+
+          <!-- FABs -->
+          <div class="fab-near-me">📍</div>
+          <div class="fab">+</div>
+        </div>
+      </div>
+      <div class="phone-label">Default map view</div>
+      <div class="phone-sublabel">Green = verified this week · Grey = filtered for your rig</div>
+    </div>
+  </div>
+  <div class="desc-grid">
+    <div class="desc-card"><h3>Full-screen map</h3><p>The map fills the entire screen. No persistent chrome at top or bottom. All UI elements float over the map — search bar, rig badge, layer toggle, FABs.</p></div>
+    <div class="desc-card"><h3>Rig filter badge</h3><p>Always visible below search bar. Shows current rig and confirms filter is active. Tap to modify rig profile. Never hidden.</p></div>
+    <div class="desc-card"><h3>Greyed pins</h3><p>Rig-filtered spots are visible but desaturated and semi-transparent. User can see they exist but understands they're not reachable in their rig.</p></div>
+    <div class="desc-card"><h3>Layer toggles</h3><p>Left-side floating panel for show/hide by category. Compact, out of thumb's primary reach, but accessible. Persisted to localStorage.</p></div>
+  </div>
+</div>
+
+<!-- DIRECTION 2: Pin Detail Bottom Sheet -->
+<div id="d2" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 2</div>
+    <h2>Pin Detail — Bottom Sheet</h2>
+    <p class="subtitle">Tapping a pin opens the bottom sheet with full spot details. The "aha" moment — trust is visible immediately.</p>
+  </div>
+  <div class="phones">
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="map-bg"></div>
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:35%"></div>
+          <div class="map-road-v" style="left:45%"></div>
+          <div class="pin" style="top:38%;left:44%"><div class="pin-ring fresh" style="transform:scale(1.2)">🚽</div></div>
+          <div class="pin" style="top:25%;left:25%"><div class="pin-ring fresh">🏕</div></div>
+          <div class="pin" style="top:30%;left:70%"><div class="pin-ring recent">🏕</div></div>
+          <div class="search-bar"><span class="search-icon">🔍</span>Amarillo, TX</div>
+          <div class="rig-badge">🚐 Class A · 35ft · Filtered</div>
+
+          <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-name">Pilot Travel Center #482</div>
+            <div class="sheet-badge fresh">✓ Verified 3 days ago</div>
+            <div class="amenities">
+              <div class="amenity">🚽 Dump $10</div>
+              <div class="amenity">💧 Water free</div>
+              <div class="amenity">⛽ Diesel</div>
+            </div>
+            <div class="sheet-meta">
+              Class A accessible · Pull-through available<br>
+              "Works great for big rigs. Water hose on east side." — Class A driver
+            </div>
+            <button class="sheet-btn">Get Directions →</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Green pin tapped — bottom sheet</div>
+      <div class="phone-sublabel">Recency badge is the first element below the name</div>
+    </div>
+
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="map-bg"></div>
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:35%"></div>
+          <div class="pin" style="top:35%;left:50%"><div class="pin-ring stale" style="transform:scale(1.2)">🏕</div></div>
+          <div class="search-bar"><span class="search-icon">🔍</span>Near me</div>
+          <div class="rig-badge">🚐 Class A · 35ft · Filtered</div>
+
+          <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-name">Walmart Supercenter</div>
+            <div class="sheet-badge stale">⚠ Last verified 47 days ago</div>
+            <div class="amenities">
+              <div class="amenity">🏕 Overnight</div>
+            </div>
+            <div class="sheet-meta">
+              Policy unverified — call ahead<br>
+              "Was allowed in 2024, policy may have changed." — 47 days ago
+            </div>
+            <button class="sheet-btn">Get Directions →</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Red pin tapped — stale data warning</div>
+      <div class="phone-sublabel">Badge prominently warns before user commits</div>
+    </div>
+  </div>
+</div>
+
+<!-- DIRECTION 3: Check-In -->
+<div id="d3" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 3</div>
+    <h2>Departure Check-In</h2>
+    <p class="subtitle">The community data flywheel. Triggered at departure — 3 taps, done. "Help the next traveler."</p>
+  </div>
+  <div class="phones">
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="map-bg"></div>
+          <div class="map-grid"></div>
+          <div class="search-bar"><span class="search-icon">🔍</span>Search destination</div>
+
+          <div class="bottom-sheet" style="padding-bottom:24px">
+            <div class="sheet-handle"></div>
+            <div class="sheet-name" style="margin-bottom:4px">Leaving Pilot #482?</div>
+            <div class="checkin-prompt">Help the next traveler — how was the dump station?</div>
+            <div class="checkin-options">
+              <div class="checkin-option selected">✅ Still open &amp; working</div>
+              <div class="checkin-option">❌ Closed or broken</div>
+              <div class="checkin-option">⚠️ Something changed</div>
+            </div>
+            <button class="sheet-btn">Submit (takes 5 sec)</button>
+            <div style="text-align:center;margin-top:10px;font-size:12px;color:#475569;cursor:pointer">Skip for now</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Departure check-in prompt</div>
+      <div class="phone-sublabel">"Help the next traveler" framing, not "fill out a form"</div>
+    </div>
+  </div>
+  <div class="desc-grid">
+    <div class="desc-card"><h3>Trigger timing</h3><p>Prompt appears when user opens the app after being near a spot for 2+ hours, or when tapping a nearby "leaving?" notification (Phase 2). Never mid-stay, never repeated.</p></div>
+    <div class="desc-card"><h3>3-tap maximum</h3><p>Tap prompt → select one option → tap Submit. Optional note field appears only if "Something changed" is selected. Never required.</p></div>
+    <div class="desc-card"><h3>Community framing</h3><p>"Help the next traveler" is the core copy. Not "rate this spot," not "submit a report." Framing drives contribution as a community act.</p></div>
+  </div>
+</div>
+
+<!-- DIRECTION 4: Onboarding -->
+<div id="d4" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 4</div>
+    <h2>Rig Profile Onboarding</h2>
+    <p class="subtitle">First-time setup. 3 steps, under 60 seconds. The "aha" moment happens when the map re-renders filtered.</p>
+  </div>
+  <div class="phones">
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="onboard">
+            <div class="onboard-step">STEP 1 OF 3</div>
+            <div class="onboard-title">What kind of rig do you have?</div>
+            <div class="onboard-sub">We'll filter every spot on the map for your specific vehicle — no more spots you can't reach.</div>
+            <div class="rig-options">
+              <div class="rig-option selected">
+                <div class="rig-icon">🚌</div>
+                <div class="rig-info"><div class="rig-name">Class A</div><div class="rig-desc">Motorhome, 28–45ft</div></div>
+                <div style="color:#0ea5e9">✓</div>
+              </div>
+              <div class="rig-option">
+                <div class="rig-icon">🚐</div>
+                <div class="rig-info"><div class="rig-name">Class B / Van</div><div class="rig-desc">Sprinter, Transit, cargo van</div></div>
+              </div>
+              <div class="rig-option">
+                <div class="rig-icon">🚗</div>
+                <div class="rig-info"><div class="rig-name">Class C</div><div class="rig-desc">Motorhome, 20–32ft</div></div>
+              </div>
+              <div class="rig-option">
+                <div class="rig-icon">🏕</div>
+                <div class="rig-info"><div class="rig-name">Travel Trailer / 5th Wheel</div><div class="rig-desc">Towed rig</div></div>
+              </div>
+            </div>
+            <button class="onboard-btn">Next →</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Step 1 — Rig class selection</div>
+      <div class="phone-sublabel">Visual icons, no text entry. Tap to select.</div>
+    </div>
+  </div>
+  <div class="desc-grid">
+    <div class="desc-card"><h3>3 steps, no account</h3><p>Step 1: rig class. Step 2: length (slider). Step 3: height (slider). Saved to localStorage immediately. No email, no password, no friction.</p></div>
+    <div class="desc-card"><h3>The "aha" reveal</h3><p>After step 3, the map renders and some pins grey out in real-time. A brief animation makes the filter visible. User sees immediately that the product knows their rig.</p></div>
+    <div class="desc-card"><h3>Skip available</h3><p>"Skip for now — show all spots" is always available. Users who skip see all pins but the rig filter badge shows "No rig set" as an invitation to set up later.</p></div>
+  </div>
+</div>
+
+<!-- DIRECTION 5: Suggest Spot -->
+<div id="d5" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 5</div>
+    <h2>Suggest a Spot</h2>
+    <p class="subtitle">FAB "+" → 4-field form → founder review queue. Community contribution that scales manually in Phase 0.</p>
+  </div>
+  <div class="phones">
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="suggest-form">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <div style="color:#94a3b8;cursor:pointer;font-size:18px">←</div>
+              <div class="suggest-title">Suggest a Spot</div>
+            </div>
+            <div class="suggest-sub">We'll review and add it within 48 hours.</div>
+
+            <label class="form-label">Spot Name</label>
+            <input class="form-input" type="text" value="Flying J Travel Center" readonly>
+
+            <label class="form-label">What's here?</label>
+            <div class="type-chips">
+              <div class="chip selected">🚽 Dump</div>
+              <div class="chip selected">💧 Water</div>
+              <div class="chip">🏕 Overnight</div>
+              <div class="chip">⛽ Fuel</div>
+              <div class="chip">🔵 Propane</div>
+            </div>
+
+            <label class="form-label">Location (tap map to place pin)</label>
+            <div class="map-picker">📍 Tap to set location · 35.2220° N, 101.8313° W</div>
+
+            <label class="form-label">Notes (optional)</label>
+            <input class="form-input" type="text" placeholder="e.g. pull-around back, $10 fee" readonly>
+
+            <button class="suggest-btn">Submit for Review</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Suggest a Spot — full form</div>
+      <div class="phone-sublabel">4 fields, map tap for location, founder reviews before publish</div>
+    </div>
+  </div>
+</div>
+
+<!-- DIRECTION 6: First-Time Tooltip -->
+<div id="d6" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 6</div>
+    <h2>First-Time Recency Tooltip</h2>
+    <p class="subtitle">One tooltip explaining the recency ring. Shown once on first map view, dismissed on any tap. Never shown again.</p>
+  </div>
+  <div class="phones">
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="map-bg"></div>
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:40%"></div>
+          <div class="map-road-v" style="left:45%"></div>
+          <div class="pin" style="top:38%;left:44%"><div class="pin-ring fresh">🚽</div></div>
+          <div class="pin" style="top:55%;left:65%"><div class="pin-ring recent">🏕</div></div>
+          <div class="pin" style="top:28%;left:28%"><div class="pin-ring stale">💧</div></div>
+          <div class="pin" style="top:60%;left:30%"><div class="pin-ring filtered">🏕</div></div>
+
+          <div class="search-bar"><span class="search-icon">🔍</span>Search destination</div>
+          <div class="rig-badge">🚐 Class A · 35ft · Filtered</div>
+
+          <div class="tooltip">🟢 Green = verified this week · Tap any pin to see when</div>
+
+          <div class="fab">+</div>
+          <div class="fab-near-me">📍</div>
+        </div>
+      </div>
+      <div class="phone-label">First-time map view</div>
+      <div class="phone-sublabel">Single tooltip, auto-dismisses on first tap, never shown again</div>
+    </div>
+  </div>
+  <div class="desc-grid">
+    <div class="desc-card"><h3>One tooltip, one time</h3><p>The recency ring is the only truly novel UX pattern. One non-intrusive tooltip on first map view explains it. No onboarding tutorial, no help center, no coach marks.</p></div>
+    <div class="desc-card"><h3>Positioned for context</h3><p>Tooltip appears near the map, not overlaid on any pin. Designed to be seen, then ignored as the user starts exploring naturally.</p></div>
+    <div class="desc-card"><h3>Dismiss behavior</h3><p>Any tap anywhere on the screen dismisses it. Tapping a pin dismisses it and opens the pin sheet simultaneously. Zero blocking of the core experience.</p></div>
+  </div>
+</div>
+
+<!-- DIRECTION 7: Rig Dimensions -->
+<div id="d7" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 7</div>
+    <h2>Rig Dimensions — Onboarding Step 2</h2>
+    <p class="subtitle">Length and height entry via numeric stepper. Thumb-friendly, precise, no keyboard required. The data that powers silent rig filtering.</p>
+  </div>
+  <div class="phones">
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="onboard">
+            <div class="onboard-step">STEP 2 OF 3</div>
+            <div class="onboard-title">How big is your rig?</div>
+            <div class="onboard-sub">We filter clearances, pull-throughs, and size limits automatically — so you never end up somewhere you can't fit.</div>
+
+            <div class="dimension-block">
+              <div class="dim-label">Length (bumper to bumper)</div>
+              <div class="stepper">
+                <button class="step-btn">−</button>
+                <div class="step-value">35 ft</div>
+                <button class="step-btn">+</button>
+              </div>
+              <div class="dim-hint">Include tow vehicle or toad if applicable</div>
+            </div>
+
+            <div class="dimension-block">
+              <div class="dim-label">Height (including roof A/C)</div>
+              <div class="stepper">
+                <button class="step-btn">−</button>
+                <div class="step-value">12 ft 6 in</div>
+                <button class="step-btn">+</button>
+              </div>
+              <div class="dim-hint">Measure from ground to highest point — usually the A/C unit</div>
+            </div>
+
+            <div style="flex:1"></div>
+            <button class="onboard-btn">Next — See Your Filtered Map →</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Step 2 — Length &amp; height</div>
+      <div class="phone-sublabel">Tap +/− to set exact dimensions. No keyboard, no frustration.</div>
+    </div>
+
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="onboard">
+            <div class="onboard-step">STEP 2 OF 3</div>
+            <div class="onboard-title">How big is your rig?</div>
+            <div class="onboard-sub">We filter clearances, pull-throughs, and size limits automatically — so you never end up somewhere you can't fit.</div>
+
+            <div class="dimension-block" style="border-color:#0ea5e9">
+              <div class="dim-label" style="color:#0ea5e9">Length (bumper to bumper)</div>
+              <div class="stepper">
+                <button class="step-btn">−</button>
+                <div class="step-value" style="color:#0ea5e9">40 ft</div>
+                <button class="step-btn">+</button>
+              </div>
+              <div class="dim-hint" style="color:#0ea5e9">✓ Saved</div>
+            </div>
+
+            <div class="dimension-block" style="border-color:#0ea5e9">
+              <div class="dim-label" style="color:#0ea5e9">Height (including roof A/C)</div>
+              <div class="stepper">
+                <button class="step-btn">−</button>
+                <div class="step-value" style="color:#0ea5e9">13 ft 2 in</div>
+                <button class="step-btn">+</button>
+              </div>
+              <div class="dim-hint" style="color:#0ea5e9">✓ Saved</div>
+            </div>
+
+            <div style="flex:1"></div>
+            <button class="onboard-btn" style="background:#22c55e">Next — See Your Filtered Map →</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Step 2 — values confirmed</div>
+      <div class="phone-sublabel">Blue fields + green CTA = ready to reveal the filtered map</div>
+    </div>
+  </div>
+  <div class="desc-grid">
+    <div class="desc-card"><h3>Why stepper, not slider</h3><p>RVers know their exact dimensions (40 ft, 13'2"). A slider feels imprecise — "about 40?" is wrong when you're checking a 40ft clearance. Steppers give exact numbers with one-tap increments.</p></div>
+    <div class="desc-card"><h3>Foot + inch resolution</h3><p>Length in 1-foot increments (20–55ft). Height in 1-inch increments (8'0"–14'0"). Most RV specs are given in feet and inches — we match that mental model exactly.</p></div>
+    <div class="desc-card"><h3>Defaults by rig class</h3><p>Default values pre-populated from Step 1 selection (Class A → 35ft / 12'6" as starting point). User taps to fine-tune. Reduces friction, shows the app already knows their world.</p></div>
+    <div class="desc-card"><h3>The reveal moment</h3><p>After tapping "See Your Filtered Map", the map animates — pins that exceed their dimensions grey out in real time. 2-second reveal makes the filter viscerally visible on first use.</p></div>
+  </div>
+</div>
+
+<!-- DIRECTION 8: Amenity Filters -->
+<div id="d8" class="section">
+  <div class="dir-header">
+    <div class="label">Direction 8</div>
+    <h2>Amenity Filter Chips</h2>
+    <p class="subtitle">Horizontal scrollable chips below the search bar. Multi-select, live pin filtering, no modal. "I need water AND dump" is two taps.</p>
+  </div>
+  <div class="phones">
+
+    <!-- Phone 1: No filters active -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="map-bg"></div>
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:40%"></div>
+          <div class="map-road-h" style="top:65%"></div>
+          <div class="map-road-v" style="left:30%"></div>
+          <div class="map-road-v" style="left:70%"></div>
+
+          <div class="pin" style="top:35%;left:27%"><div class="pin-ring fresh">🏕</div></div>
+          <div class="pin" style="top:50%;left:52%"><div class="pin-ring fresh">🚽</div></div>
+          <div class="pin" style="top:28%;left:62%"><div class="pin-ring recent">💧</div></div>
+          <div class="pin" style="top:62%;left:38%"><div class="pin-ring stale">🔵</div></div>
+          <div class="pin" style="top:42%;left:78%"><div class="pin-ring fresh">🏕</div></div>
+          <div class="pin" style="top:70%;left:20%"><div class="pin-ring recent">🚽</div></div>
+          <div class="pin" style="top:22%;left:42%"><div class="pin-ring fresh">⛽</div></div>
+
+          <div class="search-bar"><span class="search-icon">🔍</span>Search or "near me"</div>
+
+          <!-- Filter chips - none active -->
+          <div class="filter-bar">
+            <div class="f-chip">💧 Water</div>
+            <div class="f-chip">🚽 Dump</div>
+            <div class="f-chip">🏕 Overnight</div>
+            <div class="f-chip">⛽ Fuel</div>
+            <div class="f-chip">🔵 Propane</div>
+            <div class="f-chip">⚡ Electric</div>
+            <div class="f-chip">🚿 Shower</div>
+          </div>
+
+          <div class="rig-badge" style="top:104px">🚐 Class A · 35ft · Filtered</div>
+
+          <div class="legend" style="bottom:12px">
+            <div class="legend-item"><div class="legend-dot fresh"></div>This week</div>
+            <div class="legend-item"><div class="legend-dot recent"></div>This month</div>
+            <div class="legend-item"><div class="legend-dot stale"></div>Older</div>
+          </div>
+
+          <div class="fab" style="bottom:20px">+</div>
+          <div class="fab-near-me" style="bottom:76px">📍</div>
+        </div>
+      </div>
+      <div class="phone-label">No filters — all spots visible</div>
+      <div class="phone-sublabel">Chips always visible · Scroll right for more</div>
+    </div>
+
+    <!-- Phone 2: Water + Dump + Propane active -->
+    <div class="phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="map-bg"></div>
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:40%"></div>
+          <div class="map-road-h" style="top:65%"></div>
+          <div class="map-road-v" style="left:30%"></div>
+          <div class="map-road-v" style="left:70%"></div>
+
+          <!-- Full pins: spots that have all 3 amenities -->
+          <div class="pin" style="top:50%;left:52%"><div class="pin-ring fresh">🚽</div></div>
+          <div class="pin" style="top:42%;left:78%"><div class="pin-ring fresh">🏕</div></div>
+
+          <!-- Greyed out: missing one of the required amenities -->
+          <div class="pin" style="top:35%;left:27%"><div class="pin-ring filtered">🏕</div></div>
+          <div class="pin" style="top:28%;left:62%"><div class="pin-ring filtered">💧</div></div>
+          <div class="pin" style="top:62%;left:38%"><div class="pin-ring filtered">🔵</div></div>
+          <div class="pin" style="top:70%;left:20%"><div class="pin-ring filtered">🚽</div></div>
+          <div class="pin" style="top:22%;left:42%"><div class="pin-ring filtered">⛽</div></div>
+
+          <div class="search-bar"><span class="search-icon">🔍</span>Search or "near me"</div>
+
+          <!-- Filter chips - 3 active -->
+          <div class="filter-bar">
+            <div class="f-chip on">💧 Water ✕</div>
+            <div class="f-chip on">🚽 Dump ✕</div>
+            <div class="f-chip on">🔵 Propane ✕</div>
+            <div class="f-chip">🏕 Overnight</div>
+            <div class="f-chip">⛽ Fuel</div>
+            <div class="f-chip">⚡ Electric</div>
+            <div class="f-chip">🚿 Shower</div>
+          </div>
+
+          <div class="rig-badge" style="top:104px">🚐 Class A · 35ft · Filtered</div>
+
+          <div class="result-count">2 matching spots nearby</div>
+
+          <div class="fab" style="bottom:20px">+</div>
+          <div class="fab-near-me" style="bottom:76px">📍</div>
+        </div>
+      </div>
+      <div class="phone-label">Water + Dump + Propane active</div>
+      <div class="phone-sublabel">Grey = missing an amenity · "2 matching spots" count updates live</div>
+    </div>
+
+  </div>
+  <div class="desc-grid">
+    <div class="desc-card"><h3>Chips, not a filter sheet</h3><p>iOverlander uses a modal sheet to pick categories. Opening a sheet adds 2–3 taps. Chips are always visible, always one tap. The mental model: "I want water" → tap Water. Done.</p></div>
+    <div class="desc-card"><h3>Multi-select AND logic</h3><p>Selecting Water + Dump shows only spots that have BOTH. This is the most common real-world need: "I need to fill water AND dump the tanks before my next stop." One gesture, two requirements.</p></div>
+    <div class="desc-card"><h3>Active chip has ✕ to clear</h3><p>Active chips show a ✕ so clearing a filter is a single tap on the chip itself — no separate "clear all" button needed. Tap to add, tap again to remove.</p></div>
+    <div class="desc-card"><h3>Live result count</h3><p>When filters are active, a floating count shows "X matching spots nearby." This grounds the filter state — user knows immediately if they're being too restrictive before panning the map.</p></div>
+    <div class="desc-card"><h3>Propane as a chip</h3><p>🔵 Propane fills a real gap — exchange tanks at travel centers are genuinely hard to find with confidence. One chip. RVers with propane fridges and furnaces will tap it immediately.</p></div>
+    <div class="desc-card"><h3>Scroll reveals more</h3><p>7 chips fit without scrolling on most screens. Users who want Shower or Electric scroll right — the scroll shadow hints at more. Propane is chip 5 (core) — Electric and Shower are 6–7 (secondary).</p></div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
