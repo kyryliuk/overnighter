@@ -1,0 +1,3 @@
+# Exclude test files from serverless function deployment
+# Vercel deploys every *.ts in api/ as a function — *.test.ts files must be excluded
+api/**/*.test.ts

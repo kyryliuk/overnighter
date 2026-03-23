@@ -1,0 +1,18 @@
+name: Daily Gov Data Sync
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2am UTC daily — syncs BLM/USFS/NPS pin data
+  workflow_dispatch:       # Manual trigger for testing without waiting for cron
+
+jobs:
+  sync-gov:
+    name: Sync pin data from BLM/USFS/NPS APIs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sync-gov endpoint
+        run: |
+          curl -f -X POST "${{ secrets.SYNC_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 180

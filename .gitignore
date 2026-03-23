@@ -17,6 +17,7 @@ test-results/
 
 # Logs
 logs/
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -28,18 +29,25 @@ lerna-debug.log*
 **/.env
 **/.env.*
 !**/.env.example
+.env.local
+.env.*.local
+*.local
 
 # Deployment and CLI temp files
 .vercel/
 **/.vercel/
+.vercel
+supabase/.temp/
 **/supabase/.temp/
 
 # OS and editor noise
 .DS_Store
 Thumbs.db
 .idea/
+.idea
 .vs/
 .vscode/*
+!.vscode/extensions.json
 !.vscode/mcp.json
 *.suo
 *.ntvs*
