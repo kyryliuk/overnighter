@@ -17,7 +17,7 @@ export default function AdminAuth({ onAuthenticated }: AdminAuthProps) {
     setErrorMsg(null)
 
     try {
-      const res = await fetch('/api/admin/auth', {
+      const res = await fetch('/api/admin/flagged-pins', {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
