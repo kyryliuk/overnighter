@@ -1,4 +1,4 @@
-# generated: 2026-03-19
+# generated: 2026-03-24
 # project: Overnighter
 # project_key: NOKEY
 # tracking_system: file-system
@@ -32,14 +32,19 @@
 # - Stories can be worked in parallel if team capacity allows
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Phase 2 story keys are prefixed with 'p2-' to avoid collisions with Phase 1 story files
 
-generated: 2026-03-19
+generated: 2026-03-24
 project: Overnighter
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 
 development_status:
+  # ══════════════════════════════════════════════════════════════════
+  # PHASE 1 — COMPLETE
+  # ══════════════════════════════════════════════════════════════════
+
   # ── Epic 1: Project Foundation & Rig Profile Onboarding ──────────────────
   epic-1: done
   1-1-project-initialization-and-infrastructure-setup: done
@@ -79,3 +84,59 @@ development_status:
   5-3-admin-pin-creation: done
   5-4-admin-pin-editing: done
   epic-5-retrospective: done
+
+  # ══════════════════════════════════════════════════════════════════
+  # PHASE 2 — IN BACKLOG
+  # ══════════════════════════════════════════════════════════════════
+
+  # ── Phase 2 Epic 1: User Accounts & Data Sync ────────────────────────────
+  p2-epic-1: backlog
+  p2-1-1-phase-2-foundation-and-package-setup: backlog
+  p2-1-2-user-registration: backlog
+  p2-1-3-sign-in-and-sign-out: backlog
+  p2-1-4-localstorage-data-migration: backlog
+  p2-1-5-cross-device-cloud-sync: backlog
+  p2-epic-1-retrospective: optional
+
+  # ── Phase 2 Epic 2: Premium Subscription ─────────────────────────────────
+  p2-epic-2: backlog
+  p2-2-1-stripe-infrastructure: backlog
+  p2-2-2-subscription-checkout-flow: backlog
+  p2-2-3-subscription-lifecycle-management: backlog
+  p2-2-4-premiumgate-ui-component: backlog
+  p2-epic-2-retrospective: optional
+
+  # ── Phase 2 Epic 3: Offline PWA ──────────────────────────────────────────
+  p2-epic-3: backlog
+  p2-3-1-pwa-manifest-and-service-worker-installation: backlog
+  p2-3-2-offline-map-tile-cache: backlog
+  p2-3-3-offline-status-banner: backlog
+  p2-3-4-offline-check-in-queue: backlog
+  p2-epic-3-retrospective: optional
+
+  # ── Phase 2 Epic 4: Push Notifications ───────────────────────────────────
+  p2-epic-4: backlog
+  p2-4-1-push-notification-infrastructure: backlog
+  p2-4-2-per-spot-push-opt-in: backlog
+  p2-4-3-push-notification-delivery-and-opt-out: backlog
+  p2-epic-4-retrospective: optional
+
+  # ── Phase 2 Epic 5: Community Contributions ──────────────────────────────
+  p2-epic-5: backlog
+  p2-5-1-photo-upload-on-check-ins: backlog
+  p2-5-2-spot-submission-form: backlog
+  p2-5-3-submission-status-tracking: backlog
+  p2-epic-5-retrospective: optional
+
+  # ── Phase 2 Epic 6: Admin Moderation UI ──────────────────────────────────
+  p2-epic-6: backlog
+  p2-6-1-admin-submission-queue: backlog
+  p2-6-2-approve-and-reject-submissions: backlog
+  p2-6-3-pin-management-flag-badge-override-archive: backlog
+  p2-epic-6-retrospective: optional
+
+  # ── Phase 2 Epic 7: US Geographic Expansion ──────────────────────────────
+  p2-epic-7: backlog
+  p2-7-1-postgis-spatial-index-migration: backlog
+  p2-7-2-viewport-query-migration-to-st-dwithin: backlog
+  p2-epic-7-retrospective: optional
