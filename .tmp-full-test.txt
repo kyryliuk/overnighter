@@ -1,0 +1,371 @@
+
+> overnighter@0.0.0 test
+> vitest run --pool threads --reporter=dot
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/Users/rkyryliuk/Desktop/overnighter[39m
+
+stderr | src/features/map/MapView.test.tsx > MapView redirect guard > redirects to /onboarding when no rig profile and onboarding not dismissed
+A suspended resource finished loading inside a test, but the event was not wrapped in act(...).
+
+When testing, code that resolves suspended data should be wrapped into act(...):
+
+act(() => {
+  /* finish loading suspended data */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+A suspended resource finished loading inside a test, but the event was not wrapped in act(...).
+
+When testing, code that resolves suspended data should be wrapped into act(...):
+
+act(() => {
+  /* finish loading suspended data */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/map/MapView.test.tsx > MapView AmenityFilterBar integration > renders AmenityFilterBar with all 7 chips in MapView
+An update to AmenityFilterBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to MapView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/map/MapView.test.tsx > MapView AmenityFilterBar integration > empty state message not shown when no filters active
+An update to AmenityFilterBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to MapView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/map/MapView.test.tsx > MapView AmenityFilterBar integration > empty state message appears when active filters match no pins
+An update to AmenityFilterBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to MapView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/map/MapView.test.tsx > MapView AmenityFilterBar integration > empty state not shown when pins data is loading
+An update to AmenityFilterBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to MapView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/map/MapView.test.tsx > MapView AmenityFilterBar integration > empty state not shown when at least one pin matches the active filter
+An update to AmenityFilterBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to MapView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/map/MapView.test.tsx > MapView pin selection navigation > navigates to /pin/:id when selectedPinId is set in UIStore
+An update to MapView inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/App.test.tsx > App CheckInForm mounting (Story 4.3) > renders CheckInForm when pendingCheckIn is set (9.3)
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/App.test.tsx > App CheckInForm mounting (Story 4.3) > passes correct pinId prop to CheckInForm (9.4)
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/App.test.tsx > App IssueReportSheet mounting (Story 4.4) > renders IssueReportSheet when pendingReport is set
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/App.test.tsx > App IssueReportSheet mounting (Story 4.4) > passes correct pinId prop to IssueReportSheet
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | api/report.test.ts > api/report handler > returns 500 and skips rpc when rate-limit DB query fails
+[api/report] Error: DB read error
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/report.test.ts:128:60
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/report.test.ts > api/report handler > returns 500 when rpc submit_issue_report fails
+[api/report] Error: transaction failed
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/report.test.ts:137:40
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/admin/flagged-pins.test.ts > GET /api/admin/flagged-pins > returns 500 when rpc returns an error (7.5)
+[api/admin/flagged-pins] Error: DB error
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/admin/flagged-pins.test.ts:82:56
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/overpass.test.ts > GET /api/overpass > returns 500 when Overpass fetch fails
+[api/overpass] Error: Overpass 429: Too Many Requests
+    at Module.handler (C:/Users/rkyryliuk/Desktop/overnighter/api/overpass.ts:63:32)
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/overpass.test.ts:148:5
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:20
+
+stderr | api/pins/[id]/verify.test.ts > PATCH /api/pins/:id/verify > returns 500 on Supabase error (11.7)
+[api/pins/[id]/verify] Error: DB write failed
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/pins/[id]/verify.test.ts:109:43
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/pins/[id].test.ts > DELETE /api/pins/:id > returns 500 on Supabase error (9.5)
+[api/pins/[id]] Error: DB write failed
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/pins/[id].test.ts:85:43
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/pins/[id].test.ts > PATCH /api/pins/:id > returns 500 when Supabase update returns error (10.6)
+[api/pins/[id]] Error: DB write failed
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/pins/[id].test.ts:156:43
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/sync-gov.test.ts > POST /api/sync > returns 500 when RIDB fetch fails
+[api/sync] Error: RIDB API 503: Service Unavailable
+    at fetchRidbPage (C:/Users/rkyryliuk/Desktop/overnighter/api/sync-gov.ts:18:22)
+    at Module.handler (C:/Users/rkyryliuk/Desktop/overnighter/api/sync-gov.ts:36:20)
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/sync-gov.test.ts:183:5
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:20
+
+stderr | api/sync-gov.test.ts > POST /api/sync > returns 500 when Supabase upsert fails
+[api/sync] Error: Supabase upsert: constraint violation
+    at Module.handler (C:/Users/rkyryliuk/Desktop/overnighter/api/sync-gov.ts:65:26)
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/sync-gov.test.ts:197:5
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:20
+
+stderr | api/admin/pins.test.ts > POST /api/admin/pins > returns 500 when Supabase insert returns error (2.7)
+[api/admin/pins] Error: DB error
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/admin/pins.test.ts:145:59
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/checkin.test.ts > api/checkin handler > returns 500 when Supabase insert fails (3.8)
+[api/checkin] Error: DB write error
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/checkin.test.ts:122:43
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/checkin.test.ts > api/checkin handler > returns 500 when count query fails ΓÇö M2 fix
+[api/checkin] Error: count query failed
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/checkin.test.ts:130:53
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+stderr | api/checkin.test.ts > api/checkin handler > returns 500 when pins.update fails ΓÇö H1 fix
+[api/checkin] Error: pins update failed
+    at C:/Users/rkyryliuk/Desktop/overnighter/api/checkin.test.ts:138:45
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:296:11
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1258:26
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1681:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1678:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1660:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:1627:10)
+    at file:///C:/Users/rkyryliuk/Desktop/overnighter/node_modules/@vitest/runner/dist/index.js:2309:64
+
+[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[31mx[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m[33m[39m[32m┬╖[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 1 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/features/route-planning/RoutePlanningScreen.test.tsx > RoutePlanningScreen sharing UX > shows link-management controls and feedback summaries for shared trip drafts
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ Γ¥» src/features/route-planning/RoutePlanningScreen.test.tsx:115:3
+    113|   })
+    114|
+    115|   it('shows link-management controls and feedback summaries for sharedΓÇª
+       |   ^
+    116|     renderScreen()
+    117|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m56 passed[39m[22m[90m (57)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m578 passed[39m[22m[90m (579)[39m
+[2m   Start at [22m 15:10:40
+[2m   Duration [22m 171.05s[2m (transform 53.15s, setup 78.40s, import 157.13s, tests 153.03s, environment 630.81s)[22m
+

@@ -1,3 +1,7 @@
 {
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "stripe": "20.4.1",
+    "web-push": "3.6.7"
+  }
 }
