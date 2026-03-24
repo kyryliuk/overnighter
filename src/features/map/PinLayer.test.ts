@@ -20,7 +20,32 @@ const mocks = vi.hoisted(() => {
     remove: mockMarkerRemove,
   }
   const mockCreatePinMarker = vi.fn(() => mockMarkerInstance)
-  return { mockMarkerOn, mockMarkerAddTo, mockMarkerRemove, mockCreatePinMarker, mockMarkerInstance }
+  const mockCircleMarkerAddTo = vi.fn().mockReturnThis()
+  const mockCircleMarkerRemove = vi.fn()
+  const mockCircleMarkerInstance = {
+    addTo: mockCircleMarkerAddTo,
+    remove: mockCircleMarkerRemove,
+  }
+  const mockCircleMarker = vi.fn(() => mockCircleMarkerInstance)
+  return {
+    mockMarkerOn,
+    mockMarkerAddTo,
+    mockMarkerRemove,
+    mockCreatePinMarker,
+    mockMarkerInstance,
+    mockCircleMarker,
+    mockCircleMarkerAddTo,
+    mockCircleMarkerRemove,
+    mockCircleMarkerInstance,
+  }
+})
+
+vi.mock('leaflet', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('leaflet')>()
+  return {
+    ...actual,
+    circleMarker: mocks.mockCircleMarker,
+  }
 })
 
 vi.mock('./PinMarker', async (importOriginal) => {
@@ -236,6 +261,19 @@ describe('PinLayer component', () => {
       }),
     )
     expect(mocks.mockCreatePinMarker).not.toHaveBeenCalled()
+  })
+
+  it('renders non-blocking skeleton circle markers when isLoading is true', () => {
+    render(
+      React.createElement(PinLayer, {
+        map: mockMap,
+        pins: [makePin()],
+        rigProfile: makeProfile(),
+        isLoading: true,
+      }),
+    )
+    expect(mocks.mockCircleMarker).toHaveBeenCalledTimes(5)
+    expect(mocks.mockCircleMarkerAddTo).toHaveBeenCalledWith(mockMap)
   })
 
   it('adds each marker to the map', () => {

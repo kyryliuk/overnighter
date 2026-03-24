@@ -12,6 +12,16 @@ interface PinLayerProps {
   isLoading: boolean
 }
 
+const SKELETON_MARKER_STYLE: L.CircleMarkerOptions = {
+  radius: 8,
+  fillColor: '#6b7280',
+  fillOpacity: 0.2,
+  color: '#9ca3af',
+  opacity: 0.7,
+  weight: 1,
+  interactive: false,
+}
+
 function createClusterIcon(count: number): L.DivIcon {
   const size = count < 10 ? 36 : count < 100 ? 42 : 48
   return L.divIcon({
@@ -31,12 +41,44 @@ function createClusterIcon(count: number): L.DivIcon {
 }
 
 export default function PinLayer({ map, pins, rigProfile, isLoading }: PinLayerProps) {
-  const markersRef = useRef<L.Marker[]>([])
+  const markersRef = useRef<Array<L.Marker | L.CircleMarker>>([])
 
   useEffect(() => {
-    if (isLoading || pins.length === 0) {
+    const clearMarkers = () => {
       markersRef.current.forEach((m) => m.remove())
       markersRef.current = []
+    }
+
+    clearMarkers()
+
+    if (isLoading) {
+      const bounds = map.getBounds()
+      const south = bounds.getSouth()
+      const north = bounds.getNorth()
+      const west = bounds.getWest()
+      const east = bounds.getEast()
+      const centerLat = (south + north) / 2
+      const centerLng = (west + east) / 2
+      const latOffset = Math.max((north - south) / 12, 0.01)
+      const lngOffset = Math.max((east - west) / 12, 0.01)
+      const skeletonPositions: Array<[number, number]> = [
+        [centerLat, centerLng],
+        [centerLat + latOffset, centerLng - lngOffset],
+        [centerLat + latOffset, centerLng + lngOffset],
+        [centerLat - latOffset, centerLng - lngOffset],
+        [centerLat - latOffset, centerLng + lngOffset],
+      ]
+
+      skeletonPositions.forEach((position) => {
+        const marker = L.circleMarker(position, SKELETON_MARKER_STYLE)
+        marker.addTo(map)
+        markersRef.current.push(marker)
+      })
+
+      return clearMarkers
+    }
+
+    if (pins.length === 0) {
       return
     }
 
@@ -101,8 +143,7 @@ export default function PinLayer({ map, pins, rigProfile, isLoading }: PinLayerP
 
     return () => {
       map.off('moveend zoomend', render)
-      markersRef.current.forEach((m) => m.remove())
-      markersRef.current = []
+      clearMarkers()
     }
   }, [map, pins, rigProfile, isLoading])
 
