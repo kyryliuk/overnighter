@@ -122,10 +122,10 @@ development_status:
   p2-epic-4-retrospective: optional
 
   # ── Phase 2 Epic 5: Community Contributions ──────────────────────────────
-  p2-epic-5: backlog
-  p2-5-1-photo-upload-on-check-ins: backlog
-  p2-5-2-spot-submission-form: backlog
-  p2-5-3-submission-status-tracking: backlog
+  p2-epic-5: done
+  p2-5-1-photo-upload-on-check-ins: done
+  p2-5-2-spot-submission-form: done
+  p2-5-3-submission-status-tracking: done
   p2-epic-5-retrospective: optional
 
   # ── Phase 2 Epic 6: Admin Moderation UI ──────────────────────────────────

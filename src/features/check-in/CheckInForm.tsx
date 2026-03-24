@@ -4,6 +4,8 @@ import { useDeviceId } from '@/hooks/useDeviceId'
 import { useCheckInMutation, type CheckInStatus } from '@/hooks/useCheckInMutation'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { appendPendingCheckin } from '@/lib/offline/pendingCheckins'
+import { useAuth } from '@/contexts/AuthContext'
+import PhotoUpload from './PhotoUpload'
 
 interface CheckInFormProps {
   pinId: string
@@ -20,6 +22,9 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
   const [status, setStatus] = useState<CheckInStatus | null>(null)
   const [note, setNote] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [photoCdnUrl, setPhotoCdnUrl] = useState<string | null>(null)
+  const [photoStoragePath, setPhotoStoragePath] = useState<string | null>(null)
+  const [tempCheckInId] = useState(() => crypto.randomUUID())
 
   const { data: pins = [] } = usePinsQuery({ enabled: false })
   const pin = pins.find((p) => p.id === pinId)
@@ -28,6 +33,7 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
   const deviceId = useDeviceId()
   const mutation = useCheckInMutation()
   const isOnline = useOnlineStatus()
+  const { isAuthenticated } = useAuth()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,7 +58,15 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
 
     setErrorMsg(null)
     mutation.mutate(
-      { pinId, deviceId, status, note: note || undefined },
+      {
+        pinId,
+        deviceId,
+        status,
+        note: note || undefined,
+        checkInId: tempCheckInId,
+        photoCdnUrl: photoCdnUrl ?? undefined,
+        photoStoragePath: photoStoragePath ?? undefined,
+      },
       {
         onSuccess: () => { onClose() },
         onError: () => { setErrorMsg("Couldn't save check-in. Tap to retry.") },
@@ -103,6 +117,23 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
               </button>
             ))}
           </div>
+
+          {/* Photo upload — authenticated users only */}
+          {isAuthenticated && (
+            <PhotoUpload
+              pinId={pinId}
+              checkInId={tempCheckInId}
+              disabled={!isOnline}
+              onUploadComplete={(cdn, path) => {
+                setPhotoCdnUrl(cdn)
+                setPhotoStoragePath(path)
+              }}
+              onUploadClear={() => {
+                setPhotoCdnUrl(null)
+                setPhotoStoragePath(null)
+              }}
+            />
+          )}
 
           {/* Optional note */}
           <textarea

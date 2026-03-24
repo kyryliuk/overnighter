@@ -7,6 +7,8 @@ import { useUIStore } from '@/store/uiStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useCheckInPromptStore } from '@/store/checkInPromptStore'
 import { useAuth } from '@/contexts/AuthContext'
+import { usePinPhotos } from '@/hooks/usePinPhotos'
+import { usePinSubmitter } from '@/hooks/usePinSubmitter'
 import PushNotificationToggle from '@/features/push/PushNotificationToggle'
 import type { PinAmenities, PinSource } from '@/types/pin'
 import RecencyBadge from '@/components/RecencyBadge'
@@ -60,6 +62,8 @@ export default function PinDetailSheet() {
   const rigProfile = useRigStore((state) => state.rigProfile)
   const pin = pins.find((p) => p.id === id)
   const { isAuthenticated } = useAuth()
+  const { data: pinPhotos = [] } = usePinPhotos(id ?? '')
+  const { data: submitterName } = usePinSubmitter(pin?.id, pin?.pinType)
   const isSaved = useSpotsStore((state) => state.isSaved(id ?? ''))
   const saveSpot = useSpotsStore((state) => state.saveSpot)
   const removeSpot = useSpotsStore((state) => state.removeSpot)
@@ -186,6 +190,12 @@ export default function PinDetailSheet() {
               <p className="text-sm text-muted-foreground">
                 {PIN_TYPE_LABELS[pin.pinType] ?? pin.pinType}
               </p>
+              {/* Submitter attribution (community pins only) */}
+              {submitterName && (
+                <p className="text-xs text-muted-foreground italic">
+                  Submitted by {submitterName}
+                </p>
+              )}
               {/* Recency badge */}
               <RecencyBadge badgeState={pin.badgeState} />
               {/* Amenities */}
@@ -316,6 +326,32 @@ export default function PinDetailSheet() {
                     [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:text-muted-foreground
                     [&_li]:mb-0.5">
                     <Markdown>{pin.description}</Markdown>
+                  </div>
+                </div>
+              )}
+              {/* Recent Photos */}
+              {pinPhotos.length > 0 && (
+                <div>
+                  <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-2">
+                    Recent Photos
+                  </span>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {pinPhotos.map((photo) => (
+                      <a
+                        key={photo.id}
+                        href={photo.cdnUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0"
+                      >
+                        <img
+                          src={photo.cdnUrl}
+                          alt="Check-in photo"
+                          className="w-20 h-20 rounded-lg object-cover border border-border"
+                          loading="lazy"
+                        />
+                      </a>
+                    ))}
                   </div>
                 </div>
               )}
