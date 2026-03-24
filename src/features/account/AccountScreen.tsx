@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'
 import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useTripPlansStore } from '@/store/tripPlansStore'
+import { SubscriptionStatusCard } from '@/features/subscription/SubscriptionStatusCard'
 
 function formatTimestamp(timestamp: string | null) {
   if (!timestamp) return 'Not synced yet'
@@ -168,6 +169,8 @@ export default function AccountScreen() {
           )}
 
         </section>
+
+        {isAuthenticated && <SubscriptionStatusCard />}
 
         {!isAuthenticated ? (
           <section className="rounded-2xl border border-border bg-secondary p-5 space-y-4">

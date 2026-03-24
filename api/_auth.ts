@@ -31,3 +31,20 @@ export async function requireUserAuth(req: VercelRequest, res: VercelResponse): 
 
   return data.user
 }
+
+export async function requirePremiumAuth(req: VercelRequest, res: VercelResponse): Promise<User | null> {
+  const user = await requireUserAuth(req, res)
+  if (!user) return null
+
+  const status = (user.app_metadata?.subscription_status as string) ?? 'free'
+  if (status !== 'premium' && status !== 'trialing') {
+    res.status(403).json({
+      error: 'FORBIDDEN',
+      message: 'Premium subscription required',
+      status: 403,
+    })
+    return null
+  }
+
+  return user
+}

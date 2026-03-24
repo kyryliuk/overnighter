@@ -99,11 +99,11 @@ development_status:
   p2-epic-1-retrospective: optional
 
   # ── Phase 2 Epic 2: Premium Subscription ─────────────────────────────────
-  p2-epic-2: backlog
-  p2-2-1-stripe-infrastructure: backlog
-  p2-2-2-subscription-checkout-flow: backlog
-  p2-2-3-subscription-lifecycle-management: backlog
-  p2-2-4-premiumgate-ui-component: backlog
+  p2-epic-2: done
+  p2-2-1-stripe-infrastructure: review
+  p2-2-2-subscription-checkout-flow: review
+  p2-2-3-subscription-lifecycle-management: done
+  p2-2-4-premiumgate-ui-component: done
   p2-epic-2-retrospective: optional
 
   # ── Phase 2 Epic 3: Offline PWA ──────────────────────────────────────────

@@ -7,7 +7,7 @@ import { useSpotsStore } from '@/store/spotsStore'
 import { useTripPlansStore } from '@/store/tripPlansStore'
 
 const authState = vi.hoisted(() => ({
-  session: null,
+  session: null as { user: { id: string; email: string }; access_token: string } | null,
   isLoading: false,
   isAuthenticated: false,
   isSigningIn: false,
@@ -22,6 +22,19 @@ const authState = vi.hoisted(() => ({
 
 vi.mock('./AuthContext', () => ({
   useAuth: () => authState,
+}))
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => authState,
+}))
+
+vi.mock('@/hooks/useSubscription', () => ({
+  useSubscription: () => ({
+    isPremium: authState.isAuthenticated,
+    isTrial: false,
+    status: authState.isAuthenticated ? 'premium' : 'free',
+    isLoading: false,
+  }),
 }))
 
 function renderScreen() {
@@ -193,12 +206,31 @@ describe('AccountScreen', () => {
 
   it('renders authenticated account actions when a session exists', () => {
     authState.isAuthenticated = true
-    authState.session = { user: { id: 'user-1', email: 'user@example.com' } }
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
 
     renderScreen()
 
     expect(screen.getByRole('heading', { name: /account actions/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
     expect(screen.getByText(/signed in as user@example.com/i)).toBeInTheDocument()
+  })
+
+  it('renders SubscriptionStatusCard for authenticated users', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+
+    renderScreen()
+
+    expect(screen.getByTestId('subscription-status-card')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /subscription/i })).toBeInTheDocument()
+  })
+
+  it('does not render SubscriptionStatusCard for unauthenticated users', () => {
+    authState.isAuthenticated = false
+    authState.session = null
+
+    renderScreen()
+
+    expect(screen.queryByTestId('subscription-status-card')).not.toBeInTheDocument()
   })
 })
