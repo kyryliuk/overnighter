@@ -26,6 +26,7 @@ vi.mock('@/features/spot-submissions/SuggestSpotScreen', () => ({ default: () =>
 vi.mock('@/features/route-planning/RoutePlanningScreen', () => ({ default: () => null }))
 vi.mock('@/features/route-planning/SharedTripPlanScreen', () => ({ default: () => null }))
 vi.mock('@/features/admin/AdminDashboard', () => ({ default: () => null }))
+vi.mock('@/components/PWAInstallPrompt', () => ({ default: () => null }))
 vi.mock('@/features/check-in/CheckInForm', () => ({
   default: ({ pinId }: { pinId: string }) => (
     <div data-testid="check-in-form" data-pin-id={pinId} />

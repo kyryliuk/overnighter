@@ -162,15 +162,15 @@ describe('CheckInForm', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true')
   })
 
-  it('disables submission and shows offline guidance when the user is offline', () => {
+  it('queues check-in when offline and shows guidance message', () => {
     Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: false })
     window.dispatchEvent(new Event('offline'))
 
     render(<CheckInForm {...defaultProps} />)
     fireEvent.click(screen.getByText('Still Open'))
 
-    expect(screen.getByRole('status')).toHaveTextContent(/offline mode: check-ins require a connection/i)
-    expect(screen.getByRole('button', { name: /submit check-in/i })).toBeDisabled()
-    expect(mockMutate).not.toHaveBeenCalled()
+    expect(screen.getByRole('status')).toHaveTextContent(/your check-in will be saved and submitted when you reconnect/i)
+    // Submit button is enabled when offline (queuing is supported)
+    expect(screen.getByRole('button', { name: /submit check-in/i })).not.toBeDisabled()
   })
 })

@@ -3,6 +3,7 @@ import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useDeviceId } from '@/hooks/useDeviceId'
 import { useCheckInMutation, type CheckInStatus } from '@/hooks/useCheckInMutation'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { appendPendingCheckin } from '@/lib/offline/pendingCheckins'
 
 interface CheckInFormProps {
   pinId: string
@@ -31,10 +32,24 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!status) return
+
     if (!isOnline) {
-      setErrorMsg("You're offline. Reconnect to save this check-in.")
+      try {
+        appendPendingCheckin({
+          pinId,
+          deviceId,
+          status,
+          note: note || undefined,
+          timestamp: new Date().toISOString(),
+          queuedAt: new Date().toISOString(),
+        })
+        onClose()
+      } catch {
+        setErrorMsg("Couldn't save check-in locally. Storage may be full.")
+      }
       return
     }
+
     setErrorMsg(null)
     mutation.mutate(
       { pinId, deviceId, status, note: note || undefined },
@@ -102,14 +117,14 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
 
           {!isOnline && (
             <p role="status" className="text-sm text-amber-400 text-center mb-4">
-              Offline mode: check-ins require a connection.
+              Offline — your check-in will be saved and submitted when you reconnect.
             </p>
           )}
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={status === null || mutation.isPending || !isOnline}
+            disabled={status === null || mutation.isPending}
             className="w-full min-h-[44px] rounded-lg text-white text-sm font-medium disabled:opacity-50"
             style={{ backgroundColor: '#0ea5e9' }}
           >

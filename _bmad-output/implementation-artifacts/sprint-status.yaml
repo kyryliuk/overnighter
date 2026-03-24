@@ -107,11 +107,11 @@ development_status:
   p2-epic-2-retrospective: optional
 
   # ── Phase 2 Epic 3: Offline PWA ──────────────────────────────────────────
-  p2-epic-3: backlog
-  p2-3-1-pwa-manifest-and-service-worker-installation: backlog
-  p2-3-2-offline-map-tile-cache: backlog
-  p2-3-3-offline-status-banner: backlog
-  p2-3-4-offline-check-in-queue: backlog
+  p2-epic-3: done
+  p2-3-1-pwa-manifest-and-service-worker-installation: done
+  p2-3-2-offline-map-tile-cache: done
+  p2-3-3-offline-status-banner: done
+  p2-3-4-offline-check-in-queue: done
   p2-epic-3-retrospective: optional
 
   # ── Phase 2 Epic 4: Push Notifications ───────────────────────────────────

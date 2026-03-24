@@ -8,6 +8,7 @@ import { useCheckInPromptStore, type VisitRecord } from '@/store/checkInPromptSt
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useOfflineMapDownload } from '@/hooks/useOfflineMapDownload'
 import type * as L from 'leaflet'
 import { doesPinMatchFilters, doesPinFitRig, doesPinMatchSourceFilter } from './pinFilters'
 
@@ -21,6 +22,9 @@ import DeparturePrompt from './DeparturePrompt'
 import RigFilterOverlay from './RigFilterOverlay'
 import BadgeTooltip from './BadgeTooltip'
 import AmenityFilterBar from './AmenityFilterBar'
+import { OfflineDownloadGate } from '@/features/offline/OfflineDownloadGate'
+import { BboxPreviewOverlay } from '@/features/offline/BboxPreviewOverlay'
+import { DownloadProgress } from '@/features/offline/DownloadProgress'
 
 const LeafletMap = lazy(() => import('./LeafletMap'))
 
@@ -64,6 +68,31 @@ export default function MapView() {
   const setPendingCheckIn = useUIStore((state) => state.setPendingCheckIn)
   const geoError = geoState.error ? GEO_ERROR_MESSAGES[geoState.error] ?? 'Location error' : null
   const accountInitial = session?.user.email?.trim().charAt(0).toUpperCase() || 'A'
+
+  const {
+    status: downloadStatus,
+    progress: downloadProgress,
+    totalTiles,
+    previewBbox,
+    estimatedTiles,
+    startPreview,
+    startDownload,
+    cancelPreview,
+    retry: retryDownload,
+    dismiss: dismissDownload,
+  } = useOfflineMapDownload()
+
+  function handleStartPreview() {
+    const map = mapRef.current
+    if (!map) return
+    const bounds = map.getBounds()
+    startPreview({
+      north: bounds.getNorth(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      west: bounds.getWest(),
+    })
+  }
 
   useEffect(() => {
     // M2 fix: skip onboarding redirect on deep-linked pin routes (/pin/:id)
@@ -165,6 +194,22 @@ export default function MapView() {
         <div className="pointer-events-auto w-full">
           <AmenityFilterBar />
         </div>
+        {downloadStatus === 'idle' && (
+          <div className="pointer-events-auto">
+            <OfflineDownloadGate onStartPreview={handleStartPreview} />
+          </div>
+        )}
+        {(downloadStatus === 'downloading' || downloadStatus === 'complete' || downloadStatus === 'error') && (
+          <div className="pointer-events-auto w-full">
+            <DownloadProgress
+              progress={downloadProgress}
+              total={totalTiles}
+              status={downloadStatus as 'downloading' | 'complete' | 'error'}
+              onRetry={retryDownload}
+              onDismiss={dismissDownload}
+            />
+          </div>
+        )}
       </div>
       {/* z-0 creates a stacking context that contains all Leaflet internal panes (z-index 400–1000),
           preventing them from bleeding above the overlay controls at z-10 */}
@@ -260,6 +305,16 @@ export default function MapView() {
           rigType={rigProfile.rigType}
           onSkip={handleDepartureSkip}
           onCheckIn={handleDepartureCheckIn}
+        />
+      )}
+      {/* Bbox preview overlay — shown when user is previewing download area */}
+      {downloadStatus === 'previewing' && previewBbox && (
+        <BboxPreviewOverlay
+          bbox={previewBbox}
+          mapRef={mapRef}
+          estimatedTiles={estimatedTiles}
+          onConfirm={() => startDownload(previewBbox)}
+          onCancel={cancelPreview}
         />
       )}
       {/* Pin detail sheet overlay — rendered via nested route /pin/:id */}
