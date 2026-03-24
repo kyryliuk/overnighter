@@ -49,6 +49,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const now = new Date().toISOString()
     let publishedPinId: string | null = null
 
+    // Prevent duplicate actions — only pending/changes_requested can be reviewed
+    if (record.status !== 'pending' && record.status !== 'changes_requested') {
+      return res.status(409).json({
+        error: 'INVALID_STATUS',
+        message: `Submission is already ${record.status}`,
+        status: 409,
+      })
+    }
+
     if (parsed.data.action === 'approve') {
       const { data: pinData, error: pinInsertError } = await supabase
         .from('pins')

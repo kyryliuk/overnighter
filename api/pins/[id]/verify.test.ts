@@ -3,11 +3,22 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mock setup ──────────────────────────────────────────────────────────────
 
-const { mockRequireAdminAuth, mockUpdate, mockEq } = vi.hoisted(() => {
+const { mockRequireAdminAuth, mockUpdate, mockEq, mockInsert, mockSelect, mockFrom } = vi.hoisted(() => {
+  const mockSelect = vi.fn().mockResolvedValue({ data: [{ id: 'report-1' }, { id: 'report-2' }] })
+  const mockEqChain2 = vi.fn().mockReturnValue({ select: mockSelect })
+  const mockEqChain1 = vi.fn().mockReturnValue({ eq: mockEqChain2 })
   const mockEq = vi.fn().mockResolvedValue({ error: null })
-  const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq })
+  const mockUpdate = vi.fn().mockImplementation(() => ({ eq: mockEq }))
+  const mockInsert = vi.fn().mockResolvedValue({ error: null })
+
+  const mockFrom = vi.fn((table: string) => {
+    if (table === 'admin_audit_log') return { insert: mockInsert }
+    if (table === 'issue_reports') return { update: vi.fn().mockReturnValue({ eq: mockEqChain1 }) }
+    return { update: mockUpdate }
+  })
+
   const mockRequireAdminAuth = vi.fn().mockReturnValue(true)
-  return { mockRequireAdminAuth, mockUpdate, mockEq }
+  return { mockRequireAdminAuth, mockUpdate, mockEq, mockInsert, mockSelect, mockFrom }
 })
 
 vi.mock('../../_middleware', () => ({
@@ -16,7 +27,7 @@ vi.mock('../../_middleware', () => ({
 
 vi.mock('../../_supabase', () => ({
   createServiceClient: vi.fn(() => ({
-    from: vi.fn(() => ({ update: mockUpdate })),
+    from: mockFrom,
   })),
 }))
 
@@ -49,7 +60,19 @@ describe('PATCH /api/pins/:id/verify', () => {
     vi.clearAllMocks()
     mockRequireAdminAuth.mockReturnValue(true)
     mockEq.mockResolvedValue({ error: null })
-    mockUpdate.mockReturnValue({ eq: mockEq })
+    mockUpdate.mockImplementation(() => ({ eq: mockEq }))
+    mockInsert.mockResolvedValue({ error: null })
+    mockSelect.mockResolvedValue({ data: [{ id: 'report-1' }, { id: 'report-2' }] })
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'admin_audit_log') return { insert: mockInsert }
+      if (table === 'issue_reports') {
+        const mockEqChain2 = vi.fn().mockReturnValue({ select: mockSelect })
+        const mockEqChain1 = vi.fn().mockReturnValue({ eq: mockEqChain2 })
+        return { update: vi.fn().mockReturnValue({ eq: mockEqChain1 }) }
+      }
+      return { update: mockUpdate }
+    })
   })
 
   it('returns 405 for non-PATCH methods (11.2)', async () => {
@@ -111,5 +134,51 @@ describe('PATCH /api/pins/:id/verify', () => {
     await handler(mockReq('PATCH', { action: 'verify' }), res)
     expect(ctx.statusCode).toBe(500)
     expect((ctx.body as { error: string }).error).toBe('INTERNAL_ERROR')
+  })
+
+  it('dismiss action closes all open issue reports', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('PATCH', { action: 'dismiss' }, 'pin-xyz'), res)
+    expect(ctx.statusCode).toBe(200)
+
+    // Check that issue_reports table was accessed
+    expect(mockFrom).toHaveBeenCalledWith('issue_reports')
+  })
+
+  it('dismiss action inserts audit log with flags_cleared count', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('PATCH', { action: 'dismiss' }, 'pin-xyz'), res)
+    expect(ctx.statusCode).toBe(200)
+
+    expect(mockFrom).toHaveBeenCalledWith('admin_audit_log')
+    expect(mockInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'dismiss_flags',
+        pin_id: 'pin-xyz',
+        details: { flags_cleared: 2 },
+      }),
+    )
+  })
+
+  it('verify action closes all open issue reports', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('PATCH', { action: 'verify' }, 'pin-xyz'), res)
+    expect(ctx.statusCode).toBe(200)
+
+    expect(mockFrom).toHaveBeenCalledWith('issue_reports')
+  })
+
+  it('verify action inserts audit log with action verify', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('PATCH', { action: 'verify' }, 'pin-xyz'), res)
+    expect(ctx.statusCode).toBe(200)
+
+    expect(mockFrom).toHaveBeenCalledWith('admin_audit_log')
+    expect(mockInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'verify',
+        pin_id: 'pin-xyz',
+      }),
+    )
   })
 })

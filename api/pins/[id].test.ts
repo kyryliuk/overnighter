@@ -3,11 +3,20 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mock setup ──────────────────────────────────────────────────────────────
 
-const { mockRequireAdminAuth, mockUpdate, mockEq } = vi.hoisted(() => {
+const { mockRequireAdminAuth, mockUpdate, mockEq, mockInsert, mockFrom } = vi.hoisted(() => {
   const mockEq = vi.fn().mockResolvedValue({ error: null })
   const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq })
+  const mockInsert = vi.fn().mockResolvedValue({ error: null })
+  const mockIssueEq2 = vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue({ error: null }) })
+  const mockIssueEq1 = vi.fn().mockReturnValue({ eq: mockIssueEq2 })
+  const mockIssueUpdate = vi.fn().mockReturnValue({ eq: mockIssueEq1 })
+  const mockFrom = vi.fn((table: string) => {
+    if (table === 'admin_audit_log') return { insert: mockInsert }
+    if (table === 'issue_reports') return { update: mockIssueUpdate }
+    return { update: mockUpdate }
+  })
   const mockRequireAdminAuth = vi.fn().mockReturnValue(true)
-  return { mockRequireAdminAuth, mockUpdate, mockEq }
+  return { mockRequireAdminAuth, mockUpdate, mockEq, mockInsert, mockFrom }
 })
 
 vi.mock('../_middleware', () => ({
@@ -16,7 +25,7 @@ vi.mock('../_middleware', () => ({
 
 vi.mock('../_supabase', () => ({
   createServiceClient: vi.fn(() => ({
-    from: vi.fn(() => ({ update: mockUpdate })),
+    from: mockFrom,
   })),
 }))
 
@@ -50,6 +59,12 @@ describe('DELETE /api/pins/:id', () => {
     mockRequireAdminAuth.mockReturnValue(true)
     mockEq.mockResolvedValue({ error: null })
     mockUpdate.mockReturnValue({ eq: mockEq })
+    mockInsert.mockResolvedValue({ error: null })
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'admin_audit_log') return { insert: mockInsert }
+      if (table === 'issue_reports') return { update: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue({ error: null }) }) }) }) }
+      return { update: mockUpdate }
+    })
   })
 
   it('returns 405 for methods that are neither DELETE nor PATCH (9.2)', async () => {
@@ -88,6 +103,23 @@ describe('DELETE /api/pins/:id', () => {
     expect(ctx.statusCode).toBe(500)
     expect((ctx.body as { error: string }).error).toBe('INTERNAL_ERROR')
   })
+
+  it('DELETE (archive) inserts audit log entry', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('DELETE', 'pin-abc-123'), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(mockFrom).toHaveBeenCalledWith('admin_audit_log')
+    expect(mockInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'archive', pin_id: 'pin-abc-123' }),
+    )
+  })
+
+  it('audit log insert failure causes 500 response', async () => {
+    mockInsert.mockResolvedValueOnce({ error: new Error('Audit insert failed') })
+    const { res, ctx } = mockRes()
+    await handler(mockReq('DELETE', 'pin-abc-123'), res)
+    expect(ctx.statusCode).toBe(500)
+  })
 })
 
 describe('PATCH /api/pins/:id', () => {
@@ -96,6 +128,12 @@ describe('PATCH /api/pins/:id', () => {
     mockRequireAdminAuth.mockReturnValue(true)
     mockEq.mockResolvedValue({ error: null })
     mockUpdate.mockReturnValue({ eq: mockEq })
+    mockInsert.mockResolvedValue({ error: null })
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'admin_audit_log') return { insert: mockInsert }
+      if (table === 'issue_reports') return { update: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue({ error: null }) }) }) }) }
+      return { update: mockUpdate }
+    })
   })
 
   it('returns 405 for methods that are neither DELETE nor PATCH (10.1)', async () => {

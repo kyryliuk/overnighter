@@ -4,6 +4,7 @@ export type SpotSubmissionStatus = 'pending' | 'approved' | 'rejected' | 'change
 
 export interface SpotSubmission {
   id: string
+  userId: string
   name: string
   description: string | null
   latitude: number

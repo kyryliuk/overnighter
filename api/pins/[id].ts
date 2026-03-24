@@ -40,6 +40,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) throw error
 
+      // Close open issue reports for archived pin
+      const { error: reportsError } = await supabase
+        .from('issue_reports')
+        .update({ status: 'closed', resolved_at: new Date().toISOString() })
+        .eq('pin_id', pinId)
+        .eq('status', 'open')
+      if (reportsError) throw reportsError
+
+      const { error: auditError } = await supabase.from('admin_audit_log').insert({
+        action: 'archive',
+        pin_id: pinId,
+        details: {},
+      })
+      if (auditError) throw auditError
+
       return res.status(200).json({ ok: true })
     } catch (error) {
       console.error('[api/pins/[id]]', error)

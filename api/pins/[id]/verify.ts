@@ -36,6 +36,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) throw error
 
+    // Close all open issue reports for this pin
+    const { data: closedReports, error: reportsError } = await supabase
+      .from('issue_reports')
+      .update({ status: 'closed', resolved_at: now })
+      .eq('pin_id', pinId)
+      .eq('status', 'open')
+      .select('id')
+    if (reportsError) throw reportsError
+
+    const flagsCleared = closedReports?.length ?? 0
+
+    // Audit log
+    const { error: auditError } = await supabase.from('admin_audit_log').insert({
+      action: action === 'verify' ? 'verify' : 'dismiss_flags',
+      pin_id: pinId,
+      details: { flags_cleared: flagsCleared },
+    })
+    if (auditError) throw auditError
+
     return res.status(200).json({ ok: true })
   } catch (error) {
     console.error('[api/pins/[id]/verify]', error)

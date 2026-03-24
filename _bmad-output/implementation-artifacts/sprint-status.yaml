@@ -1,4 +1,4 @@
-# generated: 2026-03-24
+# generated: 2026-03-25
 # project: Overnighter
 # project_key: NOKEY
 # tracking_system: file-system
@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Phase 2 story keys are prefixed with 'p2-' to avoid collisions with Phase 1 story files
 
-generated: 2026-03-24
+generated: 2026-03-25
 project: Overnighter
 project_key: NOKEY
 tracking_system: file-system
@@ -129,10 +129,10 @@ development_status:
   p2-epic-5-retrospective: optional
 
   # ── Phase 2 Epic 6: Admin Moderation UI ──────────────────────────────────
-  p2-epic-6: backlog
-  p2-6-1-admin-submission-queue: backlog
-  p2-6-2-approve-and-reject-submissions: backlog
-  p2-6-3-pin-management-flag-badge-override-archive: backlog
+  p2-epic-6: done
+  p2-6-1-admin-submission-queue: done
+  p2-6-2-approve-and-reject-submissions: done
+  p2-6-3-pin-management-flag-badge-override-archive: done
   p2-epic-6-retrospective: optional
 
   # ── Phase 2 Epic 7: US Geographic Expansion ──────────────────────────────

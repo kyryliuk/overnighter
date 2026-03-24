@@ -21,6 +21,7 @@ export interface ApiDbSpotSubmission {
 export function mapSpotSubmission(record: ApiDbSpotSubmission) {
   return {
     id: record.id,
+    userId: record.user_id,
     name: record.name,
     description: record.description,
     latitude: record.latitude,
