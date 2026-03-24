@@ -55,10 +55,37 @@ registerRoute(
   }),
 )
 
-// Push notification listener — implemented in Epic 4 Story 4.1
-// self.addEventListener('push', (event) => {
-//   // TODO: Handle push notifications (Story 4.1)
-// })
+// Push notification listener
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() ?? { title: 'Overnighter', options: {} }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      icon: '/pwa-192x192.png',
+      badge: '/pwa-192x192.png',
+      ...data.options,
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const raw = event.notification.data?.url
+  if (raw) {
+    try {
+      const parsed = new URL(raw, self.location.origin)
+      if (parsed.origin !== self.location.origin) return
+      event.waitUntil(
+        self.clients.matchAll({ type: 'window' }).then((windowClients) => {
+          const existing = windowClients.find((c) => c.url === parsed.href && 'focus' in c)
+          if (existing) return existing.focus()
+          return self.clients.openWindow(parsed.href)
+        }),
+      )
+    } catch {
+      // invalid URL — ignore
+    }
+  }
+})
 
 // --- Active tile download (Story 3.2) ---
 

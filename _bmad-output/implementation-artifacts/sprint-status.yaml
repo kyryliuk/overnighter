@@ -115,10 +115,10 @@ development_status:
   p2-epic-3-retrospective: optional
 
   # ── Phase 2 Epic 4: Push Notifications ───────────────────────────────────
-  p2-epic-4: backlog
-  p2-4-1-push-notification-infrastructure: backlog
-  p2-4-2-per-spot-push-opt-in: backlog
-  p2-4-3-push-notification-delivery-and-opt-out: backlog
+  p2-epic-4: done
+  p2-4-1-push-notification-infrastructure: done
+  p2-4-2-per-spot-push-opt-in: done
+  p2-4-3-push-notification-delivery-and-opt-out: done
   p2-epic-4-retrospective: optional
 
   # ── Phase 2 Epic 5: Community Contributions ──────────────────────────────

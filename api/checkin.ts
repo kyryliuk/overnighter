@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
 import { createServiceClient } from './_supabase'
+import { notifySubscribers } from './_pushNotify'
 
 const CheckInSchema = z.object({
   pinId: z.string().uuid(),
@@ -52,6 +53,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (countError) throw countError
 
+    const { data: currentPin } = await supabase
+      .from('pins')
+      .select('badge_state, name')
+      .eq('id', body.pinId)
+      .single()
+
     const { error: updateError } = await supabase
       .from('pins')
       .update({
@@ -63,6 +70,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', body.pinId)
 
     if (updateError) throw updateError
+
+    // Fire-and-forget — do not await, do not block response
+    notifySubscribers(supabase, body.pinId, currentPin?.name ?? 'A spot', body.status).catch(
+      (err) => console.error('[api/checkin] notification dispatch failed:', err),
+    )
 
     return res.status(200).json({ ok: true })
   } catch (error) {

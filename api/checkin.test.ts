@@ -3,24 +3,32 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
-const { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate } = vi.hoisted(() => {
+const { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate, mockPinSelectSingle } = vi.hoisted(() => {
   const mockInsert = vi.fn().mockResolvedValue({ error: null })
   const mockGte = vi.fn().mockResolvedValue({ count: 1, error: null })
   const mockCountEq = vi.fn().mockReturnValue({ gte: mockGte })
   const mockSelect = vi.fn().mockReturnValue({ eq: mockCountEq })
   const mockUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const mockUpdate = vi.fn().mockReturnValue({ eq: mockUpdateEq })
-  return { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate }
+  const mockPinSelectSingle = vi.fn().mockResolvedValue({ data: { badge_state: 'grey', name: 'Test Spot' }, error: null })
+  const mockPinSelectEq = vi.fn().mockReturnValue({ single: mockPinSelectSingle })
+  const mockPinSelect = vi.fn().mockReturnValue({ eq: mockPinSelectEq })
+  return { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate, mockPinSelectSingle, mockPinSelect }
 })
 
 vi.mock('./_supabase', () => ({
   createServiceClient: vi.fn(() => ({
     from: vi.fn((table: string) => {
-      if (table === 'pins') return { update: mockUpdate }
+      if (table === 'pins') return { update: mockUpdate, select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: mockPinSelectSingle }) }) }
       // 'check_ins' — supports both insert and select
       return { insert: mockInsert, select: mockSelect }
     }),
   })),
+}))
+
+const mockNotifySubscribers = vi.fn().mockResolvedValue(undefined)
+vi.mock('./_pushNotify', () => ({
+  notifySubscribers: (...args: unknown[]) => mockNotifySubscribers(...args),
 }))
 
 import handler from './checkin'
@@ -55,6 +63,8 @@ describe('api/checkin handler', () => {
     mockInsert.mockResolvedValue({ error: null })
     mockGte.mockResolvedValue({ count: 1, error: null })
     mockUpdateEq.mockResolvedValue({ error: null })
+    mockPinSelectSingle.mockResolvedValue({ data: { badge_state: 'grey', name: 'Test Spot' }, error: null })
+    mockNotifySubscribers.mockResolvedValue(undefined)
   })
 
   it('returns 405 for non-POST methods (3.2)', async () => {
@@ -140,5 +150,40 @@ describe('api/checkin handler', () => {
     await handler(mockReq('POST', VALID_BODY), res)
     expect(ctx.statusCode).toBe(500)
     expect(ctx.body).toMatchObject({ error: 'INTERNAL_ERROR' })
+  })
+
+  it('calls notifySubscribers with correct args on successful check-in (4.3)', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', VALID_BODY), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(mockNotifySubscribers).toHaveBeenCalledWith(
+      expect.anything(),
+      VALID_BODY.pinId,
+      'Test Spot',
+      'still_open',
+    )
+  })
+
+  it('uses fallback pin name when pin query returns no data (4.3)', async () => {
+    mockPinSelectSingle.mockResolvedValue({ data: null, error: null })
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', VALID_BODY), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(mockNotifySubscribers).toHaveBeenCalledWith(
+      expect.anything(),
+      VALID_BODY.pinId,
+      'A spot',
+      'still_open',
+    )
+  })
+
+  it('returns 200 even when notifySubscribers throws (fire-and-forget) (4.3)', async () => {
+    mockNotifySubscribers.mockRejectedValue(new Error('notification dispatch failed'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', VALID_BODY), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(ctx.body).toEqual({ ok: true })
+    consoleSpy.mockRestore()
   })
 })

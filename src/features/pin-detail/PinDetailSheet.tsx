@@ -6,6 +6,8 @@ import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useCheckInPromptStore } from '@/store/checkInPromptStore'
+import { useAuth } from '@/contexts/AuthContext'
+import PushNotificationToggle from '@/features/push/PushNotificationToggle'
 import type { PinAmenities, PinSource } from '@/types/pin'
 import RecencyBadge from '@/components/RecencyBadge'
 import { buildMapsUrl } from './mapLinks'
@@ -57,6 +59,7 @@ export default function PinDetailSheet() {
   const { data: pins = [], isLoading, error } = usePinsQuery({ enabled: true })
   const rigProfile = useRigStore((state) => state.rigProfile)
   const pin = pins.find((p) => p.id === id)
+  const { isAuthenticated } = useAuth()
   const isSaved = useSpotsStore((state) => state.isSaved(id ?? ''))
   const saveSpot = useSpotsStore((state) => state.saveSpot)
   const removeSpot = useSpotsStore((state) => state.removeSpot)
@@ -335,6 +338,8 @@ export default function PinDetailSheet() {
               >
                 Report an Issue
               </button>
+              {/* Push notification opt-in — only for signed-in users with saved spots */}
+              {isAuthenticated && isSaved && <PushNotificationToggle pinId={pin.id} />}
             </div>
           )}
         </div>
