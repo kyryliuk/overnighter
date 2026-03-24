@@ -24,6 +24,29 @@ vi.mock('@/hooks/usePinsQuery', () => ({
   usePinsQuery: mockUsePinsQuery,
 }))
 
+const { mockUseAuth } = vi.hoisted(() => ({
+  mockUseAuth: vi.fn(() => ({
+    isAuthenticated: false,
+    session: null,
+    isLoading: false,
+    isSigningIn: false,
+    isSigningUp: false,
+    isSyncing: false,
+    syncError: null,
+    lastSyncedAt: null,
+    signIn: vi.fn(),
+    signUp: vi.fn(),
+    signOut: vi.fn(),
+  })),
+}))
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: mockUseAuth,
+}))
+
+vi.mock('@/features/push/PushNotificationToggle', () => ({
+  default: ({ pinId }: { pinId: string }) => <div data-testid="push-toggle" data-pin-id={pinId} />,
+}))
+
 const STUB_PIN: Pin = {
   id: 'pin-1',
   name: 'Test Spot',
@@ -435,5 +458,83 @@ describe('PinDetailSheet visit recording', () => {
     mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
     renderSheet('nonexistent-id')
     expect(useCheckInPromptStore.getState().visitRecords).toHaveLength(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PushNotificationToggle conditional rendering — Story 4.2
+// ---------------------------------------------------------------------------
+
+describe('PinDetailSheet PushNotificationToggle', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear()
+    useRigStore.getState().clearRigProfile()
+    useUIStore.setState({ selectedPinId: null })
+    useSpotsStore.setState({ savedSpots: [] })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+  })
+
+  afterEach(() => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+    vi.restoreAllMocks()
+  })
+
+  it('renders PushNotificationToggle when authenticated and spot is saved', () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      session: { user: { id: 'user-1' }, access_token: 'token' },
+      isLoading: false,
+      isSigningIn: false,
+      isSigningUp: false,
+      isSyncing: false,
+      syncError: null,
+      lastSyncedAt: null,
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      signOut: vi.fn(),
+    })
+    useSpotsStore.setState({ savedSpots: [STUB_PIN] })
+    renderSheet('pin-1')
+    expect(screen.getByTestId('push-toggle')).toBeInTheDocument()
+    expect(screen.getByTestId('push-toggle')).toHaveAttribute('data-pin-id', 'pin-1')
+  })
+
+  it('does NOT render PushNotificationToggle when not authenticated', () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      session: null,
+      isLoading: false,
+      isSigningIn: false,
+      isSigningUp: false,
+      isSyncing: false,
+      syncError: null,
+      lastSyncedAt: null,
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      signOut: vi.fn(),
+    })
+    useSpotsStore.setState({ savedSpots: [STUB_PIN] })
+    renderSheet('pin-1')
+    expect(screen.queryByTestId('push-toggle')).not.toBeInTheDocument()
+  })
+
+  it('does NOT render PushNotificationToggle when spot is not saved', () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      session: { user: { id: 'user-1' }, access_token: 'token' },
+      isLoading: false,
+      isSigningIn: false,
+      isSigningUp: false,
+      isSyncing: false,
+      syncError: null,
+      lastSyncedAt: null,
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      signOut: vi.fn(),
+    })
+    useSpotsStore.setState({ savedSpots: [] })
+    renderSheet('pin-1')
+    expect(screen.queryByTestId('push-toggle')).not.toBeInTheDocument()
   })
 })

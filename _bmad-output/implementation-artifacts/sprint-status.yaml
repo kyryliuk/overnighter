@@ -100,32 +100,32 @@ development_status:
 
   # ── Phase 2 Epic 2: Premium Subscription ─────────────────────────────────
   p2-epic-2: done
-  p2-2-1-stripe-infrastructure: review
-  p2-2-2-subscription-checkout-flow: review
+  p2-2-1-stripe-infrastructure: done
+  p2-2-2-subscription-checkout-flow: done
   p2-2-3-subscription-lifecycle-management: done
   p2-2-4-premiumgate-ui-component: done
   p2-epic-2-retrospective: optional
 
   # ── Phase 2 Epic 3: Offline PWA ──────────────────────────────────────────
-  p2-epic-3: backlog
-  p2-3-1-pwa-manifest-and-service-worker-installation: backlog
-  p2-3-2-offline-map-tile-cache: backlog
-  p2-3-3-offline-status-banner: backlog
-  p2-3-4-offline-check-in-queue: backlog
+  p2-epic-3: done
+  p2-3-1-pwa-manifest-and-service-worker-installation: done
+  p2-3-2-offline-map-tile-cache: done
+  p2-3-3-offline-status-banner: done
+  p2-3-4-offline-check-in-queue: done
   p2-epic-3-retrospective: optional
 
   # ── Phase 2 Epic 4: Push Notifications ───────────────────────────────────
-  p2-epic-4: backlog
-  p2-4-1-push-notification-infrastructure: backlog
-  p2-4-2-per-spot-push-opt-in: backlog
-  p2-4-3-push-notification-delivery-and-opt-out: backlog
+  p2-epic-4: done
+  p2-4-1-push-notification-infrastructure: done
+  p2-4-2-per-spot-push-opt-in: done
+  p2-4-3-push-notification-delivery-and-opt-out: done
   p2-epic-4-retrospective: optional
 
   # ── Phase 2 Epic 5: Community Contributions ──────────────────────────────
-  p2-epic-5: backlog
-  p2-5-1-photo-upload-on-check-ins: backlog
-  p2-5-2-spot-submission-form: backlog
-  p2-5-3-submission-status-tracking: backlog
+  p2-epic-5: done
+  p2-5-1-photo-upload-on-check-ins: done
+  p2-5-2-spot-submission-form: done
+  p2-5-3-submission-status-tracking: done
   p2-epic-5-retrospective: optional
 
   # ── Phase 2 Epic 6: Admin Moderation UI ──────────────────────────────────

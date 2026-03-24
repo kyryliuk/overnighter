@@ -6,8 +6,11 @@ import { SpeedInsights } from '@vercel/speed-insights/react'
 import { useDeviceId } from '@/hooks/useDeviceId'
 import { useUIStore } from '@/store/uiStore'
 import OfflineStatusBanner from '@/components/OfflineStatusBanner'
+import UpdateBanner from '@/components/UpdateBanner'
 import { AuthRequired } from '@/components/AuthRequired'
 import { AuthProvider } from '@/contexts/AuthProvider'
+import PWAInstallPrompt from '@/components/PWAInstallPrompt'
+import { useOfflineCheckinQueue } from '@/hooks/useOfflineCheckinQueue'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +41,7 @@ const AdminDashboard = lazy(() => import('@/features/admin/AdminDashboard'))
 
 export default function App() {
   useDeviceId() // Initialize anonymous device ID on first app load (Story 4.1)
+  useOfflineCheckinQueue() // Flush pending offline check-ins on reconnect (Story 3.4)
   const pendingCheckIn = useUIStore((state) => state.pendingCheckIn)
   const setPendingCheckIn = useUIStore((state) => state.setPendingCheckIn)
   const pendingReport = useUIStore((state) => state.pendingReport)
@@ -47,6 +51,7 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <OfflineStatusBanner />
+          <UpdateBanner />
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
             <Routes>
               <Route path="/" element={<MapView />}>
@@ -95,6 +100,7 @@ export default function App() {
           />
         </Suspense>
       )}
+      <PWAInstallPrompt />
       <ReactQueryDevtools initialIsOpen={false} />
       <SpeedInsights />
     </QueryClientProvider>

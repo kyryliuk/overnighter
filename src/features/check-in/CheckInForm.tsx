@@ -3,6 +3,9 @@ import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useDeviceId } from '@/hooks/useDeviceId'
 import { useCheckInMutation, type CheckInStatus } from '@/hooks/useCheckInMutation'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import { appendPendingCheckin } from '@/lib/offline/pendingCheckins'
+import { useAuth } from '@/contexts/AuthContext'
+import PhotoUpload from './PhotoUpload'
 
 interface CheckInFormProps {
   pinId: string
@@ -19,6 +22,9 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
   const [status, setStatus] = useState<CheckInStatus | null>(null)
   const [note, setNote] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [photoCdnUrl, setPhotoCdnUrl] = useState<string | null>(null)
+  const [photoStoragePath, setPhotoStoragePath] = useState<string | null>(null)
+  const [tempCheckInId] = useState(() => crypto.randomUUID())
 
   const { data: pins = [] } = usePinsQuery({ enabled: false })
   const pin = pins.find((p) => p.id === pinId)
@@ -27,17 +33,40 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
   const deviceId = useDeviceId()
   const mutation = useCheckInMutation()
   const isOnline = useOnlineStatus()
+  const { isAuthenticated } = useAuth()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!status) return
+
     if (!isOnline) {
-      setErrorMsg("You're offline. Reconnect to save this check-in.")
+      try {
+        appendPendingCheckin({
+          pinId,
+          deviceId,
+          status,
+          note: note || undefined,
+          timestamp: new Date().toISOString(),
+          queuedAt: new Date().toISOString(),
+        })
+        onClose()
+      } catch {
+        setErrorMsg("Couldn't save check-in locally. Storage may be full.")
+      }
       return
     }
+
     setErrorMsg(null)
     mutation.mutate(
-      { pinId, deviceId, status, note: note || undefined },
+      {
+        pinId,
+        deviceId,
+        status,
+        note: note || undefined,
+        checkInId: tempCheckInId,
+        photoCdnUrl: photoCdnUrl ?? undefined,
+        photoStoragePath: photoStoragePath ?? undefined,
+      },
       {
         onSuccess: () => { onClose() },
         onError: () => { setErrorMsg("Couldn't save check-in. Tap to retry.") },
@@ -89,6 +118,23 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
             ))}
           </div>
 
+          {/* Photo upload — authenticated users only */}
+          {isAuthenticated && (
+            <PhotoUpload
+              pinId={pinId}
+              checkInId={tempCheckInId}
+              disabled={!isOnline}
+              onUploadComplete={(cdn, path) => {
+                setPhotoCdnUrl(cdn)
+                setPhotoStoragePath(path)
+              }}
+              onUploadClear={() => {
+                setPhotoCdnUrl(null)
+                setPhotoStoragePath(null)
+              }}
+            />
+          )}
+
           {/* Optional note */}
           <textarea
             value={note}
@@ -102,14 +148,14 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
 
           {!isOnline && (
             <p role="status" className="text-sm text-amber-400 text-center mb-4">
-              Offline mode: check-ins require a connection.
+              Offline — your check-in will be saved and submitted when you reconnect.
             </p>
           )}
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={status === null || mutation.isPending || !isOnline}
+            disabled={status === null || mutation.isPending}
             className="w-full min-h-[44px] rounded-lg text-white text-sm font-medium disabled:opacity-50"
             style={{ backgroundColor: '#0ea5e9' }}
           >

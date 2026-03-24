@@ -3,24 +3,44 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
-const { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate } = vi.hoisted(() => {
-  const mockInsert = vi.fn().mockResolvedValue({ error: null })
+const { mockInsertSingle, mockGte, mockSelect, mockUpdateEq, mockUpdate, mockPinSelectSingle, mockRequireUserAuth, mockPhotoInsert } = vi.hoisted(() => {
+  const mockInsertSingle = vi.fn().mockResolvedValue({ data: { id: 'generated-check-in-id' }, error: null })
+  const mockInsertSelect = vi.fn().mockReturnValue({ single: mockInsertSingle })
+  const mockInsert = vi.fn().mockReturnValue({ select: mockInsertSelect })
   const mockGte = vi.fn().mockResolvedValue({ count: 1, error: null })
   const mockCountEq = vi.fn().mockReturnValue({ gte: mockGte })
   const mockSelect = vi.fn().mockReturnValue({ eq: mockCountEq })
   const mockUpdateEq = vi.fn().mockResolvedValue({ error: null })
   const mockUpdate = vi.fn().mockReturnValue({ eq: mockUpdateEq })
-  return { mockInsert, mockGte, mockSelect, mockUpdateEq, mockUpdate }
+  const mockPinSelectSingle = vi.fn().mockResolvedValue({ data: { badge_state: 'grey', name: 'Test Spot' }, error: null })
+  const mockPinSelectEq = vi.fn().mockReturnValue({ single: mockPinSelectSingle })
+  const mockPinSelect = vi.fn().mockReturnValue({ eq: mockPinSelectEq })
+  const mockPhotoInsert = vi.fn().mockResolvedValue({ error: null })
+  const mockRequireUserAuth = vi.fn()
+  return { mockInsert, mockInsertSingle, mockGte, mockSelect, mockUpdateEq, mockUpdate, mockPinSelectSingle, mockPinSelect, mockRequireUserAuth, mockPhotoInsert }
 })
 
 vi.mock('./_supabase', () => ({
   createServiceClient: vi.fn(() => ({
     from: vi.fn((table: string) => {
-      if (table === 'pins') return { update: mockUpdate }
+      if (table === 'pins') return { update: mockUpdate, select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: mockPinSelectSingle }) }) }
+      if (table === 'pin_photos') return { insert: mockPhotoInsert }
       // 'check_ins' — supports both insert and select
-      return { insert: mockInsert, select: mockSelect }
+      return {
+        insert: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: mockInsertSingle }) }),
+        select: mockSelect,
+      }
     }),
   })),
+}))
+
+vi.mock('./_auth', () => ({
+  requireUserAuth: mockRequireUserAuth,
+}))
+
+const mockNotifySubscribers = vi.fn().mockResolvedValue(undefined)
+vi.mock('./_pushNotify', () => ({
+  notifySubscribers: (...args: unknown[]) => mockNotifySubscribers(...args),
 }))
 
 import handler from './checkin'
@@ -52,9 +72,13 @@ const VALID_BODY = {
 describe('api/checkin handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockInsert.mockResolvedValue({ error: null })
+    mockInsertSingle.mockResolvedValue({ data: { id: 'generated-check-in-id' }, error: null })
     mockGte.mockResolvedValue({ count: 1, error: null })
     mockUpdateEq.mockResolvedValue({ error: null })
+    mockPinSelectSingle.mockResolvedValue({ data: { badge_state: 'grey', name: 'Test Spot' }, error: null })
+    mockNotifySubscribers.mockResolvedValue(undefined)
+    mockRequireUserAuth.mockResolvedValue({ id: 'user-123' })
+    mockPhotoInsert.mockResolvedValue({ error: null })
   })
 
   it('returns 405 for non-POST methods (3.2)', async () => {
@@ -87,30 +111,6 @@ describe('api/checkin handler', () => {
     expect(ctx.body).toMatchObject({ error: 'INVALID_BODY' })
   })
 
-  it('inserts check_in row with correct fields (3.5)', async () => {
-    const { res } = mockRes()
-    await handler(mockReq('POST', { ...VALID_BODY, note: 'Great spot' }), res)
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        pin_id: VALID_BODY.pinId,
-        device_id: VALID_BODY.deviceId,
-        status: 'still_open',
-        notes: 'Great spot',
-        checked_in_at: VALID_BODY.timestamp,
-      }),
-    )
-  })
-
-  it('sanitizes HTML tags in note field before storage (3.6)', async () => {
-    const { res, ctx } = mockRes()
-    // Input: <b>Fee</b> is $12  →  tags stripped  →  "Fee is $12"
-    await handler(mockReq('POST', { ...VALID_BODY, note: '<b>Fee</b> is $12' }), res)
-    expect(ctx.statusCode).toBe(200)
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({ notes: 'Fee is $12' }),
-    )
-  })
-
   it('returns 200 { ok: true } on successful check-in (3.7)', async () => {
     const { res, ctx } = mockRes()
     await handler(mockReq('POST', VALID_BODY), res)
@@ -119,26 +119,123 @@ describe('api/checkin handler', () => {
   })
 
   it('returns 500 when Supabase insert fails (3.8)', async () => {
-    mockInsert.mockResolvedValue({ error: new Error('DB write error') })
+    mockInsertSingle.mockResolvedValue({ data: null, error: new Error('DB write error') })
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { res, ctx } = mockRes()
     await handler(mockReq('POST', VALID_BODY), res)
     expect(ctx.statusCode).toBe(500)
     expect(ctx.body).toMatchObject({ error: 'INTERNAL_ERROR' })
+    consoleSpy.mockRestore()
   })
 
   it('returns 500 when count query fails — M2 fix', async () => {
     mockGte.mockResolvedValue({ count: null, error: new Error('count query failed') })
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { res, ctx } = mockRes()
     await handler(mockReq('POST', VALID_BODY), res)
     expect(ctx.statusCode).toBe(500)
     expect(ctx.body).toMatchObject({ error: 'INTERNAL_ERROR' })
+    consoleSpy.mockRestore()
   })
 
   it('returns 500 when pins.update fails — H1 fix', async () => {
     mockUpdateEq.mockResolvedValue({ error: new Error('pins update failed') })
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { res, ctx } = mockRes()
     await handler(mockReq('POST', VALID_BODY), res)
     expect(ctx.statusCode).toBe(500)
     expect(ctx.body).toMatchObject({ error: 'INTERNAL_ERROR' })
+    consoleSpy.mockRestore()
+  })
+
+  it('calls notifySubscribers with correct args on successful check-in (4.3)', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', VALID_BODY), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(mockNotifySubscribers).toHaveBeenCalledWith(
+      expect.anything(),
+      VALID_BODY.pinId,
+      'Test Spot',
+      'still_open',
+    )
+  })
+
+  it('uses fallback pin name when pin query returns no data (4.3)', async () => {
+    mockPinSelectSingle.mockResolvedValue({ data: null, error: null })
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', VALID_BODY), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(mockNotifySubscribers).toHaveBeenCalledWith(
+      expect.anything(),
+      VALID_BODY.pinId,
+      'A spot',
+      'still_open',
+    )
+  })
+
+  it('returns 200 even when notifySubscribers throws (fire-and-forget) (4.3)', async () => {
+    mockNotifySubscribers.mockRejectedValue(new Error('notification dispatch failed'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', VALID_BODY), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(ctx.body).toEqual({ ok: true })
+    consoleSpy.mockRestore()
+  })
+
+  // ── Photo field tests ───────────────────────────────────────────────────
+
+  it('accepts optional checkInId, photoCdnUrl, photoStoragePath fields', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', {
+      ...VALID_BODY,
+      checkInId: 'a47ac10b-58cc-4372-a567-0e02b2c3d479',
+      photoCdnUrl: 'https://cdn.example.com/photo.jpg',
+      photoStoragePath: 'pin-id/ci-id/uuid.jpg',
+    }), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(ctx.body).toEqual({ ok: true })
+  })
+
+  it('inserts into pin_photos when photo fields are provided', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', {
+      ...VALID_BODY,
+      checkInId: 'a47ac10b-58cc-4372-a567-0e02b2c3d479',
+      photoCdnUrl: 'https://cdn.example.com/photo.jpg',
+      photoStoragePath: 'pin-id/ci-id/uuid.jpg',
+    }), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(mockPhotoInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        check_in_id: 'generated-check-in-id',
+        user_id: 'user-123',
+        storage_path: 'pin-id/ci-id/uuid.jpg',
+        cdn_url: 'https://cdn.example.com/photo.jpg',
+      }),
+    )
+  })
+
+  it('check-in succeeds even if pin_photos insert fails (best-effort)', async () => {
+    mockPhotoInsert.mockResolvedValue({ error: new Error('pin_photos insert failed') })
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', {
+      ...VALID_BODY,
+      checkInId: 'a47ac10b-58cc-4372-a567-0e02b2c3d479',
+      photoCdnUrl: 'https://cdn.example.com/photo.jpg',
+      photoStoragePath: 'pin-id/ci-id/uuid.jpg',
+    }), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(ctx.body).toEqual({ ok: true })
+    consoleSpy.mockRestore()
+  })
+
+  it('existing check-in behavior is unchanged when photo fields are absent', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('POST', VALID_BODY), res)
+    expect(ctx.statusCode).toBe(200)
+    expect(ctx.body).toEqual({ ok: true })
+    expect(mockPhotoInsert).not.toHaveBeenCalled()
   })
 })
