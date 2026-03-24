@@ -3,6 +3,16 @@ import { supabase } from '@/lib/supabase/client'
 
 const DEFAULT_SITE_URL = 'https://overnighter.vercel.app'
 
+export type SignUpWithPasswordResult =
+  | {
+      needsEmailConfirmation: false
+      session: Session
+    }
+  | {
+      needsEmailConfirmation: true
+      session: null
+    }
+
 function normalizeRedirectUrl(url: string, source: string) {
   try {
     return new URL('/', url).toString()
@@ -45,6 +55,18 @@ export function onAuthSessionChange(callback: (session: Session | null) => void)
   })
 }
 
+function isDuplicateEmailError(message: string) {
+  return /already (registered|exists|in use)/i.test(message)
+}
+
+function normalizeAuthErrorMessage(message: string, fallbackPrefix: string) {
+  if (isDuplicateEmailError(message)) {
+    return 'An account with this email already exists'
+  }
+
+  return `${fallbackPrefix}: ${message}`
+}
+
 export async function requestMagicLink(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -54,6 +76,33 @@ export async function requestMagicLink(email: string) {
   })
 
   if (error) throw new Error(`Failed to send magic link: ${error.message}`)
+}
+
+export async function signUpWithPassword(email: string, password: string): Promise<SignUpWithPasswordResult> {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
+
+  if (error) {
+    throw new Error(normalizeAuthErrorMessage(error.message, 'Failed to create account'))
+  }
+
+  if (data.session) {
+    return {
+      needsEmailConfirmation: false,
+      session: data.session,
+    }
+  }
+
+  if (data.user) {
+    return {
+      needsEmailConfirmation: true,
+      session: null,
+    }
+  }
+
+  throw new Error('Account could not be created')
 }
 
 export async function signOut() {

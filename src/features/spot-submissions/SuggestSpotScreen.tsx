@@ -21,7 +21,7 @@ const STATUS_STYLES: Record<SpotSubmissionStatus, string> = {
 export default function SuggestSpotScreen() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { session, isAuthenticated } = useAuth()
+  const { session } = useAuth()
   const [geoState, requestGeo] = useGeolocation()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -128,35 +128,6 @@ export default function SuggestSpotScreen() {
 
     setErrors({})
     submitMutation.mutate()
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background text-foreground px-6 py-8">
-        <div className="mx-auto max-w-xl rounded-2xl border border-border bg-secondary p-6 space-y-4">
-          <h1 className="text-2xl font-bold">Suggest a spot</h1>
-          <p className="text-sm text-muted-foreground">
-            Sign in first so we can track your submission status and send it through review safely.
-          </p>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/account')}
-              className="min-h-[44px] rounded-lg bg-primary px-4 text-primary-foreground font-semibold"
-            >
-              Go to account
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="min-h-[44px] rounded-lg border border-border px-4 text-muted-foreground"
-            >
-              Back to map
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (

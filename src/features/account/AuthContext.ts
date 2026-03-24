@@ -1,16 +1,19 @@
 import { createContext, useContext } from 'react'
 import type { Session } from '@supabase/supabase-js'
 
+export type SignUpResult =
+  | { status: 'authenticated' }
+  | { status: 'email-confirmation-required'; email: string }
+
 export interface AuthContextValue {
   session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
-  isSendingLink: boolean
-  pendingEmail: string | null
+  isSigningUp: boolean
   isSyncing: boolean
   syncError: string | null
   lastSyncedAt: string | null
-  requestMagicLink: (email: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<SignUpResult>
   signOut: () => Promise<void>
 }
 

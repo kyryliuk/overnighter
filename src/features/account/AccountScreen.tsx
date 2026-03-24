@@ -18,11 +18,12 @@ function formatTimestamp(timestamp: string | null) {
 
 export default function AccountScreen() {
   const navigate = useNavigate()
-  const { session, isLoading, isAuthenticated, isSendingLink, pendingEmail, isSyncing, syncError, lastSyncedAt, requestMagicLink, signOut } = useAuth()
+  const { session, isLoading, isAuthenticated, isSigningUp, isSyncing, syncError, lastSyncedAt, signUp, signOut } = useAuth()
   const rigProfile = useRigStore((state) => state.rigProfile)
   const savedSpots = useSpotsStore((state) => state.savedSpots)
   const tripPlans = useTripPlansStore((state) => state.tripPlans)
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -31,16 +32,25 @@ export default function AccountScreen() {
     return `${rigProfile.rigType}, ${rigProfile.lengthFt}ft, ${rigProfile.heightFt}ft tall`
   }, [rigProfile])
 
-  async function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCreateAccount(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSubmitError(null)
     setStatusMessage(null)
 
     try {
-      await requestMagicLink(email.trim())
-      setStatusMessage(`Magic link sent to ${email.trim()}`)
+      const result = await signUp(email.trim(), password)
+
+      if (result.status === 'email-confirmation-required') {
+        setPassword('')
+        setStatusMessage(`Account created. Check ${result.email} to confirm your email, then come back to back up your data.`)
+        return
+      }
+
+      setEmail('')
+      setPassword('')
+      setStatusMessage('Account created. We are backing up your local data now.')
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Failed to send magic link')
+      setSubmitError(error instanceof Error ? error.message : 'Failed to create account')
     }
   }
 
@@ -127,23 +137,18 @@ export default function AccountScreen() {
             </p>
           )}
 
-          {pendingEmail && !isAuthenticated && (
-            <p className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground">
-              Waiting for sign-in confirmation from {pendingEmail}.
-            </p>
-          )}
         </section>
 
         {!isAuthenticated ? (
           <section className="rounded-2xl border border-border bg-secondary p-5 space-y-4">
             <div className="space-y-1">
-              <h2 className="text-lg font-semibold">Turn on cross-device sync</h2>
+              <h2 className="text-lg font-semibold">Create your account</h2>
               <p className="text-sm text-muted-foreground">
-                We&apos;ll email you a magic link. Your local rig profile, saved spots, and trip drafts will migrate to your account on first sign-in.
+                Back up your local rig profile, saved spots, and trip drafts with email and password so they can sync across devices.
               </p>
             </div>
 
-            <form onSubmit={handleEmailSubmit} className="space-y-3">
+            <form onSubmit={handleCreateAccount} className="space-y-3">
               <label className="block text-sm font-medium" htmlFor="account-email">
                 Email
               </label>
@@ -157,12 +162,26 @@ export default function AccountScreen() {
                 placeholder="you@example.com"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 min-h-[44px]"
               />
+              <label className="block text-sm font-medium" htmlFor="account-password">
+                Password
+              </label>
+              <input
+                id="account-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Create a password"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 min-h-[44px]"
+              />
               <button
                 type="submit"
-                disabled={!email.trim() || isSendingLink}
+                disabled={!email.trim() || password.length < 8 || isSigningUp}
                 className="min-h-[44px] w-full rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-50"
               >
-                {isSendingLink ? 'Sending link...' : 'Email me a magic link'}
+                {isSigningUp ? 'Creating account...' : 'Create account and back up'}
               </button>
             </form>
           </section>

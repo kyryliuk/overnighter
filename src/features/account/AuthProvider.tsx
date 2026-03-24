@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { getCurrentSession, onAuthSessionChange, requestMagicLink as sendMagicLink, signOut as signOutAuth } from '@/lib/supabase/auth'
+import { getCurrentSession, onAuthSessionChange, signOut as signOutAuth, signUpWithPassword } from '@/lib/supabase/auth'
+import { ensureProfile } from '@/lib/supabase/profiles'
 import { getRigProfile, upsertRigProfile, deleteRigProfile } from '@/lib/supabase/rigProfiles'
 import { getSavedSpots, replaceSavedSpots as syncSavedSpots } from '@/lib/supabase/savedSpots'
 import { getTripPlans, replaceTripPlans as syncTripPlans } from '@/lib/supabase/tripPlans'
@@ -8,7 +9,7 @@ import { mergeRigProfileState, mergeSavedSpots, mergeTripPlans } from '@/lib/syn
 import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useTripPlansStore } from '@/store/tripPlansStore'
-import { AuthContext, type AuthContextValue } from './AuthContext'
+import { AuthContext, type AuthContextValue, type SignUpResult } from './AuthContext'
 
 function getRigSignature() {
   const state = useRigStore.getState()
@@ -30,8 +31,7 @@ function getTripPlansSignature() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isSendingLink, setIsSendingLink] = useState(false)
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [isSigningUp, setIsSigningUp] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
@@ -71,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = onAuthSessionChange((nextSession) => {
       setSession(nextSession)
-      setPendingEmail(null)
       setIsLoading(false)
     })
 
@@ -237,15 +236,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tripPlans,
   ])
 
-  async function requestMagicLink(email: string) {
-    setIsSendingLink(true)
+  async function signUp(email: string, password: string): Promise<SignUpResult> {
+    setIsSigningUp(true)
     setSyncError(null)
 
     try {
-      await sendMagicLink(email)
-      setPendingEmail(email)
+      const result = await signUpWithPassword(email, password)
+
+      if (result.needsEmailConfirmation) {
+        return {
+          status: 'email-confirmation-required',
+          email,
+        }
+      }
+
+      try {
+        await ensureProfile(result.session.user.id)
+      } catch (error) {
+        try {
+          await signOutAuth()
+          setSession(null)
+        } catch (rollbackError) {
+          const profileMessage = error instanceof Error ? error.message : 'Failed to initialize profile'
+          const rollbackMessage = rollbackError instanceof Error ? rollbackError.message : 'Failed to roll back session'
+          throw new Error(`${profileMessage}. Cleanup sign-out also failed: ${rollbackMessage}`)
+        }
+
+        if (error instanceof Error) {
+          throw error
+        }
+
+        throw new Error('Failed to initialize profile')
+      }
+
+      setSession(result.session)
+      return { status: 'authenticated' }
     } finally {
-      setIsSendingLink(false)
+      setIsSigningUp(false)
     }
   }
 
@@ -259,15 +286,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       isLoading,
       isAuthenticated: Boolean(session?.user),
-      isSendingLink,
-      pendingEmail,
+      isSigningUp,
       isSyncing,
       syncError,
       lastSyncedAt,
-      requestMagicLink,
+      signUp,
       signOut,
     }),
-    [session, isLoading, isSendingLink, pendingEmail, isSyncing, syncError, lastSyncedAt],
+    [session, isLoading, isSigningUp, isSyncing, syncError, lastSyncedAt],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

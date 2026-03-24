@@ -4,15 +4,25 @@ import App from './App'
 import { DEVICE_ID_KEY } from '@/hooks/useDeviceId'
 import { useUIStore } from '@/store/uiStore'
 
+const authState = vi.hoisted(() => ({
+  isAuthenticated: false,
+  isLoading: false,
+}))
+
 // Mock all lazy-loaded routes — prevents dynamic import resolution in jsdom
-vi.mock('@/features/account/AuthProvider', () => ({
+vi.mock('@/contexts/AuthProvider', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
-vi.mock('@/features/map/MapView', () => ({ default: () => null }))
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => authState,
+}))
+vi.mock('@/features/map/MapView', () => ({ default: () => <div data-testid="map-view" /> }))
 vi.mock('@/features/rig-profile/OnboardingScreen', () => ({ default: () => null }))
 vi.mock('@/features/rig-profile/RigEditScreen', () => ({ default: () => null }))
 vi.mock('@/features/pin-detail/PinDetailSheet', () => ({ default: () => null }))
 vi.mock('@/features/saved-spots/SavedSpotsScreen', () => ({ default: () => null }))
+vi.mock('@/features/account/AccountScreen', () => ({ default: () => <div data-testid="account-screen" /> }))
+vi.mock('@/features/spot-submissions/SuggestSpotScreen', () => ({ default: () => <div data-testid="suggest-spot-screen" /> }))
 vi.mock('@/features/route-planning/RoutePlanningScreen', () => ({ default: () => null }))
 vi.mock('@/features/route-planning/SharedTripPlanScreen', () => ({ default: () => null }))
 vi.mock('@/features/admin/AdminDashboard', () => ({ default: () => null }))
@@ -32,6 +42,9 @@ const STUB_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
 describe('App initialization', () => {
   beforeEach(() => {
     localStorage.clear()
+    authState.isAuthenticated = false
+    authState.isLoading = false
+    window.history.pushState({}, '', '/')
     vi.stubGlobal('crypto', { randomUUID: vi.fn(() => STUB_UUID) })
   })
 
@@ -43,6 +56,21 @@ describe('App initialization', () => {
   it('initializes anonymous device ID in localStorage on first render (AC1)', async () => {
     await act(async () => { render(<App />) })
     expect(localStorage.getItem(DEVICE_ID_KEY)).toBe(STUB_UUID)
+  })
+
+  it('keeps anonymous users on the map route', async () => {
+    await act(async () => { render(<App />) })
+    expect(screen.getByTestId('map-view')).toBeInTheDocument()
+    expect(screen.queryByTestId('account-screen')).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous suggest-spot visits to the account route', async () => {
+    window.history.pushState({}, '', '/suggest-spot')
+
+    await act(async () => { render(<App />) })
+
+    expect(screen.getByTestId('account-screen')).toBeInTheDocument()
+    expect(screen.queryByTestId('suggest-spot-screen')).not.toBeInTheDocument()
   })
 })
 

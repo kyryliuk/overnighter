@@ -5,7 +5,8 @@ import { lazy, Suspense } from 'react'
 import { useDeviceId } from '@/hooks/useDeviceId'
 import { useUIStore } from '@/store/uiStore'
 import OfflineStatusBanner from '@/components/OfflineStatusBanner'
-import { AuthProvider } from '@/features/account/AuthProvider'
+import { AuthRequired } from '@/components/AuthRequired'
+import { AuthProvider } from '@/contexts/AuthProvider'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,7 +54,14 @@ export default function App() {
               <Route path="/rig-edit" element={<RigEditScreen />} />
               <Route path="/saved" element={<SavedSpotsScreen />} />
               <Route path="/account" element={<AccountScreen />} />
-              <Route path="/suggest-spot" element={<SuggestSpotScreen />} />
+              <Route
+                path="/suggest-spot"
+                element={(
+                  <AuthRequired>
+                    <SuggestSpotScreen />
+                  </AuthRequired>
+                )}
+              />
               <Route path="/plan-route" element={<RoutePlanningScreen />} />
               <Route path="/shared-trip/:shareToken" element={<SharedTripPlanScreen />} />
               <Route path="/admin" element={<AdminDashboard />} />
