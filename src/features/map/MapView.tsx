@@ -7,6 +7,7 @@ import { useSourceFilterStore } from '@/store/sourceFilterStore'
 import { useCheckInPromptStore, type VisitRecord } from '@/store/checkInPromptStore'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { useAuth } from '@/contexts/AuthContext'
 import type * as L from 'leaflet'
 import { doesPinMatchFilters, doesPinFitRig, doesPinMatchSourceFilter } from './pinFilters'
 
@@ -35,6 +36,7 @@ function distanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): 
 
 export default function MapView() {
   const navigate = useNavigate()
+  const { session, isAuthenticated } = useAuth()
   const hasRigProfile = useRigStore((state) => state.hasRigProfile)
   const rigProfile = useRigStore((state) => state.rigProfile)
   const onboardingDismissed = useRigStore((state) => state.onboardingDismissed)
@@ -61,6 +63,7 @@ export default function MapView() {
   const isDismissed = useCheckInPromptStore((state) => state.isDismissed)
   const setPendingCheckIn = useUIStore((state) => state.setPendingCheckIn)
   const geoError = geoState.error ? GEO_ERROR_MESSAGES[geoState.error] ?? 'Location error' : null
+  const accountInitial = session?.user.email?.trim().charAt(0).toUpperCase() || 'A'
 
   useEffect(() => {
     // M2 fix: skip onboarding redirect on deep-linked pin routes (/pin/:id)
@@ -238,10 +241,12 @@ export default function MapView() {
         <button
           type="button"
           onClick={() => navigate('/account')}
-          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
-          aria-label="Open account"
+          className={`bg-surface border border-border min-h-[44px] shadow-md text-sm font-medium ${
+            isAuthenticated ? 'min-w-[44px] rounded-full px-0 flex items-center justify-center' : 'rounded-full px-4'
+          }`}
+          aria-label={isAuthenticated ? `Open profile for ${session?.user.email ?? 'your account'}` : 'Open account'}
         >
-          Account
+          {isAuthenticated ? accountInitial : 'Account'}
         </button>
       </div>
       {/* First-session badge onboarding tooltip (AC7) — shown above all map layers */}

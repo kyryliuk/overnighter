@@ -13,6 +13,10 @@ export type SignUpWithPasswordResult =
       session: null
     }
 
+export interface SignInWithPasswordResult {
+  session: Session
+}
+
 function normalizeRedirectUrl(url: string, source: string) {
   try {
     return new URL('/', url).toString()
@@ -59,12 +63,24 @@ function isDuplicateEmailError(message: string) {
   return /already (registered|exists|in use)/i.test(message)
 }
 
+function isInvalidCredentialError(message: string) {
+  return /invalid (login )?credentials/i.test(message)
+}
+
 function normalizeAuthErrorMessage(message: string, fallbackPrefix: string) {
   if (isDuplicateEmailError(message)) {
     return 'An account with this email already exists'
   }
 
   return `${fallbackPrefix}: ${message}`
+}
+
+function normalizeSignInErrorMessage(message: string) {
+  if (isInvalidCredentialError(message)) {
+    return 'Incorrect email or password'
+  }
+
+  return `Failed to sign in: ${message}`
 }
 
 export async function requestMagicLink(email: string) {
@@ -103,6 +119,25 @@ export async function signUpWithPassword(email: string, password: string): Promi
   }
 
   throw new Error('Account could not be created')
+}
+
+export async function signInWithPassword(email: string, password: string): Promise<SignInWithPasswordResult> {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error) {
+    throw new Error(normalizeSignInErrorMessage(error.message))
+  }
+
+  if (!data.session) {
+    throw new Error('Sign-in did not return an authenticated session')
+  }
+
+  return {
+    session: data.session,
+  }
 }
 
 export async function signOut() {

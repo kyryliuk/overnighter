@@ -18,19 +18,29 @@ function formatTimestamp(timestamp: string | null) {
 
 export default function AccountScreen() {
   const navigate = useNavigate()
-  const { session, isLoading, isAuthenticated, isSigningUp, isSyncing, syncError, lastSyncedAt, signUp, signOut } = useAuth()
+  const { session, isLoading, isAuthenticated, isSigningIn, isSigningUp, isSyncing, syncError, lastSyncedAt, signIn, signUp, signOut } = useAuth()
   const rigProfile = useRigStore((state) => state.rigProfile)
   const savedSpots = useSpotsStore((state) => state.savedSpots)
   const tripPlans = useTripPlansStore((state) => state.tripPlans)
+  const [authMode, setAuthMode] = useState<'sign-up' | 'sign-in'>('sign-up')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+
   const rigSummary = useMemo(() => {
     if (!rigProfile.rigType) return 'No rig profile saved yet'
     return `${rigProfile.rigType}, ${rigProfile.lengthFt}ft, ${rigProfile.heightFt}ft tall`
   }, [rigProfile])
+
+  const backupPreview = useMemo(() => {
+    const parts: string[] = []
+    if (rigProfile.rigType) parts.push(`Your ${rigProfile.rigType} profile`)
+    if (savedSpots.length > 0) parts.push(`${savedSpots.length} saved spot${savedSpots.length === 1 ? '' : 's'}`)
+    if (parts.length === 0) return null
+    return `${parts.join(' and ')} will be backed up`
+  }, [rigProfile.rigType, savedSpots.length])
 
   async function handleCreateAccount(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -48,9 +58,29 @@ export default function AccountScreen() {
 
       setEmail('')
       setPassword('')
-      setStatusMessage('Account created. We are backing up your local data now.')
+
+      if (result.migrationError) {
+        setStatusMessage(result.migrationError)
+        return
+      }
+
+      const count = result.migrationResult?.spotsCount ?? 0
+      setStatusMessage(count > 0 ? `${count} spot${count === 1 ? '' : 's'} backed up` : 'Account created successfully.')
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to create account')
+    }
+  }
+
+  async function handleSignIn(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitError(null)
+    setStatusMessage(null)
+
+    try {
+      await signIn(email.trim(), password)
+      setPassword('')
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to sign in')
     }
   }
 
@@ -141,14 +171,54 @@ export default function AccountScreen() {
 
         {!isAuthenticated ? (
           <section className="rounded-2xl border border-border bg-secondary p-5 space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-lg font-semibold">Create your account</h2>
-              <p className="text-sm text-muted-foreground">
-                Back up your local rig profile, saved spots, and trip drafts with email and password so they can sync across devices.
-              </p>
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Account access mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authMode === 'sign-up'}
+                onClick={() => {
+                  setAuthMode('sign-up')
+                  setSubmitError(null)
+                  setStatusMessage(null)
+                }}
+                className={`min-h-[44px] rounded-lg border px-4 text-sm font-medium ${
+                  authMode === 'sign-up' ? 'border-primary bg-background text-foreground' : 'border-border text-muted-foreground'
+                }`}
+              >
+                Create account
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authMode === 'sign-in'}
+                onClick={() => {
+                  setAuthMode('sign-in')
+                  setSubmitError(null)
+                  setStatusMessage(null)
+                }}
+                className={`min-h-[44px] rounded-lg border px-4 text-sm font-medium ${
+                  authMode === 'sign-in' ? 'border-primary bg-background text-foreground' : 'border-border text-muted-foreground'
+                }`}
+              >
+                Sign in
+              </button>
             </div>
 
-            <form onSubmit={handleCreateAccount} className="space-y-3">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold">
+                {authMode === 'sign-up' ? 'Create your account' : 'Sign in to your account'}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {authMode === 'sign-up'
+                  ? 'Back up your local rig profile, saved spots, and trip drafts with email and password so they can sync across devices.'
+                  : 'Sign in with your email and password to restore your cloud-backed rig profile, saved spots, and trip drafts.'}
+              </p>
+              {authMode === 'sign-up' && backupPreview && (
+                <p className="text-sm font-medium text-foreground">{backupPreview}</p>
+              )}
+            </div>
+
+            <form onSubmit={authMode === 'sign-up' ? handleCreateAccount : handleSignIn} className="space-y-3">
               <label className="block text-sm font-medium" htmlFor="account-email">
                 Email
               </label>
@@ -168,20 +238,26 @@ export default function AccountScreen() {
               <input
                 id="account-password"
                 type="password"
-                autoComplete="new-password"
+                autoComplete={authMode === 'sign-up' ? 'new-password' : 'current-password'}
                 required
                 minLength={8}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Create a password"
+                placeholder={authMode === 'sign-up' ? 'Create a password' : 'Enter your password'}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 min-h-[44px]"
               />
               <button
                 type="submit"
-                disabled={!email.trim() || password.length < 8 || isSigningUp}
+                disabled={!email.trim() || password.length < 8 || isSigningIn || isSigningUp}
                 className="min-h-[44px] w-full rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-50"
               >
-                {isSigningUp ? 'Creating account...' : 'Create account and back up'}
+                {authMode === 'sign-up'
+                  ? isSigningUp
+                    ? 'Creating account...'
+                    : 'Create account and back up'
+                  : isSigningIn
+                    ? 'Signing in...'
+                    : 'Sign in'}
               </button>
             </form>
           </section>

@@ -13,10 +13,12 @@ describe('contexts/AuthContext', () => {
       session: null as Session | null,
       isLoading: false,
       isAuthenticated: true,
+      isSigningIn: false,
       isSigningUp: false,
       isSyncing: false,
       syncError: null,
       lastSyncedAt: null,
+      signIn: async () => {},
       signUp: async () => {},
       signOut: async () => {},
     }

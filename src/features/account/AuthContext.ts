@@ -2,17 +2,19 @@ import { createContext, useContext } from 'react'
 import type { Session } from '@supabase/supabase-js'
 
 export type SignUpResult =
-  | { status: 'authenticated' }
+  | { status: 'authenticated'; migrationResult?: { spotsCount: number }; migrationError?: string | null }
   | { status: 'email-confirmation-required'; email: string }
 
 export interface AuthContextValue {
   session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
+  isSigningIn: boolean
   isSigningUp: boolean
   isSyncing: boolean
   syncError: string | null
   lastSyncedAt: string | null
+  signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<SignUpResult>
   signOut: () => Promise<void>
 }

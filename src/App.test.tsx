@@ -72,6 +72,14 @@ describe('App initialization', () => {
     expect(screen.getByTestId('account-screen')).toBeInTheDocument()
     expect(screen.queryByTestId('suggest-spot-screen')).not.toBeInTheDocument()
   })
+
+  it('allows anonymous users to open the account route directly', async () => {
+    window.history.pushState({}, '', '/account')
+
+    await act(async () => { render(<App />) })
+
+    expect(screen.getByTestId('account-screen')).toBeInTheDocument()
+  })
 })
 
 describe('App CheckInForm mounting (Story 4.3)', () => {

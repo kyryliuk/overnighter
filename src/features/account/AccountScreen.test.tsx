@@ -10,10 +10,12 @@ const authState = vi.hoisted(() => ({
   session: null,
   isLoading: false,
   isAuthenticated: false,
+  isSigningIn: false,
   isSigningUp: false,
   isSyncing: false,
   syncError: null,
   lastSyncedAt: null,
+  signIn: vi.fn(),
   signUp: vi.fn(),
   signOut: vi.fn(),
 }))
@@ -35,10 +37,12 @@ describe('AccountScreen', () => {
     authState.session = null
     authState.isLoading = false
     authState.isAuthenticated = false
+    authState.isSigningIn = false
     authState.isSigningUp = false
     authState.isSyncing = false
     authState.syncError = null
     authState.lastSyncedAt = null
+    authState.signIn.mockReset()
     authState.signUp.mockReset()
     authState.signOut.mockReset()
 
@@ -105,6 +109,44 @@ describe('AccountScreen', () => {
     expect(screen.getByLabelText(/^password$/i)).toHaveValue('')
   })
 
+  it('shows the backup preview copy with rig class and spot count', () => {
+    renderScreen()
+
+    expect(screen.getByText('Your Class B profile and 2 saved spots will be backed up')).toBeInTheDocument()
+  })
+
+  it('shows migration success count after account creation', async () => {
+    authState.signUp.mockResolvedValue({
+      status: 'authenticated',
+      migrationResult: { spotsCount: 2 },
+    })
+
+    renderScreen()
+
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } })
+    fireEvent.submit(screen.getByRole('button', { name: /create account and back up/i }).closest('form')!)
+
+    expect(await screen.findByRole('status')).toHaveTextContent('2 spots backed up')
+  })
+
+  it('shows failure copy when migration fails but account is created', async () => {
+    authState.signUp.mockResolvedValue({
+      status: 'authenticated',
+      migrationError: 'Account created. Data sync failed — will retry on next sign-in.',
+    })
+
+    renderScreen()
+
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } })
+    fireEvent.submit(screen.getByRole('button', { name: /create account and back up/i }).closest('form')!)
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Account created. Data sync failed — will retry on next sign-in.',
+    )
+  })
+
   it('shows inline duplicate-email errors without clearing the form', async () => {
     authState.signUp.mockRejectedValue(new Error('An account with this email already exists'))
 
@@ -120,5 +162,43 @@ describe('AccountScreen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('An account with this email already exists')
     expect(screen.getByLabelText(/^email$/i)).toHaveValue('user@example.com')
     expect(screen.getByLabelText(/^password$/i)).toHaveValue('password123')
+  })
+
+  it('switches to sign-in mode and shows the returning-user copy', () => {
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('tab', { name: /^sign in$/i }))
+
+    expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
+  })
+
+  it('shows inline incorrect-credential errors without clearing the email in sign-in mode', async () => {
+    authState.signIn.mockRejectedValue(new Error('Incorrect email or password'))
+
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('tab', { name: /^sign in$/i }))
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'wrongpass' } })
+    fireEvent.submit(screen.getByRole('button', { name: /^sign in$/i }).closest('form')!)
+
+    await waitFor(() => {
+      expect(authState.signIn).toHaveBeenCalledWith('user@example.com', 'wrongpass')
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect email or password')
+    expect(screen.getByLabelText(/^email$/i)).toHaveValue('user@example.com')
+    expect(screen.getByLabelText(/^password$/i)).toHaveValue('wrongpass')
+  })
+
+  it('renders authenticated account actions when a session exists', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' } }
+
+    renderScreen()
+
+    expect(screen.getByRole('heading', { name: /account actions/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
+    expect(screen.getByText(/signed in as user@example.com/i)).toBeInTheDocument()
   })
 })

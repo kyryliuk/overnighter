@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { signInWithOtp, signUp } = vi.hoisted(() => ({
+const { signInWithOtp, signInWithPassword: signInWithPasswordAuth, signUp } = vi.hoisted(() => ({
   signInWithOtp: vi.fn(),
+  signInWithPassword: vi.fn(),
   signUp: vi.fn(),
 }))
 
@@ -11,18 +12,20 @@ vi.mock('@/lib/supabase/client', () => ({
       getSession: vi.fn(),
       onAuthStateChange: vi.fn(),
       signInWithOtp,
+      signInWithPassword: signInWithPasswordAuth,
       signUp,
       signOut: vi.fn(),
     },
   },
 }))
 
-import { getEmailRedirectUrl, requestMagicLink, signUpWithPassword } from './auth'
+import { getEmailRedirectUrl, requestMagicLink, signInWithPassword, signUpWithPassword } from './auth'
 
 describe('supabase auth redirects', () => {
   beforeEach(() => {
     signInWithOtp.mockReset()
     signInWithOtp.mockResolvedValue({ error: null })
+    signInWithPasswordAuth.mockReset()
     signUp.mockReset()
   })
 
@@ -101,6 +104,33 @@ describe('supabase auth redirects', () => {
 
     await expect(signUpWithPassword('user@example.com', 'password123')).rejects.toThrow(
       'An account with this email already exists',
+    )
+  })
+
+  it('returns the session created by email/password sign-in', async () => {
+    const session = { user: { id: 'user-1', email: 'user@example.com' } }
+    signInWithPasswordAuth.mockResolvedValue({
+      data: { session },
+      error: null,
+    })
+
+    await expect(signInWithPassword('user@example.com', 'password123')).resolves.toEqual({
+      session,
+    })
+    expect(signInWithPasswordAuth).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'password123',
+    })
+  })
+
+  it('maps invalid sign-in credentials to the exact friendly message', async () => {
+    signInWithPasswordAuth.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Invalid login credentials' },
+    })
+
+    await expect(signInWithPassword('user@example.com', 'wrong-password')).rejects.toThrow(
+      'Incorrect email or password',
     )
   })
 })

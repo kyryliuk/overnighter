@@ -10,11 +10,19 @@ import { useCheckInPromptStore } from '@/store/checkInPromptStore'
 import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
+const authState = vi.hoisted(() => ({
+  session: null as { user: { id: string; email?: string } } | null,
+  isAuthenticated: false,
+}))
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return { ...actual, useNavigate: () => mockNavigate }
 })
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => authState,
+}))
 
 // Avoid Leaflet DOM dependency in jsdom
 vi.mock('./LeafletMap', () => ({
@@ -90,6 +98,8 @@ describe('MapView redirect guard', () => {
     useRigStore.setState({ onboardingDismissed: false })
     useAmenityFilterStore.setState({ activeFilters: [] })
     useUIStore.setState({ selectedPinId: null })
+    authState.session = null
+    authState.isAuthenticated = false
     mockNavigate.mockClear()
   })
 
@@ -493,5 +503,32 @@ describe('MapView departure check-in prompt (Story 4.2)', () => {
     expect(screen.queryByTestId('departure-prompt')).not.toBeInTheDocument()
     expect(useCheckInPromptStore.getState().isDismissed(VISIT_RECORD.visitKey)).toBe(true)
     expect(useUIStore.getState().pendingCheckIn).toEqual({ pinId: VISIT_RECORD.pinId })
+  })
+})
+
+describe('MapView account affordance', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
+    authState.session = null
+    authState.isAuthenticated = false
+    mockNavigate.mockClear()
+  })
+
+  it('shows the anonymous account label when signed out', () => {
+    render(<MapView />, { wrapper: Wrapper })
+
+    expect(screen.getByRole('button', { name: /open account/i })).toHaveTextContent('Account')
+  })
+
+  it('shows the signed-in user initial when authenticated', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'camper@example.com' } }
+
+    render(<MapView />, { wrapper: Wrapper })
+
+    expect(screen.getByRole('button', { name: /open profile for camper@example.com/i })).toHaveTextContent('C')
   })
 })

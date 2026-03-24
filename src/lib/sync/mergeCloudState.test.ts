@@ -89,6 +89,50 @@ describe('mergeRigProfileState', () => {
     expect(merged.rigProfile.rigType).toBe('Class A')
     expect(merged.onboardingDismissed).toBe(false)
   })
+
+  it('returns local state when remote is null', () => {
+    const local = {
+      rigProfile: { rigType: 'Class A' as const, lengthFt: 35, heightFt: 12.5 },
+      onboardingDismissed: true,
+      updatedAt: '2026-03-23T12:00:00.000Z',
+    }
+    const merged = mergeRigProfileState(local, null)
+    expect(merged).toBe(local)
+  })
+
+  it('returns remote when both local and remote are empty defaults', () => {
+    const merged = mergeRigProfileState(
+      {
+        rigProfile: { rigType: null, lengthFt: null, heightFt: null },
+        onboardingDismissed: false,
+        updatedAt: null,
+      },
+      {
+        rigProfile: { rigType: null, lengthFt: null, heightFt: null },
+        onboardingDismissed: false,
+        updatedAt: null,
+      },
+    )
+    expect(merged.rigProfile.rigType).toBeNull()
+    expect(merged.onboardingDismissed).toBe(false)
+  })
+
+  it('keeps local state when timestamps are equal', () => {
+    const merged = mergeRigProfileState(
+      {
+        rigProfile: { rigType: 'Class A', lengthFt: 35, heightFt: 12.5 },
+        onboardingDismissed: false,
+        updatedAt: '2026-03-23T12:00:00.000Z',
+      },
+      {
+        rigProfile: { rigType: 'Class B', lengthFt: 20, heightFt: 7 },
+        onboardingDismissed: true,
+        updatedAt: '2026-03-23T12:00:00.000Z',
+      },
+    )
+    expect(merged.rigProfile.rigType).toBe('Class A')
+    expect(merged.onboardingDismissed).toBe(false)
+  })
 })
 
 describe('mergeSavedSpots', () => {
@@ -109,6 +153,27 @@ describe('mergeSavedSpots', () => {
 
     expect(merged).toHaveLength(1)
     expect(merged[0].name).toBe('Local spot')
+  })
+
+  it('returns remote spots unmodified when local array is empty', () => {
+    const remoteSpots = [
+      { ...STUB_PIN, id: 'pin-r1', name: 'Remote spot 1' },
+      { ...STUB_PIN, id: 'pin-r2', name: 'Remote spot 2' },
+    ]
+    const merged = mergeSavedSpots([], remoteSpots)
+    expect(merged).toHaveLength(2)
+    expect(merged.map((p) => p.id)).toEqual(['pin-r1', 'pin-r2'])
+  })
+
+  it('returns local spots when remote array is empty', () => {
+    const merged = mergeSavedSpots([{ ...STUB_PIN, id: 'pin-l1', name: 'Local spot 1' }], [])
+    expect(merged).toHaveLength(1)
+    expect(merged[0].name).toBe('Local spot 1')
+  })
+
+  it('returns empty array when both arrays are empty', () => {
+    const merged = mergeSavedSpots([], [])
+    expect(merged).toHaveLength(0)
   })
 })
 
@@ -143,5 +208,23 @@ describe('mergeTripPlans', () => {
 
     expect(merged).toHaveLength(1)
     expect(merged[0].title).toBe('Local trip')
+  })
+
+  it('returns remote plans when local array is empty', () => {
+    const remotePlans = [{ ...LOCAL_PLAN, id: 'trip-r1', title: 'Remote trip' }]
+    const merged = mergeTripPlans([], remotePlans)
+    expect(merged).toHaveLength(1)
+    expect(merged[0].title).toBe('Remote trip')
+  })
+
+  it('returns local plans when remote array is empty', () => {
+    const merged = mergeTripPlans([LOCAL_PLAN], [])
+    expect(merged).toHaveLength(1)
+    expect(merged[0].title).toBe('Local trip')
+  })
+
+  it('returns empty array when both arrays are empty', () => {
+    const merged = mergeTripPlans([], [])
+    expect(merged).toHaveLength(0)
   })
 })

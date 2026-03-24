@@ -1,7 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { getCurrentSession, onAuthSessionChange, signOut as signOutAuth, signUpWithPassword } from '@/lib/supabase/auth'
+import {
+  getCurrentSession,
+  onAuthSessionChange,
+  signInWithPassword,
+  signOut as signOutAuth,
+  signUpWithPassword,
+} from '@/lib/supabase/auth'
 import { ensureProfile } from '@/lib/supabase/profiles'
+import { migrateLocalData } from '@/lib/supabase/migrate'
 import { getRigProfile, upsertRigProfile, deleteRigProfile } from '@/lib/supabase/rigProfiles'
 import { getSavedSpots, replaceSavedSpots as syncSavedSpots } from '@/lib/supabase/savedSpots'
 import { getTripPlans, replaceTripPlans as syncTripPlans } from '@/lib/supabase/tripPlans'
@@ -10,6 +17,8 @@ import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useTripPlansStore } from '@/store/tripPlansStore'
 import { AuthContext, type AuthContextValue, type SignUpResult } from './AuthContext'
+
+export const VISIBILITY_SYNC_INTERVAL_MS = 30_000
 
 function getRigSignature() {
   const state = useRigStore.getState()
@@ -31,6 +40,7 @@ function getTripPlansSignature() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const [isSigningUp, setIsSigningUp] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
@@ -48,9 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applyingRemoteStateRef = useRef(false)
   const activeUserIdRef = useRef<string | null>(null)
+  const migrationCompletedRef = useRef(false)
   const lastRigSignatureRef = useRef('')
   const lastSavedSpotsSignatureRef = useRef('')
   const lastTripPlansSignatureRef = useRef('')
+  const lastSyncTimestampRef = useRef(0)
 
   useEffect(() => {
     let cancelled = false
@@ -94,8 +106,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastTripPlansSignatureRef.current = ''
   }, [session?.user.id])
 
+  const syncWithCloud = useCallback(async (userId: string) => {
+    const [remoteRigProfile, remoteSavedSpots, remoteTripPlans] = await Promise.all([
+      getRigProfile(userId),
+      getSavedSpots(userId),
+      getTripPlans(userId),
+    ])
+
+    const mergedRigState = mergeRigProfileState(
+      {
+        rigProfile: useRigStore.getState().rigProfile,
+        onboardingDismissed: useRigStore.getState().onboardingDismissed,
+        updatedAt: useRigStore.getState().updatedAt,
+      },
+      remoteRigProfile,
+    )
+    const mergedSavedSpots = mergeSavedSpots(useSpotsStore.getState().savedSpots, remoteSavedSpots)
+    const mergedTripPlans = mergeTripPlans(useTripPlansStore.getState().tripPlans, remoteTripPlans)
+
+    try {
+      applyingRemoteStateRef.current = true
+      useRigStore.getState().replaceFromCloud(
+        mergedRigState.rigProfile,
+        mergedRigState.onboardingDismissed,
+        mergedRigState.updatedAt,
+      )
+      useSpotsStore.getState().replaceSavedSpots(mergedSavedSpots)
+      useTripPlansStore.getState().replaceTripPlans(mergedTripPlans)
+
+      lastRigSignatureRef.current = getRigSignature()
+      lastSavedSpotsSignatureRef.current = JSON.stringify(mergedSavedSpots)
+      lastTripPlansSignatureRef.current = JSON.stringify(mergedTripPlans)
+    } finally {
+      applyingRemoteStateRef.current = false
+    }
+
+    if (mergedRigState.rigProfile.rigType || mergedRigState.onboardingDismissed) {
+      await upsertRigProfile(userId, mergedRigState)
+    } else {
+      await deleteRigProfile(userId)
+    }
+
+    await syncSavedSpots(userId, mergedSavedSpots)
+    await syncTripPlans(userId, mergedTripPlans)
+
+    setLastSyncedAt(new Date().toISOString())
+    lastSyncTimestampRef.current = Date.now()
+  }, [])
+
   useEffect(() => {
     if (!session?.user || !rigHydrated || !spotsHydrated || !tripPlansHydrated || hasCompletedInitialSync) return
+
+    if (migrationCompletedRef.current) {
+      migrationCompletedRef.current = false
+      lastRigSignatureRef.current = getRigSignature()
+      lastSavedSpotsSignatureRef.current = getSavedSpotsSignature()
+      lastTripPlansSignatureRef.current = getTripPlansSignature()
+      setLastSyncedAt(new Date().toISOString())
+      lastSyncTimestampRef.current = Date.now()
+      setHasCompletedInitialSync(true)
+      return
+    }
 
     let cancelled = false
     const userId = session.user.id
@@ -105,50 +176,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSyncError(null)
 
       try {
-        const [remoteRigProfile, remoteSavedSpots, remoteTripPlans] = await Promise.all([
-          getRigProfile(userId),
-          getSavedSpots(userId),
-          getTripPlans(userId),
-        ])
+        await syncWithCloud(userId)
 
         if (cancelled) return
-
-        const mergedRigState = mergeRigProfileState(
-          {
-            rigProfile: useRigStore.getState().rigProfile,
-            onboardingDismissed: useRigStore.getState().onboardingDismissed,
-            updatedAt: useRigStore.getState().updatedAt,
-          },
-          remoteRigProfile,
-        )
-        const mergedSavedSpots = mergeSavedSpots(useSpotsStore.getState().savedSpots, remoteSavedSpots)
-        const mergedTripPlans = mergeTripPlans(useTripPlansStore.getState().tripPlans, remoteTripPlans)
-
-        applyingRemoteStateRef.current = true
-        useRigStore.getState().replaceFromCloud(
-          mergedRigState.rigProfile,
-          mergedRigState.onboardingDismissed,
-          mergedRigState.updatedAt,
-        )
-        useSpotsStore.getState().replaceSavedSpots(mergedSavedSpots)
-        useTripPlansStore.getState().replaceTripPlans(mergedTripPlans)
-        applyingRemoteStateRef.current = false
-
-        if (mergedRigState.rigProfile.rigType || mergedRigState.onboardingDismissed) {
-          await upsertRigProfile(userId, mergedRigState)
-        } else {
-          await deleteRigProfile(userId)
-        }
-
-        await syncSavedSpots(userId, mergedSavedSpots)
-        await syncTripPlans(userId, mergedTripPlans)
-
-        if (cancelled) return
-
-        lastRigSignatureRef.current = getRigSignature()
-        lastSavedSpotsSignatureRef.current = JSON.stringify(mergedSavedSpots)
-        lastTripPlansSignatureRef.current = JSON.stringify(mergedTripPlans)
-        setLastSyncedAt(new Date().toISOString())
       } catch (error) {
         applyingRemoteStateRef.current = false
         setSyncError(error instanceof Error ? error.message : 'Failed to sync account data')
@@ -165,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [session?.user, rigHydrated, spotsHydrated, tripPlansHydrated, hasCompletedInitialSync])
+  }, [session?.user, rigHydrated, spotsHydrated, tripPlansHydrated, hasCompletedInitialSync, syncWithCloud])
 
   useEffect(() => {
     if (!session?.user || !hasCompletedInitialSync || !rigHydrated || !spotsHydrated || !tripPlansHydrated) return
@@ -236,7 +266,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tripPlans,
   ])
 
-  async function signUp(email: string, password: string): Promise<SignUpResult> {
+  useEffect(() => {
+    if (!session?.user || !hasCompletedInitialSync) return
+
+    const userId = session.user.id
+
+    function handleVisibilityChange() {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - lastSyncTimestampRef.current < VISIBILITY_SYNC_INTERVAL_MS) return
+
+      void (async () => {
+        try {
+          await syncWithCloud(userId)
+        } catch (error) {
+          console.warn('Visibility-triggered sync failed:', error)
+        }
+      })()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [session?.user, hasCompletedInitialSync, syncWithCloud])
+
+  const signUp = useCallback(async (email: string, password: string): Promise<SignUpResult> => {
     setIsSigningUp(true)
     setSyncError(null)
 
@@ -269,31 +324,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to initialize profile')
       }
 
+      const rigState = useRigStore.getState()
+      const spots = useSpotsStore.getState().savedSpots
+
+      let migrationError: string | null = null
+      let migratedSpotsCount = 0
+
+      try {
+        const migrationResult = await migrateLocalData(result.session.access_token, {
+          rigProfile: rigState.rigProfile,
+          onboardingDismissed: rigState.onboardingDismissed,
+          rigUpdatedAt: rigState.updatedAt,
+          savedSpots: spots,
+        })
+        migratedSpotsCount = migrationResult.migratedSpotsCount
+        migrationCompletedRef.current = true
+      } catch {
+        migrationError = 'Account created. Data sync failed — will retry on next sign-in.'
+      }
+
       setSession(result.session)
-      return { status: 'authenticated' }
+
+      if (migrationError) {
+        return { status: 'authenticated', migrationError }
+      }
+
+      return { status: 'authenticated', migrationResult: { spotsCount: migratedSpotsCount } }
     } finally {
       setIsSigningUp(false)
     }
-  }
+  }, [])
 
-  async function signOut() {
+  const signIn = useCallback(async (email: string, password: string) => {
+    setIsSigningIn(true)
+    setSyncError(null)
+
+    try {
+      const result = await signInWithPassword(email, password)
+      setSession(result.session)
+    } finally {
+      setIsSigningIn(false)
+    }
+  }, [])
+
+  const signOut = useCallback(async () => {
     setSyncError(null)
     await signOutAuth()
-  }
+  }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
       isLoading,
+      isSigningIn,
       isAuthenticated: Boolean(session?.user),
       isSigningUp,
       isSyncing,
       syncError,
       lastSyncedAt,
+      signIn,
       signUp,
       signOut,
     }),
-    [session, isLoading, isSigningUp, isSyncing, syncError, lastSyncedAt],
+    [session, isLoading, isSigningIn, isSigningUp, isSyncing, syncError, lastSyncedAt, signIn, signUp, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
