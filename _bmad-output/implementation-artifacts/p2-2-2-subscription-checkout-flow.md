@@ -1,6 +1,6 @@
 # Story 2.2: Premium Subscription Checkout
 
-Status: review
+Status: done
 
 ## Story
 

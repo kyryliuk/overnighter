@@ -19,6 +19,19 @@ const { mockMutate, getCallbacks } = vi.hoisted(() => {
   }
 })
 
+const { mockUseAuth } = vi.hoisted(() => {
+  const mockUseAuth = vi.fn().mockReturnValue({
+    session: null,
+    isAuthenticated: false,
+    isLoading: false,
+  })
+  return { mockUseAuth }
+})
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: mockUseAuth,
+}))
+
 vi.mock('@/hooks/useCheckInMutation', () => ({
   useCheckInMutation: () => ({ mutate: mockMutate, isPending: false }),
 }))
@@ -63,6 +76,11 @@ const defaultProps = {
 beforeEach(() => {
   vi.clearAllMocks()
   Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: true })
+  mockUseAuth.mockReturnValue({
+    session: null,
+    isAuthenticated: false,
+    isLoading: false,
+  })
 })
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -162,15 +180,68 @@ describe('CheckInForm', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true')
   })
 
-  it('disables submission and shows offline guidance when the user is offline', () => {
+  it('queues check-in when offline and shows guidance message', () => {
     Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: false })
     window.dispatchEvent(new Event('offline'))
 
     render(<CheckInForm {...defaultProps} />)
     fireEvent.click(screen.getByText('Still Open'))
 
-    expect(screen.getByRole('status')).toHaveTextContent(/offline mode: check-ins require a connection/i)
-    expect(screen.getByRole('button', { name: /submit check-in/i })).toBeDisabled()
-    expect(mockMutate).not.toHaveBeenCalled()
+    expect(screen.getByRole('status')).toHaveTextContent(/your check-in will be saved and submitted when you reconnect/i)
+    // Submit button is enabled when offline (queuing is supported)
+    expect(screen.getByRole('button', { name: /submit check-in/i })).not.toBeDisabled()
+  })
+
+  // ── Photo upload integration tests ───────────────────────────────────────
+
+  it('does NOT render PhotoUpload when user is unauthenticated', () => {
+    mockUseAuth.mockReturnValue({ session: null, isAuthenticated: false, isLoading: false })
+    render(<CheckInForm {...defaultProps} />)
+    expect(screen.queryByLabelText('Add photo')).not.toBeInTheDocument()
+  })
+
+  it('renders PhotoUpload when user is authenticated', () => {
+    mockUseAuth.mockReturnValue({
+      session: { user: { id: 'user-1' }, access_token: 'token' },
+      isAuthenticated: true,
+      isLoading: false,
+    })
+    render(<CheckInForm {...defaultProps} />)
+    expect(screen.getByLabelText('Add photo')).toBeInTheDocument()
+  })
+
+  it('PhotoUpload shows disabled state when offline and authenticated', () => {
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: false })
+    window.dispatchEvent(new Event('offline'))
+    mockUseAuth.mockReturnValue({
+      session: { user: { id: 'user-1' }, access_token: 'token' },
+      isAuthenticated: true,
+      isLoading: false,
+    })
+    render(<CheckInForm {...defaultProps} />)
+    expect(screen.getByText('Photo unavailable offline')).toBeInTheDocument()
+  })
+
+  it('check-in submits successfully without photo (existing behavior preserved)', () => {
+    render(<CheckInForm {...defaultProps} />)
+    fireEvent.click(screen.getByText('Still Open'))
+    fireEvent.submit(screen.getByRole('dialog').querySelector('form')!)
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ pinId: 'pin-123', deviceId: 'stub-device-uuid', status: 'still_open' }),
+      expect.any(Object),
+    )
+    // Verify photo fields are undefined when no photo attached
+    const payload = mockMutate.mock.calls[0][0]
+    expect(payload.photoCdnUrl).toBeUndefined()
+    expect(payload.photoStoragePath).toBeUndefined()
+  })
+
+  it('mutation payload includes checkInId', () => {
+    render(<CheckInForm {...defaultProps} />)
+    fireEvent.click(screen.getByText('Still Open'))
+    fireEvent.submit(screen.getByRole('dialog').querySelector('form')!)
+    const payload = mockMutate.mock.calls[0][0]
+    // checkInId should be a valid UUID
+    expect(payload.checkInId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 })

@@ -88,6 +88,15 @@ export interface DbTripPlanComment {
   created_at: string
 }
 
+export interface DbPinPhoto {
+  id: string
+  check_in_id: string
+  user_id: string
+  storage_path: string
+  cdn_url: string
+  created_at: string
+}
+
 export interface DbSpotSubmission {
   id: string
   user_id: string

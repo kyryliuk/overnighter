@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { requireAdminAuth } from '../../_middleware'
 import { createServiceClient } from '../../_supabase'
 import type { ApiDbSpotSubmission } from '../../_spot-submissions'
+import { notifySubmissionStatusChange } from '../../_submissionNotify'
 
 const ReviewSubmissionSchema = z.object({
   action: z.enum(['approve', 'reject', 'request_changes']),
@@ -98,6 +99,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', submissionId)
 
     if (updateError) throw updateError
+
+    // Fire-and-forget push notification to submitter
+    notifySubmissionStatusChange(supabase, {
+      userId: record.user_id,
+      submissionName: record.name,
+      action: parsed.data.action,
+      adminNotes: parsed.data.admin_notes,
+      publishedPinId: publishedPinId,
+    })
+
     return res.status(200).json({ id: submissionId, status: nextStatus, publishedPinId })
   } catch (error) {
     console.error('[api/admin/spot-submissions/:id]', error)

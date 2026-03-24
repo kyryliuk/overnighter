@@ -57,6 +57,16 @@ vi.mock('../_supabase', () => ({
         }
       }
 
+      if (table === 'push_subscriptions') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          }),
+        }
+      }
+
       throw new Error(`Unexpected table ${table}`)
     }),
   })),

@@ -80,7 +80,7 @@ describe('OfflineDownloadGate', () => {
     ).toBeInTheDocument()
   })
 
-  it('premium users see children content (placeholder)', () => {
+  it('premium users see download button (default children)', () => {
     mockUseSubscription.mockReturnValue({
       isPremium: true,
       isTrial: false,
@@ -90,7 +90,7 @@ describe('OfflineDownloadGate', () => {
 
     render(<OfflineDownloadGate />, { wrapper: makeWrapper() })
 
-    expect(screen.getByTestId('offline-download-placeholder')).toBeInTheDocument()
+    expect(screen.getByTestId('offline-download-button')).toBeInTheDocument()
     expect(screen.getByText('Download area')).toBeInTheDocument()
     expect(screen.queryByTestId('premium-gate-upsell')).not.toBeInTheDocument()
   })
@@ -107,7 +107,7 @@ describe('OfflineDownloadGate', () => {
 
     expect(screen.getByTestId('premium-gate-upsell')).toBeInTheDocument()
     expect(screen.getByText('Unlock with Premium')).toBeInTheDocument()
-    expect(screen.queryByTestId('offline-download-placeholder')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('offline-download-button')).not.toBeInTheDocument()
   })
 
   it('renders custom children when provided', () => {
@@ -126,6 +126,22 @@ describe('OfflineDownloadGate', () => {
     )
 
     expect(screen.getByTestId('custom-content')).toBeInTheDocument()
-    expect(screen.queryByTestId('offline-download-placeholder')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('offline-download-button')).not.toBeInTheDocument()
+  })
+
+  it('calls onStartPreview when download button is clicked', () => {
+    mockUseSubscription.mockReturnValue({
+      isPremium: true,
+      isTrial: false,
+      status: 'premium',
+      isLoading: false,
+    })
+
+    const onStartPreview = vi.fn()
+    render(<OfflineDownloadGate onStartPreview={onStartPreview} />, { wrapper: makeWrapper() })
+
+    const button = screen.getByTestId('offline-download-button')
+    button.click()
+    expect(onStartPreview).toHaveBeenCalledOnce()
   })
 })

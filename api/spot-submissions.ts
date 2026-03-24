@@ -41,7 +41,10 @@ const SpotSubmissionSchema = z.object({
   amenities: AmenitiesSchema,
   max_length_ft: z.number().int().positive().optional().nullable(),
   max_height_ft: z.number().positive().optional().nullable(),
-  website: z.string().trim().url().optional().nullable(),
+  website: z.string().trim().url().refine(
+    (url) => url.startsWith('http://') || url.startsWith('https://'),
+    { message: 'Website must be an HTTP or HTTPS URL' }
+  ).optional().nullable(),
   phone: z.string().trim().max(50).optional().nullable(),
 })
 

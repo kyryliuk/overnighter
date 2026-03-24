@@ -13,6 +13,9 @@ export default defineConfig({
     tailwindcss(),
     !isVitest &&
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icons.svg', 'pwa-icon.svg'],
         manifest: {
@@ -33,38 +36,15 @@ export default defineConfig({
             },
           ],
         },
-        workbox: {
+        injectManifest: {
           globPatterns: ['**/*.{js,css,html,svg,ico,png}'],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/[a-z0-9.-]+\.basemaps\.cartocdn\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'carto-tiles',
-                expiration: {
-                  maxEntries: 256,
-                  maxAgeSeconds: 60 * 60 * 24 * 14,
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/[a-z0-9.-]+\.tile\.openstreetmap\.org\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'osm-tiles',
-                expiration: {
-                  maxEntries: 256,
-                  maxAgeSeconds: 60 * 60 * 24 * 14,
-                },
-              },
-            },
-          ],
         },
       }),
   ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      ...(isVitest ? { 'virtual:pwa-register/react': path.resolve(__dirname, './src/test/__mocks__/pwa-register-react.ts') } : {}),
     },
   },
   test: {

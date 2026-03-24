@@ -6,6 +6,18 @@ import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useTripPlansStore } from '@/store/tripPlansStore'
 
+const pushState = vi.hoisted(() => ({
+  isSubscribed: false,
+  isLoading: false,
+  permissionState: 'granted' as NotificationPermission | 'unsupported',
+  subscribe: vi.fn(),
+  unsubscribe: vi.fn(),
+}))
+
+vi.mock('@/hooks/usePushSubscription', () => ({
+  usePushSubscription: () => pushState,
+}))
+
 const authState = vi.hoisted(() => ({
   session: null as { user: { id: string; email: string }; access_token: string } | null,
   isLoading: false,
@@ -58,6 +70,12 @@ describe('AccountScreen', () => {
     authState.signIn.mockReset()
     authState.signUp.mockReset()
     authState.signOut.mockReset()
+
+    pushState.isSubscribed = false
+    pushState.isLoading = false
+    pushState.permissionState = 'granted'
+    pushState.subscribe.mockReset()
+    pushState.unsubscribe.mockReset().mockResolvedValue(undefined)
 
     useRigStore.setState({
       rigProfile: { rigType: 'Class B', lengthFt: 22, heightFt: 10.5 },
@@ -232,5 +250,77 @@ describe('AccountScreen', () => {
     renderScreen()
 
     expect(screen.queryByTestId('subscription-status-card')).not.toBeInTheDocument()
+  })
+
+  it('shows "Disable notifications" button when subscribed and authenticated', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+    pushState.isSubscribed = true
+
+    renderScreen()
+
+    expect(screen.getByRole('button', { name: /disable notifications/i })).toBeInTheDocument()
+  })
+
+  it('calls unsubscribe when "Disable notifications" is clicked', async () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+    pushState.isSubscribed = true
+
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /disable notifications/i }))
+
+    await waitFor(() => {
+      expect(pushState.unsubscribe).toHaveBeenCalled()
+    })
+  })
+
+  it('shows "Notifications disabled" label when not subscribed', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+    pushState.isSubscribed = false
+
+    renderScreen()
+
+    expect(screen.getByText(/notifications disabled/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /disable notifications/i })).not.toBeInTheDocument()
+  })
+
+  it('does not render notification UI when push is unsupported', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+    pushState.permissionState = 'unsupported'
+    pushState.isSubscribed = false
+
+    renderScreen()
+
+    expect(screen.queryByText(/notifications disabled/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /disable notifications/i })).not.toBeInTheDocument()
+  })
+
+  it('shows "Disabling..." while isPushLoading is true', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+    pushState.isSubscribed = true
+    pushState.isLoading = true
+
+    renderScreen()
+
+    expect(screen.getByRole('button', { name: /disabling\.\.\./i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /disabling\.\.\./i })).toBeDisabled()
+  })
+
+  it('shows error message when unsubscribe fails', async () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+    pushState.isSubscribed = true
+    pushState.unsubscribe.mockRejectedValue(new Error('Unsubscribe failed'))
+
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /disable notifications/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to disable notifications')
   })
 })

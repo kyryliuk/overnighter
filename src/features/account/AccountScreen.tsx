@@ -5,6 +5,7 @@ import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useTripPlansStore } from '@/store/tripPlansStore'
 import { SubscriptionStatusCard } from '@/features/subscription/SubscriptionStatusCard'
+import { usePushSubscription } from '@/hooks/usePushSubscription'
 
 function formatTimestamp(timestamp: string | null) {
   if (!timestamp) return 'Not synced yet'
@@ -28,6 +29,7 @@ export default function AccountScreen() {
   const [password, setPassword] = useState('')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const { isSubscribed, isLoading: isPushLoading, unsubscribe, permissionState } = usePushSubscription()
 
 
   const rigSummary = useMemo(() => {
@@ -296,6 +298,28 @@ export default function AccountScreen() {
               >
                 Trip drafts
               </button>
+              {permissionState !== 'unsupported' && (
+                isSubscribed ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await unsubscribe()
+                      } catch {
+                        setSubmitError('Failed to disable notifications')
+                      }
+                    }}
+                    disabled={isPushLoading}
+                    className="min-h-[44px] rounded-lg border border-border bg-background px-4 text-sm text-amber-300"
+                  >
+                    {isPushLoading ? 'Disabling...' : 'Disable notifications'}
+                  </button>
+                ) : (
+                  <span className="min-h-[44px] rounded-lg border border-border bg-background px-4 text-sm text-muted-foreground flex items-center justify-center">
+                    Notifications disabled
+                  </span>
+                )
+              )}
               <button
                 type="button"
                 onClick={handleSignOut}

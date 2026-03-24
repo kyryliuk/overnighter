@@ -9,6 +9,9 @@ export interface CheckInPayload {
   deviceId: string
   status: CheckInStatus
   note?: string
+  checkInId?: string
+  photoCdnUrl?: string
+  photoStoragePath?: string
 }
 
 export function useCheckInMutation() {
