@@ -140,3 +140,44 @@ development_status:
   p2-7-1-postgis-spatial-index-migration: done
   p2-7-2-radius-based-search-api: done
   p2-epic-7-retrospective: done
+
+  # ══════════════════════════════════════════════════════════════════
+  # PHASE 3 — PLANNED
+  # ══════════════════════════════════════════════════════════════════
+
+  # ── Phase 3 Epic 1: Premium Trip Workspace ────────────────────────────────
+  p3-epic-1: in-progress
+  p3-1-1-normalized-trip-model-foundation: ready-for-dev
+  p3-1-2-gated-my-routes-entry-point: backlog
+  p3-1-3-create-a-new-trip-plan: backlog
+  p3-1-4-resume-an-existing-trip: backlog
+  p3-epic-1-retrospective: optional
+
+  # ── Phase 3 Epic 2: Corridor Stop Builder ─────────────────────────────────
+  p3-epic-2: backlog
+  p3-2-1-add-and-remove-route-stops: backlog
+  p3-2-2-reorder-stops-and-render-corridor-overlay: backlog
+  p3-2-3-corridor-suggestions-from-existing-route-logic: backlog
+  p3-2-4-ordered-google-maps-handoff: backlog
+  p3-epic-2-retrospective: optional
+
+  # ── Phase 3 Epic 3: Route Library Management ──────────────────────────────
+  p3-epic-3: backlog
+  p3-3-1-my-routes-library-view: backlog
+  p3-3-2-duplicate-a-trip-for-what-if-planning: backlog
+  p3-3-3-archive-and-delete-route-plans: backlog
+  p3-epic-3-retrospective: optional
+
+  # ── Phase 3 Epic 4: Offline Drafting & Sync Resilience ────────────────────
+  p3-epic-4: backlog
+  p3-4-1-local-draft-store-and-pending-mutation-queue: backlog
+  p3-4-2-offline-editing-and-sync-status-ux: backlog
+  p3-4-3-reconnect-flush-and-conflict-handling: backlog
+  p3-epic-4-retrospective: optional
+
+  # ── Phase 3 Epic 5: Legacy Migration & Sharing Compatibility ──────────────
+  p3-epic-5: backlog
+  p3-5-1-backfill-legacy-trip-plans: backlog
+  p3-5-2-dual-read-cutover-and-plan-route-redirect: backlog
+  p3-5-3-shared-trip-compatibility-and-premium-import: backlog
+  p3-epic-5-retrospective: optional
