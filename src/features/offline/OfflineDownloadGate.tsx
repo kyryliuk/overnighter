@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { PremiumGate } from '@/components/PremiumGate'
 
 interface OfflineDownloadGateProps {
   children?: ReactNode
@@ -9,11 +8,7 @@ interface OfflineDownloadGateProps {
 
 export function OfflineDownloadGate({ children, onStartPreview, className }: OfflineDownloadGateProps) {
   return (
-    <PremiumGate
-      feature="Offline Maps"
-      description="Download map areas for offline use when you have no signal."
-      className={className}
-    >
+    <div className={className}>
       {children ?? (
         <button
           type="button"
@@ -26,6 +21,6 @@ export function OfflineDownloadGate({ children, onStartPreview, className }: Off
           <span>Download area</span>
         </button>
       )}
-    </PremiumGate>
+    </div>
   )
 }

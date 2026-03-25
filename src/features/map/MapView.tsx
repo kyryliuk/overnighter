@@ -10,6 +10,10 @@ import { useGeolocation } from '@/hooks/useGeolocation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useOfflineMapDownload } from '@/hooks/useOfflineMapDownload'
 import type * as L from 'leaflet'
+import { TripCorridorOverlay } from '@/features/route-planning/TripCorridorOverlay'
+import { useTripCorridorPreview } from '@/features/route-planning/TripCorridorPreviewContext'
+import { TripCorridorPreviewProvider } from '@/features/route-planning/TripCorridorPreviewProvider'
+import { buildTripCorridorPreview } from '@/features/route-planning/routePlanning'
 import { doesPinMatchFilters, doesPinFitRig, doesPinMatchSourceFilter } from './pinFilters'
 
 const GEO_ERROR_MESSAGES: Record<string, string> = {
@@ -38,7 +42,7 @@ function distanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): 
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-export default function MapView() {
+function MapViewContent() {
   const navigate = useNavigate()
   const { session, isAuthenticated } = useAuth()
   const hasRigProfile = useRigStore((state) => state.hasRigProfile)
@@ -51,6 +55,7 @@ export default function MapView() {
     ...viewport,
   })
   const mapRef = useRef<L.Map | null>(null)
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeFilters = useAmenityFilterStore((state) => state.activeFilters)
   const activeGroups = useSourceFilterStore((state) => state.activeGroups)
@@ -65,9 +70,11 @@ export default function MapView() {
   const pendingMapCenter = useUIStore((state) => state.pendingMapCenter)
   const setPendingMapCenter = useUIStore((state) => state.setPendingMapCenter)
   const location = useLocation()
+  const { previewTrip } = useTripCorridorPreview()
   const [geoState, requestGeo] = useGeolocation()
   const [pendingDeparturePin, setPendingDeparturePin] = useState<VisitRecord | null>(null)
   const departureCheckedRef = useRef(false)
+  const lastFittedRouteSignatureRef = useRef<string | null>(null)
   const visitRecords = useCheckInPromptStore((state) => state.visitRecords)
   const isDismissed = useCheckInPromptStore((state) => state.isDismissed)
   const setPendingCheckIn = useUIStore((state) => state.setPendingCheckIn)
@@ -103,17 +110,19 @@ export default function MapView() {
     }, 300)
   }, [computeViewport])
 
-  function handleMapReady(map: L.Map) {
+  const handleMapReady = useCallback((map: L.Map) => {
     mapRef.current = map
+    setMapInstance(map)
     setViewport(computeViewport(map))
     map.on('moveend', onMoveEnd)
-  }
+  }, [computeViewport, onMoveEnd])
 
-  function handleMapRemove() {
+  const handleMapRemove = useCallback(() => {
     mapRef.current?.off('moveend', onMoveEnd)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     mapRef.current = null
-  }
+    setMapInstance(null)
+  }, [onMoveEnd])
 
   function handleStartPreview() {
     const map = mapRef.current
@@ -163,8 +172,6 @@ export default function MapView() {
     const candidates = visitRecords.filter(
       (v) => !isDismissed(v.visitKey) && distanceMiles(latitude, longitude, v.latitude, v.longitude) > 0.5,
     )
-    // Geolocation is an external system; opening the prompt in direct response here is intentional.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (candidates.length > 0) setPendingDeparturePin(candidates[0])
   }, [geoState.coords, isDismissed, visitRecords])
 
@@ -214,6 +221,51 @@ export default function MapView() {
       ),
     [pins, activeFilters, activeGroups],
   )
+  const corridorPreview = useMemo(() => buildTripCorridorPreview(previewTrip), [previewTrip])
+  const corridorFitSignature = useMemo(
+    () => corridorPreview.linePoints.map((point) => `${point.latitude}:${point.longitude}`).join('|'),
+    [corridorPreview.linePoints],
+  )
+  const mapElement = useMemo(() => (
+    <LeafletMap
+      pins={visiblePins}
+      isLoading={isLoading}
+      rigProfile={rigProfile}
+      onMapReady={handleMapReady}
+      onMapRemove={handleMapRemove}
+    />
+  ), [handleMapReady, handleMapRemove, isLoading, rigProfile, visiblePins])
+
+  useEffect(() => {
+    if (!corridorFitSignature || corridorPreview.linePoints.length < 2) {
+      lastFittedRouteSignatureRef.current = null
+      return
+    }
+
+    if (lastFittedRouteSignatureRef.current === corridorFitSignature) {
+      return
+    }
+
+    if (pendingMapCenter) {
+      return
+    }
+
+    if (!mapInstance) {
+      return
+    }
+
+    lastFittedRouteSignatureRef.current = corridorFitSignature
+
+    void import('leaflet').then((L) => {
+      const bounds = L.latLngBounds(
+        corridorPreview.linePoints.map((point) => [point.latitude, point.longitude] as [number, number]),
+      )
+      mapInstance.fitBounds(bounds, {
+        padding: [48, 48],
+        maxZoom: 14,
+      })
+    })
+  }, [corridorFitSignature, corridorPreview.linePoints, mapInstance, pendingMapCenter])
 
   return (
     <div className="relative bg-background" style={{ height: '100dvh' }}>
@@ -254,15 +306,12 @@ export default function MapView() {
             </div>
           }
         >
-          <LeafletMap
-            pins={visiblePins}
-            isLoading={isLoading}
-            rigProfile={rigProfile}
-            onMapReady={handleMapReady}
-            onMapRemove={handleMapRemove}
-          />
+          {mapElement}
         </Suspense>
       </div>
+      {mapInstance && corridorPreview.linePoints.length >= 2 ? (
+        <TripCorridorOverlay mapRef={mapRef} preview={corridorPreview} />
+      ) : null}
       {/* Empty state — shown when active filters match no pins in the dataset */}
       {!hasAnyMatch && !isLoading && (
         <div className="absolute bottom-20 left-0 right-0 flex justify-center z-10 pointer-events-none">
@@ -353,5 +402,13 @@ export default function MapView() {
       {/* Pin detail sheet overlay — rendered via nested route /pin/:id */}
       <Outlet />
     </div>
+  )
+}
+
+export default function MapView() {
+  return (
+    <TripCorridorPreviewProvider>
+      <MapViewContent />
+    </TripCorridorPreviewProvider>
   )
 }

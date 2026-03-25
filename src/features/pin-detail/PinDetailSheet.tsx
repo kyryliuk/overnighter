@@ -60,6 +60,7 @@ export default function PinDetailSheet() {
   const navigate = useNavigate()
   const { data: pins = [], isLoading, error } = usePinsQuery({ enabled: true })
   const rigProfile = useRigStore((state) => state.rigProfile)
+  const activeTripId = useUIStore((state) => state.activeTripId)
   const pin = pins.find((p) => p.id === id)
   const { isAuthenticated } = useAuth()
   const { data: pinPhotos = [] } = usePinPhotos(id ?? '')
@@ -93,6 +94,22 @@ export default function PinDetailSheet() {
   function handleDismiss() {
     useUIStore.getState().setSelectedPin(null)
     navigate('/')
+  }
+
+  function handleRoutePlanning() {
+    if (!pin) return
+
+    if (!activeTripId) {
+      navigate('/trips')
+      return
+    }
+
+    const nextParams = new URLSearchParams({
+      tripId: activeTripId,
+      addStopPinId: pin.id,
+      addStopSource: 'manual',
+    })
+    navigate(`/trips?${nextParams.toString()}`)
   }
 
 
@@ -366,14 +383,14 @@ export default function PinDetailSheet() {
                >
                  Get Directions →
                </a>
-               <button
-                 type="button"
-                 onClick={() => navigate('/trips')}
-                 aria-label="Plan route here"
-                 className="mt-2 w-full min-h-[44px] rounded-lg border border-border bg-background font-medium text-foreground"
-               >
-                 Plan route here
-               </button>
+                <button
+                  type="button"
+                  onClick={handleRoutePlanning}
+                  aria-label={activeTripId ? 'Add to route' : 'Plan route here'}
+                  className="mt-2 w-full min-h-[44px] rounded-lg border border-border bg-background font-medium text-foreground"
+                >
+                  {activeTripId ? 'Add to route' : 'Plan route here'}
+                </button>
                {/* Report an Issue — sets pendingReport in uiStore; IssueReportSheet mounts in App.tsx */}
                <button
                  onClick={() => useUIStore.getState().setPendingReport({ pinId: pin.id })}

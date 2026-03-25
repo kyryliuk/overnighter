@@ -63,7 +63,7 @@ describe('SavedSpotsScreen', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useSpotsStore.setState({ savedSpots: [] })
-    useUIStore.setState({ selectedPinId: null, pendingMapCenter: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null, pendingMapCenter: null })
     mockUseGeolocation.mockReturnValue([
       { isLoading: false, coords: null, error: null },
       vi.fn(),
@@ -153,5 +153,15 @@ describe('SavedSpotsScreen', () => {
     renderScreen()
     fireEvent.click(screen.getByRole('button', { name: /back to map/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+
+  it('shows an add-to-route action when an active trip is selected', () => {
+    useSpotsStore.setState({ savedSpots: [STUB_PIN] })
+    useUIStore.setState({ activeTripId: 'trip-123' })
+
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /add test spot to route/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/trips?tripId=trip-123&addStopPinId=pin-1&addStopSource=saved')
   })
 })

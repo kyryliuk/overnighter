@@ -154,11 +154,11 @@ development_status:
   p3-epic-1-retrospective: optional
 
   # ── Phase 3 Epic 2: Corridor Stop Builder ─────────────────────────────────
-  p3-epic-2: backlog
-  p3-2-1-add-and-remove-route-stops: backlog
-  p3-2-2-reorder-stops-and-render-corridor-overlay: backlog
-  p3-2-3-corridor-suggestions-from-existing-route-logic: backlog
-  p3-2-4-ordered-google-maps-handoff: backlog
+  p3-epic-2: in-progress
+  p3-2-1-add-and-remove-route-stops: ready-for-dev
+  p3-2-2-reorder-stops-and-render-corridor-overlay: ready-for-dev
+  p3-2-3-corridor-suggestions-from-existing-route-logic: ready-for-dev
+  p3-2-4-ordered-google-maps-handoff: ready-for-dev
   p3-epic-2-retrospective: optional
 
   # ── Phase 3 Epic 3: Route Library Management ──────────────────────────────
@@ -181,3 +181,4 @@ development_status:
   p3-5-2-dual-read-cutover-and-plan-route-redirect: backlog
   p3-5-3-shared-trip-compatibility-and-premium-import: backlog
   p3-epic-5-retrospective: optional
+

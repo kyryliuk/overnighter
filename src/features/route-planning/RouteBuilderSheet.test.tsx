@@ -1,8 +1,13 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useSpotsStore } from '@/store/spotsStore'
+import { useRigStore } from '@/store/rigStore'
 import type { Pin } from '@/types/pin'
+import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
+import type { Trip } from '@/types/trip'
 import RouteBuilderSheet from './RouteBuilderSheet'
+import { MAX_TRIP_STOPS_MESSAGE } from './routePlanning'
 
 const mockUsePinsQuery = vi.fn()
 
@@ -109,12 +114,268 @@ const PINS: Pin[] = [
     createdAt: '2026-03-25T00:00:00.000Z',
     updatedAt: '2026-03-25T00:00:00.000Z',
   },
+  {
+    id: 'pin-waypoint',
+    name: 'Kingman Fuel',
+    description: null,
+    latitude: 35.1894,
+    longitude: -114.053,
+    pinType: 'community',
+    sourceId: null,
+    maxLengthFt: null,
+    maxHeightFt: null,
+    website: null,
+    phone: null,
+    elevationM: null,
+    amenities: {
+      water: false,
+      dump: false,
+      electric: false,
+      shower: false,
+      fuel: true,
+      propane: false,
+      overnight: false,
+      toilets: false,
+      pets: true,
+      wifi: false,
+      kitchen: false,
+      restaurant: false,
+      big_rig: true,
+      tent: false,
+      hiking: false,
+      fishing: false,
+      swimming: false,
+      boating: false,
+      biking: false,
+      ohv: false,
+      climbing: false,
+      winter_sports: false,
+      hunting: false,
+      wildlife: false,
+      horseback: false,
+      hot_springs: false,
+    },
+    badgeState: 'green',
+    lastCheckInAt: null,
+    recentCheckInCount: 0,
+    isVerified: true,
+    isFlagged: false,
+    createdAt: '2026-03-25T00:00:00.000Z',
+    updatedAt: '2026-03-25T00:00:00.000Z',
+  },
+  {
+    id: 'pin-saved',
+    name: 'Lake Havasu',
+    description: null,
+    latitude: 34.4839,
+    longitude: -114.3225,
+    pinType: 'community',
+    sourceId: null,
+    maxLengthFt: null,
+    maxHeightFt: null,
+    website: null,
+    phone: null,
+    elevationM: null,
+    amenities: {
+      water: true,
+      dump: false,
+      electric: false,
+      shower: false,
+      fuel: false,
+      propane: false,
+      overnight: true,
+      toilets: true,
+      pets: true,
+      wifi: false,
+      kitchen: false,
+      restaurant: false,
+      big_rig: true,
+      tent: true,
+      hiking: false,
+      fishing: false,
+      swimming: false,
+      boating: false,
+      biking: false,
+      ohv: false,
+      climbing: false,
+      winter_sports: false,
+      hunting: false,
+      wildlife: false,
+      horseback: false,
+      hot_springs: false,
+    },
+    badgeState: 'green',
+    lastCheckInAt: null,
+    recentCheckInCount: 0,
+    isVerified: true,
+    isFlagged: false,
+    createdAt: '2026-03-25T00:00:00.000Z',
+    updatedAt: '2026-03-25T00:00:00.000Z',
+  },
+  {
+    id: 'pin-suggested',
+    name: 'Desert Oasis',
+    description: null,
+    latitude: 34.95,
+    longitude: -113.65,
+    pinType: 'community',
+    sourceId: null,
+    maxLengthFt: null,
+    maxHeightFt: null,
+    website: null,
+    phone: null,
+    elevationM: null,
+    amenities: {
+      water: true,
+      dump: false,
+      electric: false,
+      shower: false,
+      fuel: true,
+      propane: false,
+      overnight: true,
+      toilets: true,
+      pets: true,
+      wifi: false,
+      kitchen: false,
+      restaurant: false,
+      big_rig: true,
+      tent: true,
+      hiking: false,
+      fishing: false,
+      swimming: false,
+      boating: false,
+      biking: false,
+      ohv: false,
+      climbing: false,
+      winter_sports: false,
+      hunting: false,
+      wildlife: false,
+      horseback: false,
+      hot_springs: false,
+    },
+    badgeState: 'yellow',
+    lastCheckInAt: null,
+    recentCheckInCount: 0,
+    isVerified: true,
+    isFlagged: false,
+    createdAt: '2026-03-25T00:00:00.000Z',
+    updatedAt: '2026-03-25T00:00:00.000Z',
+  },
 ]
+
+const RESTORED_TRIP: Trip = {
+  id: 'trip-123',
+  title: 'Desert Loop',
+  notes: 'Camp by the river',
+  status: 'draft',
+  origin: { id: 'pin-origin', name: 'Flagstaff', latitude: 35.1983, longitude: -111.6513 },
+  destination: { id: 'pin-dest', name: 'Quartzsite', latitude: 33.6639, longitude: -114.229 },
+  routeMode: 'corridor',
+  stopCount: 2,
+  revision: 1,
+  isPublic: false,
+  shareToken: null,
+  sourceTripId: null,
+  sourceShareToken: null,
+  createdAt: '2026-03-25T00:00:00.000Z',
+  updatedAt: '2026-03-25T00:00:00.000Z',
+  stops: [
+    {
+      id: 'stop-1',
+      stopOrder: 0,
+      stopKind: 'waypoint',
+      source: 'saved',
+      pinId: 'pin-saved',
+      place: { id: 'pin-saved', name: 'Lake Havasu', latitude: 34.4839, longitude: -114.3225 },
+      notes: 'Fuel up before leaving town',
+      createdAt: '2026-03-25T00:00:00.000Z',
+      updatedAt: '2026-03-25T00:00:00.000Z',
+    },
+    {
+      id: 'stop-2',
+      stopOrder: 1,
+      stopKind: 'destination',
+      source: 'manual',
+      pinId: null,
+      place: { id: 'pin-dest', name: 'Quartzsite', latitude: 33.6639, longitude: -114.229 },
+      notes: '',
+      createdAt: '2026-03-25T00:00:00.000Z',
+      updatedAt: '2026-03-25T00:00:00.000Z',
+    },
+  ],
+}
+
+const RESTORED_TRIP_WITH_MULTIPLE_WAYPOINTS: Trip = {
+  ...RESTORED_TRIP,
+  stopCount: 3,
+  stops: [
+    RESTORED_TRIP.stops[0],
+    {
+      id: 'stop-3',
+      stopOrder: 1,
+      stopKind: 'waypoint',
+      source: 'manual',
+      pinId: 'pin-waypoint',
+      place: { id: 'pin-waypoint', name: 'Kingman Fuel', latitude: 35.1894, longitude: -114.053 },
+      notes: 'Stretch break',
+      createdAt: '2026-03-25T00:00:00.000Z',
+      updatedAt: '2026-03-25T00:00:00.000Z',
+    },
+    {
+      ...RESTORED_TRIP.stops[1],
+      stopOrder: 2,
+    },
+  ],
+}
+
+function buildTripWithMaxWaypoints(): Trip {
+  return {
+    ...RESTORED_TRIP,
+    id: 'trip-max',
+    stopCount: 12,
+    stops: [
+      ...Array.from({ length: 11 }, (_, index) => ({
+        id: `stop-${index + 1}`,
+        stopOrder: index,
+        stopKind: 'waypoint' as const,
+        source: 'manual' as const,
+        pinId: `pin-max-${index + 1}`,
+        place: {
+          id: `pin-max-${index + 1}`,
+          name: `Stop ${index + 1}`,
+          latitude: 30 + index,
+          longitude: -110 - index,
+        },
+        notes: '',
+        createdAt: '2026-03-25T00:00:00.000Z',
+        updatedAt: '2026-03-25T00:00:00.000Z',
+      })),
+      {
+        id: 'stop-destination',
+        stopOrder: 11,
+        stopKind: 'destination' as const,
+        source: 'manual' as const,
+        pinId: null,
+        place: RESTORED_TRIP.destination,
+        notes: '',
+        createdAt: '2026-03-25T00:00:00.000Z',
+        updatedAt: '2026-03-25T00:00:00.000Z',
+      },
+    ],
+  }
+}
 
 describe('RouteBuilderSheet', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockUsePinsQuery.mockReturnValue({ data: PINS, isLoading: false })
+    useSpotsStore.setState({ savedSpots: [PINS[3]] })
+    useRigStore.setState({
+      rigProfile: DEFAULT_RIG_PROFILE,
+      onboardingDismissed: false,
+      updatedAt: null,
+      hasHydrated: true,
+    })
   })
 
   it('opens and closes accessibly', async () => {
@@ -172,6 +433,196 @@ describe('RouteBuilderSheet', () => {
         latitude: 33.6639,
         longitude: -114.229,
       },
+      stops: [],
     }))
+  })
+
+  it('hydrates an existing trip into the planner sheet', () => {
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP} />)
+
+    expect(screen.getByRole('dialog', { name: /resume route/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/title/i)).toHaveValue('Desert Loop')
+    expect(screen.getByLabelText(/notes/i)).toHaveValue('Camp by the river')
+    expect(screen.getByText('Quartzsite')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /update route/i })).toBeInTheDocument()
+  })
+
+  it('adds and removes stops while preserving sequential order in resume mode', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const user = userEvent.setup()
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={onSave} trip={RESTORED_TRIP} />)
+
+    const stopList = screen.getByRole('list', { name: /route stops list/i })
+    expect(within(stopList).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(stopList).getByText(/stop 1: lake havasu/i)).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/add a stop/i), 'kingman')
+    await user.click(screen.getByRole('button', { name: /kingman fuel/i }))
+
+    expect(within(stopList).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(stopList).getByText(/stop 2: kingman fuel/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /remove lake havasu from route/i }))
+
+    expect(within(stopList).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(stopList).getByText(/stop 1: kingman fuel/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /update route/i }))
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Desert Loop',
+      destination: RESTORED_TRIP.destination,
+      stops: [
+        expect.objectContaining({
+          stopOrder: 0,
+          source: 'manual',
+          pinId: 'pin-waypoint',
+          place: expect.objectContaining({ id: 'pin-waypoint', name: 'Kingman Fuel' }),
+        }),
+      ],
+    })))
+  })
+
+  it('exposes accessible reorder controls and submits reordered normalized stops', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const user = userEvent.setup()
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={onSave} trip={RESTORED_TRIP_WITH_MULTIPLE_WAYPOINTS} />)
+
+    const stopList = screen.getByRole('list', { name: /route stops list/i })
+    expect(within(stopList).getByText(/stop 1: lake havasu/i)).toBeInTheDocument()
+    expect(within(stopList).getByText(/stop 2: kingman fuel/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /move stop 1 up/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /move stop 2 down/i })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: /move stop 2 up/i }))
+
+    const reorderedStops = within(stopList).getAllByRole('listitem')
+    expect(within(reorderedStops[0]).getByText(/stop 1: kingman fuel/i)).toBeInTheDocument()
+    expect(within(reorderedStops[1]).getByText(/stop 2: lake havasu/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /update route/i }))
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      stops: [
+        expect.objectContaining({
+          stopOrder: 0,
+          pinId: 'pin-waypoint',
+          source: 'manual',
+          notes: 'Stretch break',
+          place: expect.objectContaining({ id: 'pin-waypoint', name: 'Kingman Fuel' }),
+        }),
+        expect.objectContaining({
+          stopOrder: 1,
+          pinId: 'pin-saved',
+          source: 'saved',
+          notes: 'Fuel up before leaving town',
+          place: expect.objectContaining({ id: 'pin-saved', name: 'Lake Havasu' }),
+        }),
+      ],
+    })))
+  })
+
+  it('consumes pending stop intents from saved spots and clears the intent callback', async () => {
+    const onPendingAddStopHandled = vi.fn()
+
+    render(
+      <RouteBuilderSheet
+        isOpen
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        trip={RESTORED_TRIP}
+        pendingAddStop={{ pinId: 'pin-waypoint', source: 'saved' }}
+        onPendingAddStopHandled={onPendingAddStopHandled}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText(/stop 2: kingman fuel/i)).toBeInTheDocument())
+    expect(onPendingAddStopHandled).toHaveBeenCalled()
+  })
+
+  it('blocks pending duplicate stop intents with inline feedback', async () => {
+    const onPendingAddStopHandled = vi.fn()
+
+    render(
+      <RouteBuilderSheet
+        isOpen
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        trip={RESTORED_TRIP}
+        pendingAddStop={{ pinId: 'pin-saved', source: 'manual' }}
+        onPendingAddStopHandled={onPendingAddStopHandled}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('That stop is already part of this route.'))
+    expect(screen.getByRole('list', { name: /route stops list/i }).querySelectorAll('li')).toHaveLength(1)
+    expect(onPendingAddStopHandled).toHaveBeenCalled()
+  })
+
+  it('blocks max-stop overflows before save', async () => {
+    render(
+      <RouteBuilderSheet
+        isOpen
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        trip={buildTripWithMaxWaypoints()}
+        pendingAddStop={{ pinId: 'pin-waypoint', source: 'manual' }}
+        onPendingAddStopHandled={vi.fn()}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(MAX_TRIP_STOPS_MESSAGE))
+  })
+
+  it('renders corridor suggestions, excludes existing stops, and saves added suggestions with source metadata', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const user = userEvent.setup()
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={onSave} trip={RESTORED_TRIP} />)
+
+    const suggestionList = screen.getByRole('list', { name: /suggested corridor stops/i })
+    expect(within(suggestionList).getByText('Desert Oasis')).toBeInTheDocument()
+    expect(within(suggestionList).queryByText('Lake Havasu')).not.toBeInTheDocument()
+    expect(within(suggestionList).queryByText('Quartzsite')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /add desert oasis as a suggested stop/i }))
+
+    const stopList = screen.getByRole('list', { name: /route stops list/i })
+    expect(within(stopList).getByText(/stop 2: desert oasis/i)).toBeInTheDocument()
+    expect(within(stopList).getByText('suggested')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /update route/i }))
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      stops: [
+        expect.objectContaining({ stopOrder: 0, pinId: 'pin-saved', source: 'saved' }),
+        expect.objectContaining({ stopOrder: 1, pinId: 'pin-suggested', source: 'suggested' }),
+      ],
+    })))
+  })
+
+  it('shows a quiet corridor-suggestions message when origin context is missing', () => {
+    render(
+      <RouteBuilderSheet
+        isOpen
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        trip={{ ...RESTORED_TRIP, origin: null }}
+      />,
+    )
+
+    expect(screen.getByText(/add an origin to review corridor suggestions/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/add a stop/i)).toBeInTheDocument()
+  })
+
+  it('shows a non-blocking message when no pin data is available for suggestions', () => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false })
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP} />)
+
+    expect(screen.getByText(/suggestions are unavailable until map pins are loaded for this route/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/add a stop/i)).toBeInTheDocument()
   })
 })
