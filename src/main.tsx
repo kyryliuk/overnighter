@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import { inject } from '@vercel/analytics'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App'
@@ -24,5 +25,6 @@ if (import.meta.env.PROD) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    <SpeedInsights />
   </StrictMode>,
 )
