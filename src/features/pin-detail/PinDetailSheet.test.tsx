@@ -415,6 +415,39 @@ describe('PinDetailSheet Report an Issue button', () => {
   })
 })
 
+describe('PinDetailSheet route-planning CTA', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear()
+    useRigStore.getState().clearRigProfile()
+    useUIStore.setState({ selectedPinId: null, pendingReport: null })
+    useSpotsStore.setState({ savedSpots: [] })
+    useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
+    mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
+  })
+
+  afterEach(() => {
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: false, error: null })
+  })
+
+  it('renders the route-planning CTA only when pin data is loaded', () => {
+    const firstRender = renderSheet('pin-1')
+    expect(screen.getByRole('button', { name: /plan route here/i })).toBeInTheDocument()
+
+    firstRender.unmount()
+    mockUsePinsQuery.mockReturnValue({ data: [], isLoading: true, error: null })
+    renderSheet('pin-1')
+    expect(screen.queryByRole('button', { name: /plan route here/i })).not.toBeInTheDocument()
+  })
+
+  it('navigates to /trips when the route-planning CTA is clicked', () => {
+    renderSheet('pin-1')
+
+    fireEvent.click(screen.getByRole('button', { name: /plan route here/i }))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/trips')
+  })
+})
+
 // ---------------------------------------------------------------------------
 // Visit recording tests — Story 4.2
 // ---------------------------------------------------------------------------

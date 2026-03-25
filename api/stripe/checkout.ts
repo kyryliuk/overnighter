@@ -3,6 +3,12 @@ import Stripe from 'stripe'
 import { requireUserAuth } from '../_auth'
 import { createServiceClient } from '../_supabase'
 
+function readSafeReturnTo(value: unknown) {
+  if (typeof value !== 'string') return '/'
+  if (!value.startsWith('/') || value.startsWith('//')) return '/'
+  return value
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'METHOD_NOT_ALLOWED', message: 'POST only', status: 405 })
@@ -44,13 +50,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || ''
+    const returnTo = readSafeReturnTo(req.body?.returnTo)
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: process.env.STRIPE_PRICE_ID_ANNUAL, quantity: 1 }],
       subscription_data: { trial_period_days: 30 },
-      success_url: `${origin}/premium-welcome?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/`,
+      success_url: `${origin}/premium-welcome?session_id={CHECKOUT_SESSION_ID}&returnTo=${encodeURIComponent(returnTo)}`,
+      cancel_url: `${origin}${returnTo}`,
       customer: customerId,
     })
 

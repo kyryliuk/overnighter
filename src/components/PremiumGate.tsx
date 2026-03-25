@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSubscription } from '@/hooks/useSubscription'
 
@@ -15,6 +15,7 @@ export function PremiumGate({ children, feature, description, variant = 'full', 
   const { isPremium, isLoading } = useSubscription()
   const { isAuthenticated, session } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [isRedirecting, setIsRedirecting] = useState(false)
 
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
@@ -33,8 +34,10 @@ export function PremiumGate({ children, feature, description, variant = 'full', 
   }
 
   const handleUpgrade = async () => {
+    const returnTo = location.pathname + location.search + location.hash
+
     if (!isAuthenticated) {
-      navigate('/account?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash))
+      navigate('/account?returnTo=' + encodeURIComponent(returnTo))
       return
     }
 
@@ -47,6 +50,7 @@ export function PremiumGate({ children, feature, description, variant = 'full', 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token}`,
         },
+        body: JSON.stringify({ returnTo }),
       })
 
       if (!response.ok) {

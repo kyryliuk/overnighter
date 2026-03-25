@@ -294,11 +294,11 @@ export default function MapView() {
       <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-2">
         <button
           type="button"
-          onClick={() => navigate('/plan-route')}
+          onClick={() => navigate('/trips')}
           className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
-          aria-label="Plan a route"
+          aria-label="Open My Routes"
         >
-          Plan route
+          My Routes
         </button>
         <button
           type="button"

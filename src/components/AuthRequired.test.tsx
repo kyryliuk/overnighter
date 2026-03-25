@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { createElement, type ReactNode } from 'react'
+import { render, screen } from '@testing-library/react'
 
 const { mockUseAuth } = vi.hoisted(() => {
   const mockUseAuth = vi.fn().mockReturnValue({
@@ -17,12 +16,13 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 // Mock react-router-dom to avoid heavy import
 const mockNavigate = vi.fn()
+const mockUseLocation = vi.fn(() => ({ pathname: '/test', search: '', hash: '' }))
 vi.mock('react-router-dom', () => ({
-  Navigate: ({ to }: { to: string }) => {
-    mockNavigate(to)
-    return createElement('div', { 'data-testid': 'navigate', 'data-to': to })
+  Navigate: ({ to, state }: { to: string; state?: unknown }) => {
+    mockNavigate(to, state)
+    return <div data-testid="navigate" data-to={to} data-state={JSON.stringify(state ?? null)} />
   },
-  useLocation: () => ({ pathname: '/test' }),
+  useLocation: () => mockUseLocation(),
 }))
 
 import { AuthRequired } from './AuthRequired'
@@ -30,6 +30,7 @@ import { AuthRequired } from './AuthRequired'
 describe('AuthRequired', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseLocation.mockReturnValue({ pathname: '/test', search: '', hash: '' })
   })
 
   it('redirects to /account when user is not authenticated', () => {
@@ -38,10 +39,10 @@ describe('AuthRequired', () => {
       isLoading: false,
     })
 
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(AuthRequired, null, children)
-    renderHook(() => 'content', { wrapper })
+    render(<AuthRequired><div>content</div></AuthRequired>)
 
-    expect(mockNavigate).toHaveBeenCalledWith('/account')
+    expect(screen.getByTestId('navigate')).toHaveAttribute('data-to', '/account')
+    expect(mockNavigate).toHaveBeenCalledWith('/account', { from: '/test' })
   })
 
   it('renders children when user is authenticated', () => {
@@ -51,9 +52,9 @@ describe('AuthRequired', () => {
       isLoading: false,
     })
 
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(AuthRequired, null, children)
-    renderHook(() => 'content', { wrapper })
+    render(<AuthRequired><div>content</div></AuthRequired>)
 
+    expect(screen.getByText('content')).toBeInTheDocument()
     expect(mockNavigate).not.toHaveBeenCalled()
   })
 
@@ -63,9 +64,27 @@ describe('AuthRequired', () => {
       isLoading: true,
     })
 
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(AuthRequired, null, children)
-    renderHook(() => 'content', { wrapper })
+    render(<AuthRequired><div>content</div></AuthRequired>)
 
+    expect(screen.getByText(/checking your account/i)).toBeInTheDocument()
     expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('preserves pathname, search, and hash in the return path', () => {
+    mockUseLocation.mockReturnValue({
+      pathname: '/trips',
+      search: '?tripId=trip-123',
+      hash: '#details',
+    })
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+    })
+
+    render(<AuthRequired><div>content</div></AuthRequired>)
+
+    expect(mockNavigate).toHaveBeenCalledWith('/account', {
+      from: '/trips?tripId=trip-123#details',
+    })
   })
 })

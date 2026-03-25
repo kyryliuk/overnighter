@@ -532,3 +532,27 @@ describe('MapView account affordance', () => {
     expect(screen.getByRole('button', { name: /open profile for camper@example.com/i })).toHaveTextContent('C')
   })
 })
+
+describe('MapView My Routes entry point', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null })
+    mockNavigate.mockClear()
+  })
+
+  it('renders the My Routes floating action button', () => {
+    render(<MapView />, { wrapper: Wrapper })
+
+    expect(screen.getByRole('button', { name: /open my routes/i })).toHaveTextContent('My Routes')
+  })
+
+  it('navigates to /trips when the My Routes button is clicked', () => {
+    render(<MapView />, { wrapper: Wrapper })
+
+    fireEvent.click(screen.getByRole('button', { name: /open my routes/i }))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/trips')
+  })
+})

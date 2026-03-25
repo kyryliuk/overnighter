@@ -124,7 +124,7 @@ describe('PremiumWelcomeScreen', () => {
     expect(screen.getByText('Priority support')).toBeInTheDocument()
   })
 
-  it('navigates to map when CTA is clicked', async () => {
+  it('navigates to returnTo when CTA is clicked', async () => {
     mockUseSubscription.mockReturnValue({
       isPremium: true,
       isTrial: false,
@@ -135,10 +135,10 @@ describe('PremiumWelcomeScreen', () => {
     vi.useRealTimers()
     const user = userEvent.setup()
 
-    render(<PremiumWelcomeScreen />, { wrapper: makeWrapper() })
+    render(<PremiumWelcomeScreen />, { wrapper: makeWrapper('/premium-welcome?session_id=cs_test_123&returnTo=%2Ftrips%3FtripId%3Dtrip-123') })
 
     await user.click(screen.getByTestId('premium-welcome-cta'))
-    expect(mockNavigate).toHaveBeenCalledWith('/')
+    expect(mockNavigate).toHaveBeenCalledWith('/trips?tripId=trip-123')
   })
 
   it('shows polling state when subscription is not yet confirmed', () => {
@@ -219,7 +219,7 @@ describe('PremiumWelcomeScreen', () => {
     expect(screen.getByText('Back to Map')).toBeInTheDocument()
   })
 
-  it('navigates to map from pending state', async () => {
+  it('navigates to returnTo from pending state', async () => {
     mockUseSubscription.mockReturnValue({
       isPremium: false,
       isTrial: false,
@@ -230,7 +230,7 @@ describe('PremiumWelcomeScreen', () => {
     vi.useRealTimers()
     const user = userEvent.setup()
 
-    render(<PremiumWelcomeScreen />, { wrapper: makeWrapper() })
+    render(<PremiumWelcomeScreen />, { wrapper: makeWrapper('/premium-welcome?session_id=cs_test_123&returnTo=%2Ftrips') })
 
     testQueryClient.setQueryData(['subscription', 'user-1'], { subscription_status: 'free' })
 
@@ -239,7 +239,7 @@ describe('PremiumWelcomeScreen', () => {
     }, { timeout: 15000 })
 
     await user.click(screen.getByText('Back to Map'))
-    expect(mockNavigate).toHaveBeenCalledWith('/')
+    expect(mockNavigate).toHaveBeenCalledWith('/trips')
   })
 
   it('calls refreshSession on mount', async () => {

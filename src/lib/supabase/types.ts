@@ -72,6 +72,38 @@ export interface DbTripPlan {
   updated_at: string
 }
 
+export interface DbTrip {
+  id: string
+  user_id: string
+  title: string
+  notes: string
+  status: string
+  origin_snapshot: Record<string, unknown> | null
+  destination_snapshot: Record<string, unknown>
+  route_mode: string
+  stop_count: number
+  revision: number
+  is_public: boolean
+  share_token: string | null
+  source_trip_id: string | null
+  source_share_token: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DbTripStop {
+  id: string
+  trip_id: string
+  stop_order: number
+  stop_kind: string
+  source: string
+  pin_id: string | null
+  place_snapshot: Record<string, unknown>
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
 export interface DbTripPlanReaction {
   share_token: string
   user_id: string

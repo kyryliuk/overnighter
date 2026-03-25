@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, act, screen } from '@testing-library/react'
+import { Outlet } from 'react-router-dom'
 import App from './App'
 import { DEVICE_ID_KEY } from '@/hooks/useDeviceId'
 import { useUIStore } from '@/store/uiStore'
@@ -16,13 +17,14 @@ vi.mock('@/contexts/AuthProvider', () => ({
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => authState,
 }))
-vi.mock('@/features/map/MapView', () => ({ default: () => <div data-testid="map-view" /> }))
+vi.mock('@/features/map/MapView', () => ({ default: () => <div data-testid="map-view"><Outlet /></div> }))
 vi.mock('@/features/rig-profile/OnboardingScreen', () => ({ default: () => null }))
 vi.mock('@/features/rig-profile/RigEditScreen', () => ({ default: () => null }))
 vi.mock('@/features/pin-detail/PinDetailSheet', () => ({ default: () => null }))
 vi.mock('@/features/saved-spots/SavedSpotsScreen', () => ({ default: () => null }))
 vi.mock('@/features/account/AccountScreen', () => ({ default: () => <div data-testid="account-screen" /> }))
 vi.mock('@/features/spot-submissions/SuggestSpotScreen', () => ({ default: () => <div data-testid="suggest-spot-screen" /> }))
+vi.mock('@/features/route-planning/MyRoutesScreen', () => ({ default: () => <div data-testid="my-routes-screen" /> }))
 vi.mock('@/features/route-planning/RoutePlanningScreen', () => ({ default: () => null }))
 vi.mock('@/features/route-planning/SharedTripPlanScreen', () => ({ default: () => null }))
 vi.mock('@/features/admin/AdminDashboard', () => ({ default: () => null }))
@@ -72,6 +74,25 @@ describe('App initialization', () => {
 
     expect(screen.getByTestId('account-screen')).toBeInTheDocument()
     expect(screen.queryByTestId('suggest-spot-screen')).not.toBeInTheDocument()
+  })
+
+  it('redirects anonymous /trips visits to the account route', async () => {
+    window.history.pushState({}, '', '/trips?tripId=trip-123')
+
+    await act(async () => { render(<App />) })
+
+    expect(screen.getByTestId('account-screen')).toBeInTheDocument()
+    expect(screen.queryByTestId('my-routes-screen')).not.toBeInTheDocument()
+  })
+
+  it('renders the my routes screen for authenticated /trips visits', async () => {
+    authState.isAuthenticated = true
+    window.history.pushState({}, '', '/trips')
+
+    await act(async () => { render(<App />) })
+
+    expect(screen.getByTestId('my-routes-screen')).toBeInTheDocument()
+    expect(screen.queryByTestId('account-screen')).not.toBeInTheDocument()
   })
 
   it('allows anonymous users to open the account route directly', async () => {

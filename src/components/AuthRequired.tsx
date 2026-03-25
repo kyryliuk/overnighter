@@ -15,7 +15,8 @@ export function AuthRequired({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/account" replace state={{ from: location.pathname }} />
+    const from = `${location.pathname}${location.search}${location.hash}`
+    return <Navigate to="/account" replace state={{ from }} />
   }
 
   return <>{children}</>
