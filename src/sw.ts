@@ -13,7 +13,7 @@ declare const self: ServiceWorkerGlobalScope
 // Precache static assets injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST)
 
-// CartoDB map tiles — CacheFirst, max 500 entries, 30-day expiry
+// CartoDB Light map tiles — CacheFirst, max 500 entries, 30-day expiry
 registerRoute(
   ({ url }) => url.hostname.includes('basemaps.cartocdn.com'),
   new CacheFirst({
@@ -94,7 +94,7 @@ const SUBDOMAINS = ['a', 'b', 'c', 'd']
 // Match Leaflet's subdomain selection: (x + y) % subdomains.length
 function tileUrl(x: number, y: number, z: number): string {
   const s = SUBDOMAINS[Math.abs(x + y) % SUBDOMAINS.length]
-  return `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}@2x.png`
+  return `https://${s}.basemaps.cartocdn.com/light_all/${z}/${x}/${y}@2x.png`
 }
 
 async function postToClients(msg: Record<string, unknown>) {

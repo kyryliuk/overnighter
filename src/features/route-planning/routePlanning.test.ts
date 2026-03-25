@@ -3,7 +3,19 @@ import { buildDirectionsUrl } from '@/lib/maps/googleMaps'
 import type { Pin } from '@/types/pin'
 import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
 import type { TripPlanPlace } from '@/types/tripPlan'
-import { appendUniqueWaypoint, buildRouteSuggestions, moveWaypoint } from './routePlanning'
+import {
+  appendTripWaypoint,
+  appendUniqueWaypoint,
+  buildTripCorridorPreview,
+  buildRouteSuggestions,
+  compactTripWaypointOrders,
+  DEFAULT_ROUTE_SUGGESTION_LIMIT,
+  MAX_TRIP_STOPS_MESSAGE,
+  MIN_ROUTE_SUGGESTION_TRIP_DISTANCE_MILES,
+  moveWaypoint,
+  pinToTripWaypointInput,
+  removeTripWaypoint,
+} from './routePlanning'
 
 function makePin(overrides: Partial<Pin> = {}): Pin {
   return {
@@ -105,12 +117,31 @@ describe('buildRouteSuggestions', () => {
   it('returns no suggestions when the trip is too short', () => {
     const suggestions = buildRouteSuggestions({
       origin: { latitude: 39, longitude: -105 },
-      destination: { latitude: 39.1, longitude: -105.2 },
+      destination: { latitude: 39, longitude: -105 + (MIN_ROUTE_SUGGESTION_TRIP_DISTANCE_MILES / 400) },
       rigProfile: DEFAULT_RIG_PROFILE,
       pins: [makePin({ id: 'good', latitude: 39.05, longitude: -105.1 })],
     })
 
     expect(suggestions).toEqual([])
+  })
+
+  it('prefers lower-penalty suggestions and respects the requested limit', () => {
+    const suggestions = buildRouteSuggestions({
+      origin: { latitude: 39, longitude: -105 },
+      destination: { latitude: 41, longitude: -109 },
+      rigProfile: DEFAULT_RIG_PROFILE,
+      limit: 2,
+      pins: [
+        makePin({ id: 'best', name: 'Best Stop', latitude: 40, longitude: -107, badgeState: 'green', isVerified: true }),
+        makePin({ id: 'good', name: 'Good Stop', latitude: 40.05, longitude: -107.05, badgeState: 'yellow', isVerified: true }),
+        makePin({ id: 'worse', name: 'Worse Stop', latitude: 40.1, longitude: -107.1, badgeState: 'red', isVerified: false }),
+      ],
+    })
+
+    expect(DEFAULT_ROUTE_SUGGESTION_LIMIT).toBeGreaterThanOrEqual(2)
+    expect(suggestions).toHaveLength(2)
+    expect(suggestions.map((suggestion) => suggestion.pin.id)).toEqual(['best', 'good'])
+    expect(suggestions[0].score).toBeLessThan(suggestions[1].score)
   })
 })
 
@@ -134,5 +165,135 @@ describe('trip waypoint helpers', () => {
   it('moves a waypoint up or down while preserving the rest', () => {
     expect(moveWaypoint(WAYPOINTS, 2, 'up').map((waypoint) => waypoint.id)).toEqual(['a', 'c', 'b'])
     expect(moveWaypoint(WAYPOINTS, 0, 'down').map((waypoint) => waypoint.id)).toEqual(['b', 'a', 'c'])
+  })
+})
+
+describe('normalized trip stop helpers', () => {
+  it('appends a new normalized waypoint with the next sequential stopOrder', () => {
+    const first = pinToTripWaypointInput(makePin({ id: 'pin-a', name: 'Alpha' }), 'saved')
+    const second = pinToTripWaypointInput(makePin({ id: 'pin-b', name: 'Bravo' }), 'manual')
+
+    const afterFirst = appendTripWaypoint([], first, { destinationId: 'pin-dest' })
+    const afterSecond = appendTripWaypoint(afterFirst.stops, second, { destinationId: 'pin-dest' })
+
+    expect(afterFirst.error).toBeNull()
+    expect(afterSecond.error).toBeNull()
+    expect(afterSecond.stops).toEqual([
+      expect.objectContaining({ stopOrder: 0, source: 'saved', pinId: 'pin-a', place: expect.objectContaining({ id: 'pin-a' }) }),
+      expect.objectContaining({ stopOrder: 1, source: 'manual', pinId: 'pin-b', place: expect.objectContaining({ id: 'pin-b' }) }),
+    ])
+  })
+
+  it('blocks duplicate place ids including the destination', () => {
+    const first = pinToTripWaypointInput(makePin({ id: 'pin-a', name: 'Alpha' }))
+
+    expect(appendTripWaypoint([first], pinToTripWaypointInput(makePin({ id: 'pin-a', name: 'Alpha Again' })), { destinationId: 'pin-dest' }).error)
+      .toBe('That stop is already part of this route.')
+    expect(appendTripWaypoint([], pinToTripWaypointInput(makePin({ id: 'pin-dest', name: 'Destination' })), { destinationId: 'pin-dest' }).error)
+      .toBe('That stop is already part of this route.')
+  })
+
+  it('blocks duplicate place ids when the origin matches the next stop', () => {
+    const first = pinToTripWaypointInput(makePin({ id: 'pin-a', name: 'Alpha' }))
+
+    expect(
+      appendTripWaypoint(
+        [first],
+        pinToTripWaypointInput(makePin({ id: 'pin-origin', name: 'Flagstaff' })),
+        { originId: 'pin-origin', destinationId: 'pin-dest' },
+      ).error,
+    ).toBe('That stop is already part of this route.')
+  })
+
+  it('blocks additions beyond the 12-stop total limit', () => {
+    const currentStops = Array.from({ length: 11 }, (_, index) => ({
+      ...pinToTripWaypointInput(makePin({ id: `pin-${index}`, name: `Stop ${index}` })),
+      stopOrder: index,
+    }))
+
+    const result = appendTripWaypoint(currentStops, pinToTripWaypointInput(makePin({ id: 'pin-extra', name: 'Extra Stop' })), { destinationId: 'pin-dest' })
+
+    expect(result.error).toBe(MAX_TRIP_STOPS_MESSAGE)
+    expect(result.stops).toHaveLength(11)
+  })
+
+  it('removes a waypoint and compacts remaining stopOrder values', () => {
+    const currentStops = [
+      { ...pinToTripWaypointInput(makePin({ id: 'pin-a', name: 'Alpha' })), id: 'stop-a', stopOrder: 0 },
+      { ...pinToTripWaypointInput(makePin({ id: 'pin-b', name: 'Bravo' })), id: 'stop-b', stopOrder: 1 },
+      { ...pinToTripWaypointInput(makePin({ id: 'pin-c', name: 'Charlie' })), id: 'stop-c', stopOrder: 2 },
+    ]
+
+    expect(removeTripWaypoint(currentStops, 'stop-b')).toEqual([
+      expect.objectContaining({ id: 'stop-a', stopOrder: 0, place: expect.objectContaining({ id: 'pin-a' }) }),
+      expect.objectContaining({ id: 'stop-c', stopOrder: 1, place: expect.objectContaining({ id: 'pin-c' }) }),
+    ])
+  })
+
+  it('reorders normalized waypoints while preserving metadata and compact stopOrder values', () => {
+    const currentStops = [
+      { ...pinToTripWaypointInput(makePin({ id: 'pin-a', name: 'Alpha' }), 'saved'), id: 'stop-a', stopOrder: 0, notes: 'alpha notes' },
+      { ...pinToTripWaypointInput(makePin({ id: 'pin-b', name: 'Bravo' }), 'manual'), id: 'stop-b', stopOrder: 1, notes: 'bravo notes' },
+      { ...pinToTripWaypointInput(makePin({ id: 'pin-c', name: 'Charlie' }), 'imported'), id: 'stop-c', stopOrder: 2, notes: 'charlie notes' },
+    ]
+
+    expect(compactTripWaypointOrders(moveWaypoint(currentStops, 2, 'up'))).toEqual([
+      expect.objectContaining({ id: 'stop-a', stopOrder: 0, source: 'saved', notes: 'alpha notes' }),
+      expect.objectContaining({ id: 'stop-c', stopOrder: 1, source: 'imported', notes: 'charlie notes' }),
+      expect.objectContaining({ id: 'stop-b', stopOrder: 2, source: 'manual', notes: 'bravo notes' }),
+    ])
+  })
+
+  it('builds corridor preview points and numbered stop markers in route order', () => {
+    const preview = buildTripCorridorPreview({
+      origin: { id: 'origin', name: 'Flagstaff', latitude: 35.1983, longitude: -111.6513 },
+      destination: { id: 'dest', name: 'Quartzsite', latitude: 33.6639, longitude: -114.229 },
+      stops: [
+        {
+          id: 'stop-b',
+          stopOrder: 1,
+          stopKind: 'waypoint',
+          source: 'manual',
+          pinId: 'pin-b',
+          place: { id: 'pin-b', name: 'Kingman', latitude: 35.1894, longitude: -114.053 },
+          notes: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'stop-a',
+          stopOrder: 0,
+          stopKind: 'waypoint',
+          source: 'saved',
+          pinId: 'pin-a',
+          place: { id: 'pin-a', name: 'Lake Havasu', latitude: 34.4839, longitude: -114.3225 },
+          notes: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'dest-stop',
+          stopOrder: 2,
+          stopKind: 'destination',
+          source: 'manual',
+          pinId: null,
+          place: { id: 'dest', name: 'Quartzsite', latitude: 33.6639, longitude: -114.229 },
+          notes: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+      ],
+    })
+
+    expect(preview.linePoints).toEqual([
+      { latitude: 35.1983, longitude: -111.6513 },
+      { latitude: 34.4839, longitude: -114.3225 },
+      { latitude: 35.1894, longitude: -114.053 },
+      { latitude: 33.6639, longitude: -114.229 },
+    ])
+    expect(preview.stopMarkers).toEqual([
+      { stopOrder: 0, name: 'Lake Havasu', latitude: 34.4839, longitude: -114.3225 },
+      { stopOrder: 1, name: 'Kingman', latitude: 35.1894, longitude: -114.053 },
+    ])
   })
 })

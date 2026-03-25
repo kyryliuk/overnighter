@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { useEffect } from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -10,9 +11,14 @@ import { useCheckInPromptStore } from '@/store/checkInPromptStore'
 import type { Pin } from '@/types/pin'
 
 const mockNavigate = vi.fn()
+const mockMapFitBounds = vi.fn()
+const mockMapSetView = vi.fn()
 const authState = vi.hoisted(() => ({
   session: null as { user: { id: string; email?: string } } | null,
   isAuthenticated: false,
+}))
+const { mockUseTripCorridorPreview } = vi.hoisted(() => ({
+  mockUseTripCorridorPreview: vi.fn(() => ({ previewTrip: null, setPreviewTrip: vi.fn() })),
 }))
 
 vi.mock('react-router-dom', async () => {
@@ -24,9 +30,52 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => authState,
 }))
 
+vi.mock('@/features/route-planning/TripCorridorPreviewContext', () => ({
+  useTripCorridorPreview: () => mockUseTripCorridorPreview(),
+}))
+
+vi.mock('@/features/route-planning/TripCorridorPreviewProvider', () => ({
+  TripCorridorPreviewProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
+vi.mock('@/features/route-planning/TripCorridorOverlay', () => ({
+  TripCorridorOverlay: vi.fn(() => <div data-testid="trip-corridor-overlay" />),
+}))
+
+vi.mock('leaflet', () => ({
+  latLngBounds: vi.fn((points: Array<[number, number]>) => ({ points })),
+}))
+
 // Avoid Leaflet DOM dependency in jsdom
 vi.mock('./LeafletMap', () => ({
-  default: vi.fn(() => <div data-testid="leaflet-map" />),
+  default: vi.fn(({ onMapReady, onMapRemove }: { onMapReady?: (map: unknown) => void; onMapRemove?: () => void }) => {
+    useEffect(() => {
+      const mockMap = {
+        fitBounds: mockMapFitBounds,
+        setView: mockMapSetView,
+        on: vi.fn(),
+        off: vi.fn(),
+        getCenter: () => ({
+          lat: 39.5,
+          lng: -98.35,
+          distanceTo: () => 1000,
+        }),
+        getBounds: () => ({
+          getNorthEast: () => ({ lat: 40, lng: -98 }),
+          getNorth: () => 40,
+          getSouth: () => 39,
+          getEast: () => -98,
+          getWest: () => -99,
+        }),
+      }
+      onMapReady?.(mockMap)
+      return () => {
+        onMapRemove?.()
+      }
+    }, [onMapReady, onMapRemove])
+
+    return <div data-testid="leaflet-map" />
+  }),
 }))
 
 // Mock SearchBar to avoid fetch/geolocation in MapView tests
@@ -101,6 +150,9 @@ describe('MapView redirect guard', () => {
     authState.session = null
     authState.isAuthenticated = false
     mockNavigate.mockClear()
+    mockMapFitBounds.mockClear()
+    mockMapSetView.mockClear()
+    mockUseTripCorridorPreview.mockReturnValue({ previewTrip: null, setPreviewTrip: vi.fn() })
   })
 
   it('redirects to /onboarding when no rig profile and onboarding not dismissed', () => {
@@ -554,5 +606,133 @@ describe('MapView My Routes entry point', () => {
     fireEvent.click(screen.getByRole('button', { name: /open my routes/i }))
 
     expect(mockNavigate).toHaveBeenCalledWith('/trips')
+  })
+})
+
+describe('MapView trip corridor integration', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useRigStore.setState({ onboardingDismissed: true })
+    useAmenityFilterStore.setState({ activeFilters: [] })
+    useUIStore.setState({ selectedPinId: null, pendingMapCenter: null })
+    mockNavigate.mockClear()
+    mockMapFitBounds.mockClear()
+    mockMapSetView.mockClear()
+  })
+
+  it('fits the active route into view when a corridor preview is available', async () => {
+    mockUseTripCorridorPreview.mockReturnValue({
+      previewTrip: {
+        id: 'trip-123',
+        title: 'Desert Loop',
+        notes: '',
+        status: 'draft',
+        origin: { id: 'origin-1', name: 'Flagstaff', latitude: 35.1983, longitude: -111.6513 },
+        destination: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6, longitude: -114.2 },
+        routeMode: 'corridor',
+        stopCount: 3,
+        revision: 1,
+        isPublic: false,
+        shareToken: null,
+        sourceTripId: null,
+        sourceShareToken: null,
+        createdAt: '2026-03-24T10:00:00.000Z',
+        updatedAt: '2026-03-24T11:00:00.000Z',
+        stops: [
+          {
+            id: 'stop-1',
+            stopOrder: 0,
+            stopKind: 'waypoint',
+            source: 'saved',
+            pinId: 'saved-1',
+            place: { id: 'saved-1', name: 'Lake Havasu', latitude: 34.4839, longitude: -114.3225 },
+            notes: '',
+            createdAt: '2026-03-24T10:00:00.000Z',
+            updatedAt: '2026-03-24T11:00:00.000Z',
+          },
+          {
+            id: 'stop-2',
+            stopOrder: 1,
+            stopKind: 'waypoint',
+            source: 'manual',
+            pinId: 'pin-waypoint',
+            place: { id: 'pin-waypoint', name: 'Kingman Fuel', latitude: 35.1894, longitude: -114.053 },
+            notes: '',
+            createdAt: '2026-03-24T10:00:00.000Z',
+            updatedAt: '2026-03-24T11:00:00.000Z',
+          },
+          {
+            id: 'stop-3',
+            stopOrder: 2,
+            stopKind: 'destination',
+            source: 'manual',
+            pinId: null,
+            place: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6, longitude: -114.2 },
+            notes: '',
+            createdAt: '2026-03-24T10:00:00.000Z',
+            updatedAt: '2026-03-24T11:00:00.000Z',
+          },
+        ],
+      },
+      setPreviewTrip: vi.fn(),
+    })
+
+    render(<MapView />, { wrapper: Wrapper })
+
+    expect(await screen.findByTestId('trip-corridor-overlay')).toBeInTheDocument()
+    expect(mockMapFitBounds).toHaveBeenCalledTimes(1)
+  })
+
+  it('preserves pending map center behavior without immediately overriding it', async () => {
+    useUIStore.setState({ pendingMapCenter: { lat: 40, lng: -104 } })
+    mockUseTripCorridorPreview.mockReturnValue({
+      previewTrip: {
+        id: 'trip-456',
+        title: 'Focused pin trip',
+        notes: '',
+        status: 'draft',
+        origin: null,
+        destination: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6, longitude: -114.2 },
+        routeMode: 'corridor',
+        stopCount: 2,
+        revision: 1,
+        isPublic: false,
+        shareToken: null,
+        sourceTripId: null,
+        sourceShareToken: null,
+        createdAt: '2026-03-24T10:00:00.000Z',
+        updatedAt: '2026-03-24T11:00:00.000Z',
+        stops: [
+          {
+            id: 'stop-1',
+            stopOrder: 0,
+            stopKind: 'waypoint',
+            source: 'manual',
+            pinId: 'pin-waypoint',
+            place: { id: 'pin-waypoint', name: 'Kingman Fuel', latitude: 35.1894, longitude: -114.053 },
+            notes: '',
+            createdAt: '2026-03-24T10:00:00.000Z',
+            updatedAt: '2026-03-24T11:00:00.000Z',
+          },
+          {
+            id: 'stop-2',
+            stopOrder: 1,
+            stopKind: 'destination',
+            source: 'manual',
+            pinId: null,
+            place: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6, longitude: -114.2 },
+            notes: '',
+            createdAt: '2026-03-24T10:00:00.000Z',
+            updatedAt: '2026-03-24T11:00:00.000Z',
+          },
+        ],
+      },
+      setPreviewTrip: vi.fn(),
+    })
+
+    render(<MapView />, { wrapper: Wrapper })
+
+    expect(mockMapSetView).toHaveBeenCalledWith([40, -104], 14)
+    expect(mockMapFitBounds).not.toHaveBeenCalled()
   })
 })

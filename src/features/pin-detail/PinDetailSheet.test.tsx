@@ -92,7 +92,7 @@ describe('PinDetailSheet', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
-    useUIStore.setState({ selectedPinId: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null })
     useSpotsStore.setState({ savedSpots: [] })
     useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
@@ -221,7 +221,7 @@ describe('PinDetailSheet', () => {
 
   // M1: unmount cleanup
   it('clears selectedPinId in UIStore when component unmounts (browser back fix)', () => {
-    useUIStore.setState({ selectedPinId: 'pin-1' })
+    useUIStore.setState({ selectedPinId: 'pin-1', activeTripId: null })
     const { unmount } = renderSheet('pin-1')
     expect(useUIStore.getState().selectedPinId).toBe('pin-1')
     unmount()
@@ -263,7 +263,7 @@ describe('PinDetailSheet Get Directions button', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
-    useUIStore.setState({ selectedPinId: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null })
     useSpotsStore.setState({ savedSpots: [] })
     useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
@@ -325,7 +325,7 @@ describe('PinDetailSheet bookmark button', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
-    useUIStore.setState({ selectedPinId: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null })
     useSpotsStore.setState({ savedSpots: [] })
     useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
@@ -392,7 +392,7 @@ describe('PinDetailSheet Report an Issue button', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
-    useUIStore.setState({ selectedPinId: null, pendingReport: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null, pendingReport: null })
     useSpotsStore.setState({ savedSpots: [] })
     useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
@@ -419,7 +419,7 @@ describe('PinDetailSheet route-planning CTA', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
-    useUIStore.setState({ selectedPinId: null, pendingReport: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null, pendingReport: null })
     useSpotsStore.setState({ savedSpots: [] })
     useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })
@@ -446,6 +446,15 @@ describe('PinDetailSheet route-planning CTA', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/trips')
   })
+
+  it('routes active-trip pin adds into the normalized builder intent flow', () => {
+    useUIStore.setState({ activeTripId: 'trip-123' })
+    renderSheet('pin-1')
+
+    fireEvent.click(screen.getByRole('button', { name: /add to route/i }))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/trips?tripId=trip-123&addStopPinId=pin-1&addStopSource=manual')
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -456,7 +465,7 @@ describe('PinDetailSheet visit recording', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
-    useUIStore.setState({ selectedPinId: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null })
     useSpotsStore.setState({ savedSpots: [] })
     useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
   })
@@ -502,7 +511,7 @@ describe('PinDetailSheet PushNotificationToggle', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     useRigStore.getState().clearRigProfile()
-    useUIStore.setState({ selectedPinId: null })
+    useUIStore.setState({ selectedPinId: null, activeTripId: null })
     useSpotsStore.setState({ savedSpots: [] })
     useCheckInPromptStore.setState({ visitRecords: [], dismissedKeys: [] })
     mockUsePinsQuery.mockReturnValue({ data: [STUB_PIN], isLoading: false, error: null })

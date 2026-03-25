@@ -29,6 +29,7 @@ function distanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): 
 export default function SavedSpotsScreen() {
   const navigate = useNavigate()
   const savedSpots = useSpotsStore((state) => state.savedSpots)
+  const activeTripId = useUIStore((state) => state.activeTripId)
   const [geoState, requestGeo] = useGeolocation()
 
   useEffect(() => { requestGeo() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -37,6 +38,17 @@ export default function SavedSpotsScreen() {
     useUIStore.getState().setPendingMapCenter({ lat: pin.latitude, lng: pin.longitude })
     useUIStore.getState().setSelectedPin(pin.id)
     navigate('/pin/' + pin.id)
+  }
+
+  function handleAddToRoute(pin: Pin) {
+    if (!activeTripId) return
+
+    const nextParams = new URLSearchParams({
+      tripId: activeTripId,
+      addStopPinId: pin.id,
+      addStopSource: 'saved',
+    })
+    navigate(`/trips?${nextParams.toString()}`)
   }
 
   return (
@@ -84,6 +96,18 @@ export default function SavedSpotsScreen() {
                   )}
                 </div>
               </button>
+              {activeTripId ? (
+                <div className="border-b border-border px-4 pb-3">
+                  <button
+                    type="button"
+                    onClick={() => handleAddToRoute(pin)}
+                    className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium"
+                    aria-label={`Add ${pin.name} to route`}
+                  >
+                    Add to route
+                  </button>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
