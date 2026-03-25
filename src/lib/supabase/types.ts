@@ -22,6 +22,7 @@ export interface DbPin {
   is_verified: boolean
   is_flagged: boolean
   is_archived: boolean
+  location: string | null // PostGIS geography(Point, 4326) — WKB hex string
   created_at: string
   updated_at: string
 }

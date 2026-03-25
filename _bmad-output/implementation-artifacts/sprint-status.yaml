@@ -136,7 +136,7 @@ development_status:
   p2-epic-6-retrospective: optional
 
   # ── Phase 2 Epic 7: US Geographic Expansion ──────────────────────────────
-  p2-epic-7: backlog
-  p2-7-1-postgis-spatial-index-migration: backlog
-  p2-7-2-viewport-query-migration-to-st-dwithin: backlog
+  p2-epic-7: done
+  p2-7-1-postgis-spatial-index-migration: done
+  p2-7-2-radius-based-search-api: done
   p2-epic-7-retrospective: optional

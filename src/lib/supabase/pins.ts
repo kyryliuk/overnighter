@@ -32,3 +32,33 @@ export async function getAllPins(): Promise<Pin[]> {
   if (error) throw new Error(`Failed to fetch pins: ${error.message}`)
   return (data as DbPin[]).map(dbPinToPin)
 }
+
+export interface RadiusPin extends Pin {
+  distanceM: number
+}
+
+export interface RadiusSearchResult {
+  pins: RadiusPin[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export async function fetchPinsByRadius(
+  lat: number,
+  lng: number,
+  radiusM: number,
+  limit = 200,
+  offset = 0,
+): Promise<RadiusSearchResult> {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+    radiusM: String(radiusM),
+    limit: String(limit),
+    offset: String(offset),
+  })
+  const res = await fetch(`/api/pins?${params}`)
+  if (!res.ok) throw new Error(`Radius search failed: ${res.status}`)
+  return res.json()
+}

@@ -5,12 +5,14 @@ import { createElement, type ReactNode } from 'react'
 import { usePinsQuery } from './usePinsQuery'
 import type { Pin } from '@/types/pin'
 
-const { mockGetAllPins } = vi.hoisted(() => ({
+const { mockGetAllPins, mockFetchPinsByRadius } = vi.hoisted(() => ({
   mockGetAllPins: vi.fn(),
+  mockFetchPinsByRadius: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/pins', () => ({
   getAllPins: mockGetAllPins,
+  fetchPinsByRadius: mockFetchPinsByRadius,
 }))
 
 const STUB_PIN: Pin = {
@@ -116,5 +118,68 @@ describe('usePinsQuery', () => {
       expect(result.current.data).toEqual([STUB_PIN])
       expect(result.current.isSuccess).toBe(true)
     })
+  })
+
+  it('calls fetchPinsByRadius when viewport params are provided', async () => {
+    mockFetchPinsByRadius.mockResolvedValue({
+      pins: [STUB_PIN],
+      total: 1,
+      limit: 200,
+      offset: 0,
+    })
+
+    const { result } = renderHook(
+      () => usePinsQuery({ lat: 39.7, lng: -105.0, radiusM: 50000 }),
+      { wrapper: makeWrapper() },
+    )
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual([STUB_PIN])
+    })
+
+    expect(mockFetchPinsByRadius).toHaveBeenCalledWith(39.7, -105.0, 50000)
+    expect(mockGetAllPins).not.toHaveBeenCalled()
+  })
+
+  it('calls getAllPins when no viewport params are provided', async () => {
+    mockGetAllPins.mockResolvedValue([STUB_PIN])
+
+    const { result } = renderHook(() => usePinsQuery(), { wrapper: makeWrapper() })
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual([STUB_PIN])
+    })
+
+    expect(mockGetAllPins).toHaveBeenCalled()
+    expect(mockFetchPinsByRadius).not.toHaveBeenCalled()
+  })
+
+  it('falls back to cached pins when viewport fetch fails', async () => {
+    localStorage.setItem(
+      'pins-cache-v1',
+      JSON.stringify({
+        pins: [STUB_PIN],
+        cachedAt: '2026-03-23T17:00:00.000Z',
+      }),
+    )
+    mockFetchPinsByRadius.mockRejectedValue(new Error('network down'))
+
+    const { result } = renderHook(
+      () => usePinsQuery({ lat: 39.7, lng: -105.0, radiusM: 50000 }),
+      { wrapper: makeWrapper() },
+    )
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual([STUB_PIN])
+      expect(result.current.isSuccess).toBe(true)
+    })
+  })
+
+  it('does not fetch when enabled is false', async () => {
+    renderHook(() => usePinsQuery({ enabled: false }), { wrapper: makeWrapper() })
+    // Give it a tick
+    await new Promise((r) => setTimeout(r, 50))
+    expect(mockGetAllPins).not.toHaveBeenCalled()
+    expect(mockFetchPinsByRadius).not.toHaveBeenCalled()
   })
 })

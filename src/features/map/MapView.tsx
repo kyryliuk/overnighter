@@ -1,4 +1,4 @@
-import { useEffect, useRef, lazy, Suspense, useState, useMemo } from 'react'
+import { useEffect, useRef, lazy, Suspense, useState, useMemo, useCallback } from 'react'
 import { useNavigate, Outlet, useLocation } from 'react-router-dom'
 import { useRigStore } from '@/store/rigStore'
 import { useUIStore } from '@/store/uiStore'
@@ -45,8 +45,13 @@ export default function MapView() {
   const rigProfile = useRigStore((state) => state.rigProfile)
   const onboardingDismissed = useRigStore((state) => state.onboardingDismissed)
   const shouldShowMap = hasRigProfile() || onboardingDismissed
-  const { data: pins = [], isLoading } = usePinsQuery({ enabled: shouldShowMap })
+  const [viewport, setViewport] = useState<{ lat: number; lng: number; radiusM: number } | null>(null)
+  const { data: pins = [], isLoading } = usePinsQuery({
+    enabled: shouldShowMap,
+    ...viewport,
+  })
   const mapRef = useRef<L.Map | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeFilters = useAmenityFilterStore((state) => state.activeFilters)
   const activeGroups = useSourceFilterStore((state) => state.activeGroups)
 
@@ -81,6 +86,34 @@ export default function MapView() {
     retry: retryDownload,
     dismiss: dismissDownload,
   } = useOfflineMapDownload()
+
+  const computeViewport = useCallback((map: L.Map) => {
+    const center = map.getCenter()
+    const bounds = map.getBounds()
+    const ne = bounds.getNorthEast()
+    // Clamp to API max (500km) to avoid 400 errors at low zoom levels
+    const radiusM = Math.min(Math.round(center.distanceTo(ne)), 500000)
+    return { lat: center.lat, lng: center.lng, radiusM }
+  }, [])
+
+  const onMoveEnd = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      if (mapRef.current) setViewport(computeViewport(mapRef.current))
+    }, 300)
+  }, [computeViewport])
+
+  function handleMapReady(map: L.Map) {
+    mapRef.current = map
+    setViewport(computeViewport(map))
+    map.on('moveend', onMoveEnd)
+  }
+
+  function handleMapRemove() {
+    mapRef.current?.off('moveend', onMoveEnd)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    mapRef.current = null
+  }
 
   function handleStartPreview() {
     const map = mapRef.current
@@ -225,8 +258,8 @@ export default function MapView() {
             pins={visiblePins}
             isLoading={isLoading}
             rigProfile={rigProfile}
-            onMapReady={(map) => { mapRef.current = map }}
-            onMapRemove={() => { mapRef.current = null }}
+            onMapReady={handleMapReady}
+            onMapRemove={handleMapRemove}
           />
         </Suspense>
       </div>
