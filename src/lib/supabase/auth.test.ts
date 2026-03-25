@@ -31,9 +31,9 @@ describe('supabase auth redirects', () => {
 
   it('prefers the configured site URL for email redirects', () => {
     expect(
-      getEmailRedirectUrl('https://overnighter-git-main-branch.vercel.app', 'https://overnighter.vercel.app'),
+      getEmailRedirectUrl('https://overnighter-git-main-branch.vercel.app', 'https://overnighter.net'),
     ).toBe(
-      'https://overnighter.vercel.app/',
+      'https://overnighter.net/',
     )
   })
 
@@ -43,7 +43,7 @@ describe('supabase auth redirects', () => {
 
   it('defaults to the canonical production domain outside localhost', () => {
     expect(getEmailRedirectUrl('https://overnighter-git-main-branch.vercel.app')).toBe(
-      'https://overnighter.vercel.app/',
+      'https://overnighter.net/',
     )
   })
 

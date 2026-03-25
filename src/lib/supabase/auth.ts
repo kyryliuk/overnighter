@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 
-const DEFAULT_SITE_URL = 'https://overnighter.vercel.app'
+const DEFAULT_SITE_URL = 'https://overnighter.net'
 
 export type SignUpWithPasswordResult =
   | {
