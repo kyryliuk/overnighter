@@ -95,16 +95,20 @@ export async function requestMagicLink(email: string) {
 }
 
 export async function signUpWithPassword(email: string, password: string): Promise<SignUpWithPasswordResult> {
+  console.log('[auth] signUp attempt', { email })
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
   })
 
   if (error) {
+    console.error('[auth] signUp error', { email, message: error.message, status: error.status })
     throw new Error(normalizeAuthErrorMessage(error.message, 'Failed to create account'))
   }
 
   if (data.session) {
+    console.log('[auth] signUp success — session returned (email confirmation disabled)', { userId: data.session.user.id })
     return {
       needsEmailConfirmation: false,
       session: data.session,
@@ -112,29 +116,36 @@ export async function signUpWithPassword(email: string, password: string): Promi
   }
 
   if (data.user) {
+    console.log('[auth] signUp success — confirmation email sent', { userId: data.user.id, email: data.user.email })
     return {
       needsEmailConfirmation: true,
       session: null,
     }
   }
 
+  console.error('[auth] signUp returned no session and no user — unexpected Supabase response', data)
   throw new Error('Account could not be created')
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<SignInWithPasswordResult> {
+  console.log('[auth] signIn attempt', { email })
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
+    console.error('[auth] signIn error', { email, message: error.message, status: error.status })
     throw new Error(normalizeSignInErrorMessage(error.message))
   }
 
   if (!data.session) {
+    console.error('[auth] signIn returned no session — unexpected Supabase response', data)
     throw new Error('Sign-in did not return an authenticated session')
   }
 
+  console.log('[auth] signIn success', { userId: data.session.user.id, email: data.session.user.email })
   return {
     session: data.session,
   }
