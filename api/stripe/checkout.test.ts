@@ -38,7 +38,7 @@ import handler from './checkout'
 function mockReq(method = 'POST'): VercelRequest {
   return {
     method,
-    body: {},
+    body: { returnTo: '/trips?tripId=trip-123' },
     headers: { authorization: 'Bearer token', origin: 'https://app.example.com' },
   } as unknown as VercelRequest
 }
@@ -118,6 +118,8 @@ describe('/api/stripe/checkout', () => {
         mode: 'subscription',
         line_items: [{ price: 'price_annual_123', quantity: 1 }],
         subscription_data: { trial_period_days: 30 },
+        success_url: 'https://app.example.com/premium-welcome?session_id={CHECKOUT_SESSION_ID}&returnTo=%2Ftrips%3FtripId%3Dtrip-123',
+        cancel_url: 'https://app.example.com/trips?tripId=trip-123',
       }),
     )
   })

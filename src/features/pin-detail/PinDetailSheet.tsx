@@ -356,24 +356,32 @@ export default function PinDetailSheet() {
                 </div>
               )}
               {/* Get Directions — primary CTA (AC1, AC5). Visible even on stale pins: warn never block */}
-              <a
-                href={buildMapsUrl(pin.latitude, pin.longitude)}
-                target="_blank"
+               <a
+                 href={buildMapsUrl(pin.latitude, pin.longitude)}
+                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Get Directions"
                 className="flex items-center justify-center w-full min-h-[44px] rounded-lg font-semibold text-white"
                 style={{ backgroundColor: '#0ea5e9' }}
-              >
-                Get Directions →
-              </a>
-              {/* Report an Issue — sets pendingReport in uiStore; IssueReportSheet mounts in App.tsx */}
-              <button
-                onClick={() => useUIStore.getState().setPendingReport({ pinId: pin.id })}
-                aria-label="Report an Issue"
-                className="w-full min-h-[44px] rounded-lg font-medium text-muted-foreground border border-border mt-2"
-              >
-                Report an Issue
-              </button>
+               >
+                 Get Directions →
+               </a>
+               <button
+                 type="button"
+                 onClick={() => navigate('/trips')}
+                 aria-label="Plan route here"
+                 className="mt-2 w-full min-h-[44px] rounded-lg border border-border bg-background font-medium text-foreground"
+               >
+                 Plan route here
+               </button>
+               {/* Report an Issue — sets pendingReport in uiStore; IssueReportSheet mounts in App.tsx */}
+               <button
+                 onClick={() => useUIStore.getState().setPendingReport({ pinId: pin.id })}
+                 aria-label="Report an Issue"
+                 className="mt-2 w-full min-h-[44px] rounded-lg border border-border font-medium text-muted-foreground"
+               >
+                 Report an Issue
+               </button>
               {/* Push notification opt-in — only for signed-in users with saved spots */}
               {isAuthenticated && isSaved && <PushNotificationToggle pinId={pin.id} />}
             </div>

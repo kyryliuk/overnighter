@@ -18,6 +18,7 @@ export default function PremiumWelcomeScreen() {
   const { isPremium } = useSubscription()
 
   const sessionId = searchParams.get('session_id')
+  const returnTo = searchParams.get('returnTo') || '/'
   const userId = session?.user?.id
 
   const [internalState, setInternalState] = useState<'polling' | 'confirmed' | 'pending'>(
@@ -105,7 +106,7 @@ export default function PremiumWelcomeScreen() {
             <p className="mt-2 text-xs text-zinc-600">Session: {sessionId.slice(0, 8)}…</p>
           )}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(returnTo)}
             className="mt-6 rounded-md bg-zinc-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-600"
           >
             Back to Map
@@ -139,7 +140,7 @@ export default function PremiumWelcomeScreen() {
           </li>
         </ul>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(returnTo)}
           data-testid="premium-welcome-cta"
           className="mt-8 w-full rounded-md bg-amber-500 px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-amber-400"
         >

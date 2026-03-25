@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   getCurrentSession,
   onAuthSessionChange,
@@ -38,6 +39,7 @@ function getTripPlansSignature() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSigningIn, setIsSigningIn] = useState(false)
@@ -97,6 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (activeUserIdRef.current === userId) return
 
+    if (activeUserIdRef.current !== null || userId !== null) {
+      queryClient.removeQueries({ queryKey: ['trips'] })
+    }
+
     activeUserIdRef.current = userId
     setHasCompletedInitialSync(false)
     setSyncError(null)
@@ -104,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastRigSignatureRef.current = ''
     lastSavedSpotsSignatureRef.current = ''
     lastTripPlansSignatureRef.current = ''
-  }, [session?.user.id])
+  }, [session?.user.id, queryClient])
 
   const syncWithCloud = useCallback(async (userId: string) => {
     const [remoteRigProfile, remoteSavedSpots, remoteTripPlans] = await Promise.all([
@@ -370,7 +376,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setSyncError(null)
     await signOutAuth()
-  }, [])
+    queryClient.removeQueries({ queryKey: ['trips'] })
+  }, [queryClient])
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
@@ -18,8 +18,15 @@ function formatTimestamp(timestamp: string | null) {
   }).format(new Date(timestamp))
 }
 
+function readSafeReturnTo(value: unknown) {
+  if (typeof value !== 'string') return null
+  if (!value.startsWith('/') || value.startsWith('//')) return null
+  return value
+}
+
 export default function AccountScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { session, isLoading, isAuthenticated, isSigningIn, isSigningUp, isSyncing, syncError, lastSyncedAt, signIn, signUp, signOut } = useAuth()
   const rigProfile = useRigStore((state) => state.rigProfile)
   const savedSpots = useSpotsStore((state) => state.savedSpots)
@@ -30,6 +37,11 @@ export default function AccountScreen() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const { isSubscribed, isLoading: isPushLoading, unsubscribe, permissionState } = usePushSubscription()
+  const returnTo = useMemo(() => {
+    const queryReturnTo = new URLSearchParams(location.search).get('returnTo')
+    const stateFrom = (location.state as { from?: unknown } | null)?.from
+    return readSafeReturnTo(queryReturnTo) ?? readSafeReturnTo(stateFrom) ?? null
+  }, [location.search, location.state])
 
 
   const rigSummary = useMemo(() => {
@@ -82,6 +94,9 @@ export default function AccountScreen() {
     try {
       await signIn(email.trim(), password)
       setPassword('')
+      if (returnTo) {
+        navigate(returnTo, { replace: true })
+      }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to sign in')
     }

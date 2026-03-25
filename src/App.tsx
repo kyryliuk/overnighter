@@ -34,6 +34,7 @@ const PinDetailSheet = lazy(() => import('@/features/pin-detail/PinDetailSheet')
 const SavedSpotsScreen = lazy(() => import('@/features/saved-spots/SavedSpotsScreen'))
 const AccountScreen = lazy(() => import('@/features/account/AccountScreen'))
 const SuggestSpotScreen = lazy(() => import('@/features/spot-submissions/SuggestSpotScreen'))
+const MyRoutesScreen = lazy(() => import('@/features/route-planning/MyRoutesScreen'))
 const RoutePlanningScreen = lazy(() => import('@/features/route-planning/RoutePlanningScreen'))
 const SharedTripPlanScreen = lazy(() => import('@/features/route-planning/SharedTripPlanScreen'))
 const PremiumWelcomeScreen = lazy(() => import('@/features/subscription/PremiumWelcomeScreen'))
@@ -56,6 +57,14 @@ export default function App() {
             <Routes>
               <Route path="/" element={<MapView />}>
                 <Route path="pin/:id" element={<PinDetailSheet />} />
+                <Route
+                  path="trips"
+                  element={(
+                    <AuthRequired>
+                      <MyRoutesScreen />
+                    </AuthRequired>
+                  )}
+                />
               </Route>
               <Route path="/onboarding" element={<OnboardingScreen />} />
               <Route path="/rig-edit" element={<RigEditScreen />} />

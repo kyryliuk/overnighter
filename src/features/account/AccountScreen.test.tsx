@@ -6,6 +6,24 @@ import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useTripPlansStore } from '@/store/tripPlansStore'
 
+const mockNavigate = vi.fn()
+const mockUseLocation = vi.fn(() => ({
+  pathname: '/account',
+  search: '',
+  hash: '',
+  state: null,
+  key: 'account',
+}))
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useLocation: () => mockUseLocation(),
+  }
+})
+
 const pushState = vi.hoisted(() => ({
   isSubscribed: false,
   isLoading: false,
@@ -70,6 +88,14 @@ describe('AccountScreen', () => {
     authState.signIn.mockReset()
     authState.signUp.mockReset()
     authState.signOut.mockReset()
+    mockNavigate.mockReset()
+    mockUseLocation.mockReturnValue({
+      pathname: '/account',
+      search: '',
+      hash: '',
+      state: null,
+      key: 'account',
+    })
 
     pushState.isSubscribed = false
     pushState.isLoading = false
@@ -220,6 +246,52 @@ describe('AccountScreen', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect email or password')
     expect(screen.getByLabelText(/^email$/i)).toHaveValue('user@example.com')
     expect(screen.getByLabelText(/^password$/i)).toHaveValue('wrongpass')
+  })
+
+  it('returns to router state destination after a successful sign-in', async () => {
+    authState.signIn.mockResolvedValue(undefined)
+    mockUseLocation.mockReturnValue({
+      pathname: '/account',
+      search: '',
+      hash: '',
+      state: { from: '/trips?tripId=trip-123#sheet' },
+      key: 'account',
+    })
+
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('tab', { name: /^sign in$/i }))
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } })
+    fireEvent.submit(screen.getByRole('button', { name: /^sign in$/i }).closest('form')!)
+
+    await waitFor(() => {
+      expect(authState.signIn).toHaveBeenCalledWith('user@example.com', 'password123')
+    })
+    expect(mockNavigate).toHaveBeenCalledWith('/trips?tripId=trip-123#sheet', { replace: true })
+  })
+
+  it('prefers query returnTo when present after a successful sign-in', async () => {
+    authState.signIn.mockResolvedValue(undefined)
+    mockUseLocation.mockReturnValue({
+      pathname: '/account',
+      search: '?returnTo=%2Ftrips%3FtripId%3Dtrip-456',
+      hash: '',
+      state: { from: '/suggest-spot' },
+      key: 'account',
+    })
+
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('tab', { name: /^sign in$/i }))
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } })
+    fireEvent.submit(screen.getByRole('button', { name: /^sign in$/i }).closest('form')!)
+
+    await waitFor(() => {
+      expect(authState.signIn).toHaveBeenCalledWith('user@example.com', 'password123')
+    })
+    expect(mockNavigate).toHaveBeenCalledWith('/trips?tripId=trip-456', { replace: true })
   })
 
   it('renders authenticated account actions when a session exists', () => {

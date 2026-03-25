@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { createElement } from 'react'
 
-const { mockUseSubscription, mockUseAuth } = vi.hoisted(() => {
+const { mockUseSubscription, mockUseAuth, mockUseLocation } = vi.hoisted(() => {
   const mockUseSubscription = vi.fn().mockReturnValue({
     isPremium: false,
     isTrial: false,
@@ -17,8 +17,13 @@ const { mockUseSubscription, mockUseAuth } = vi.hoisted(() => {
     isAuthenticated: false,
     isLoading: false,
   })
+  const mockUseLocation = vi.fn().mockReturnValue({
+    pathname: '/',
+    search: '',
+    hash: '',
+  })
 
-  return { mockUseSubscription, mockUseAuth }
+  return { mockUseSubscription, mockUseAuth, mockUseLocation }
 })
 
 vi.mock('@/hooks/useSubscription', () => ({
@@ -32,12 +37,12 @@ vi.mock('@/contexts/AuthContext', () => ({
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
-  return { ...actual, useNavigate: () => mockNavigate }
+  return { ...actual, useNavigate: () => mockNavigate, useLocation: () => mockUseLocation() }
 })
 
 import { PremiumGate } from './PremiumGate'
 
-function makeWrapper() {
+function makeWrapper(initialEntries = ['/']) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -45,13 +50,22 @@ function makeWrapper() {
     createElement(
       QueryClientProvider,
       { client: queryClient },
-      createElement(MemoryRouter, null, children),
+      createElement(
+        MemoryRouter,
+        { initialEntries },
+        createElement(Routes, null, createElement(Route, { path: '*', element: children })),
+      ),
     )
 }
 
 describe('PremiumGate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseLocation.mockReturnValue({
+      pathname: '/',
+      search: '',
+      hash: '',
+    })
   })
 
   it('renders children when user is premium', () => {
@@ -173,6 +187,11 @@ describe('PremiumGate', () => {
       isAuthenticated: true,
       isLoading: false,
     })
+    mockUseLocation.mockReturnValue({
+      pathname: '/trips',
+      search: '',
+      hash: '',
+    })
 
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -197,6 +216,7 @@ describe('PremiumGate', () => {
         'Content-Type': 'application/json',
         Authorization: 'Bearer test-token',
       },
+      body: JSON.stringify({ returnTo: '/trips' }),
     })
 
     vi.unstubAllGlobals()
