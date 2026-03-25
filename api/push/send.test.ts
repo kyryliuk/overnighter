@@ -50,7 +50,7 @@ const VALID_BODY = {
   userId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
   title: 'New check-in',
   body: 'Someone checked in at your spot',
-  url: 'https://overnighter.app/pin/123',
+  url: 'https://overnighter.net/pin/123',
 }
 
 const FAKE_SUBS = [
@@ -66,7 +66,7 @@ describe('api/push/send', () => {
     vi.stubEnv('PUSH_ADMIN_TOKEN', 'admin-secret-token')
     vi.stubEnv('VAPID_PRIVATE_KEY', 'test-private-key')
     vi.stubEnv('VITE_VAPID_PUBLIC_KEY', 'test-public-key')
-    vi.stubEnv('VAPID_SUBJECT', 'mailto:admin@overnighter.app')
+    vi.stubEnv('VAPID_SUBJECT', 'mailto:admin@overnighter.net')
     mockSelectEq.mockResolvedValue({ data: FAKE_SUBS, error: null })
     mockSendNotification.mockResolvedValue({})
     mockDeleteEq.mockResolvedValue({ error: null })
@@ -123,7 +123,7 @@ describe('api/push/send', () => {
     expect(ctx.body).toEqual({ sent: 2, failed: 0 })
     expect(mockSendNotification).toHaveBeenCalledTimes(2)
     expect(mockSetVapidDetails).toHaveBeenCalledWith(
-      'mailto:admin@overnighter.app',
+      'mailto:admin@overnighter.net',
       'test-public-key',
       'test-private-key',
     )

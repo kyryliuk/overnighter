@@ -4,8 +4,8 @@ import { buildTripShareUrl, clearTripShareState, createTripCopyDraft } from './t
 
 describe('buildTripShareUrl', () => {
   it('builds an absolute shared trip url from the current origin', () => {
-    expect(buildTripShareUrl('https://overnighter.app', 'share-123')).toBe(
-      'https://overnighter.app/shared-trip/share-123',
+    expect(buildTripShareUrl('https://overnighter.net', 'share-123')).toBe(
+      'https://overnighter.net/shared-trip/share-123',
     )
   })
 })
