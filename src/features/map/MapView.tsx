@@ -334,7 +334,7 @@ function MapViewContent() {
           type="button"
           onClick={requestGeo}
           disabled={geoState.isLoading}
-          className="bg-surface border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-md disabled:opacity-50 text-lg"
+          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-md disabled:opacity-50 text-lg"
           aria-label={geoState.isLoading ? 'Getting location...' : 'Use my current location'}
         >
           {geoState.isLoading ? '…' : '📍'}
@@ -344,7 +344,7 @@ function MapViewContent() {
         <button
           type="button"
           onClick={() => navigate('/trips')}
-          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
           aria-label="Open My Routes"
         >
           My Routes
@@ -352,7 +352,7 @@ function MapViewContent() {
         <button
           type="button"
           onClick={() => navigate('/suggest-spot')}
-          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
           aria-label="Suggest a spot"
         >
           Suggest spot
@@ -360,7 +360,7 @@ function MapViewContent() {
         <button
           type="button"
           onClick={() => navigate('/saved')}
-          className="bg-surface border border-border rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
           aria-label="Open saved spots"
         >
           Saved spots
@@ -368,7 +368,7 @@ function MapViewContent() {
         <button
           type="button"
           onClick={() => navigate('/account')}
-          className={`bg-surface border border-border min-h-[44px] shadow-md text-sm font-medium ${
+          className={`bg-gray-200 border border-gray-300 min-h-[44px] shadow-md text-sm font-medium ${
             isAuthenticated ? 'min-w-[44px] rounded-full px-0 flex items-center justify-center' : 'rounded-full px-4'
           }`}
           aria-label={isAuthenticated ? `Open profile for ${session?.user.email ?? 'your account'}` : 'Open account'}
