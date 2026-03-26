@@ -26,17 +26,6 @@ export function useUpdateTripMutation() {
     },
     onSuccess: (updatedTrip) => {
       queryClient.setQueryData(tripQueryKey(userId, updatedTrip.id), updatedTrip)
-      queryClient.setQueryData(tripsQueryKey(userId), (currentTrips: unknown) => {
-        const trips = Array.isArray(currentTrips) ? currentTrips : []
-        const nextTrips = trips.map((trip) => (
-          trip && typeof trip === 'object' && 'id' in trip && trip.id === updatedTrip.id
-            ? updatedTrip
-            : trip
-        ))
-        return nextTrips.some((trip) => trip && typeof trip === 'object' && 'id' in trip && trip.id === updatedTrip.id)
-          ? nextTrips
-          : [updatedTrip, ...nextTrips]
-      })
       void queryClient.invalidateQueries({ queryKey: tripsQueryKey(userId) })
       void queryClient.invalidateQueries({ queryKey: tripQueryKey(userId, updatedTrip.id) })
     },

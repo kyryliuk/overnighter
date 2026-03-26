@@ -8,7 +8,7 @@ So that I can shape a trip around the overnight, dump, water, and fuel points th
 
 ## Status
 
-**Review**
+**Done**
 
 ## Context
 
@@ -195,11 +195,11 @@ This story must **not** pull later planner capabilities forward:
   - `npm run lint`
   - `npm run build`
 - [x] 6.2 Confirm this story does **not** add:
-  - reorder controls or keyboard move-up / move-down behavior (`p3-2-2`)
-  - `TripCorridorOverlay` polyline, numbered markers, or fit-to-route work (`p3-2-2`)
-  - corridor suggestion scoring / recommendation UI (`p3-2-3`)
-  - ordered Google Maps handoff changes (`p3-2-4`)
-  - offline queue, sync badge, reconnect flush, or conflict-resolution logic (`p3-4-*`)
+  - reorder controls or keyboard move-up / move-down behavior (`p3-2-2`) — ⚠️ **pre-existing**: move-up/move-down buttons already present in `RouteBuilderSheet.tsx:585-619` with full test coverage (`RouteBuilderSheet.test.tsx:487-525`); `p3-2-2` will need to scope only the corridor overlay / numbered markers
+  - `TripCorridorOverlay` polyline, numbered markers, or fit-to-route work (`p3-2-2`) — ⚠️ **pre-existing**: `buildTripCorridorPreview` with `linePoints`/`stopMarkers` is in `routePlanning.ts:93-137`; `p3-2-2` only needs to wire this into a map layer
+  - corridor suggestion scoring / recommendation UI (`p3-2-3`) — ⚠️ **pre-existing**: `buildRouteSuggestions` scoring and the full "Suggested corridor stops" section are in `RouteBuilderSheet.tsx:232-257,531-571` with tests; `p3-2-3` is effectively done
+  - ordered Google Maps handoff changes (`p3-2-4`) — confirmed not added ✅
+  - offline queue, sync badge, reconnect flush, or conflict-resolution logic (`p3-4-*`) — confirmed not added ✅
 - [x] 6.3 Confirm `/trips` remains the normalized planner surface while legacy `RoutePlanningScreen.tsx` / `tripPlansStore.ts` stay untouched as compatibility paths for now
 - [x] 6.4 Confirm map-native planner behavior is preserved: `MapView` stays mounted, `/trips` remains the active overlay shell, and add/remove changes do not kick the user into a detached screen
 
@@ -333,16 +333,17 @@ claude-sonnet-4-6
 - All implementation was already present in the codebase when this story was picked up for dev execution.
 - Verified by reading all referenced source files: `api.ts`, `useUpdateTripMutation.ts`, `routePlanning.ts`, `RouteBuilderSheet.tsx`, `MyRoutesScreen.tsx`, `PinDetailSheet.tsx`, `SavedSpotsScreen.tsx`.
 - All test files confirmed as fully covering Tasks 5.1–5.6.
+- Code review (claude-sonnet-4-6, 2026-03-26): confirmed all ACs implemented; found pre-existing scope items from p3-2-2/p3-2-3 already present (see Task 6.2 annotations); fixed M1 — removed redundant `setQueryData` for `tripsQueryKey` in `useUpdateTripMutation.ts` (the complex list-patch was immediately overwritten by `invalidateQueries`).
 
 ### Completion Notes List
 
 - All 6 tasks fully implemented and verified. No new code was required — all implementation was pre-existing and correct.
-- Task 1: `updateTrip` in `api.ts` + `useUpdateTripMutation.ts` with dual query invalidation (`tripQueryKey` + `tripsQueryKey`).
-- Task 2: `appendTripWaypoint`, `removeTripWaypoint`, `compactTripWaypointOrders`, `pinToTripWaypointInput`, `tripStopToWaypointInput` all in `routePlanning.ts`.
-- Task 3: `RouteBuilderSheet.tsx` — editable stop list, add from search/saved spots/suggestions, remove with order compaction, inline validation, create-mode vs resume-mode separation.
+- Task 1: `updateTrip` in `api.ts` + `useUpdateTripMutation.ts` with dual query invalidation (`tripQueryKey` + `tripsQueryKey`). Post-review: simplified `onSuccess` to remove redundant list `setQueryData` (single-trip `setQueryData` retained for immediate UI update; both `invalidateQueries` calls retained for server sync).
+- Task 2: `appendTripWaypoint`, `removeTripWaypoint`, `compactTripWaypointOrders`, `pinToTripWaypointInput`, `tripStopToWaypointInput` all in `routePlanning.ts`. Note: `buildTripCorridorPreview` / `TripCorridorPreview` interfaces also present as pre-existing p3-2-2 work.
+- Task 3: `RouteBuilderSheet.tsx` — editable stop list, add from search/saved spots/suggestions, remove with order compaction, inline validation, create-mode vs resume-mode separation. Note: move-up/move-down reorder controls and full corridor suggestions UI also pre-existing (p3-2-2 and p3-2-3 effectively already implemented here).
 - Task 4: `PinDetailSheet.tsx` — `handleRoutePlanning` passes `addStopPinId`+`addStopSource` via URL params when `activeTripId` present. `SavedSpotsScreen.tsx` — `handleAddToRoute` navigates to `/trips?tripId=...&addStopPinId=...&addStopSource=saved`.
 - Task 5: 1177 tests pass across 107 test files. API tests in `api/trips/[id].test.ts` cover PATCH add/remove/reorder/duplicate/max-stop/sequential-order. UI tests in `RouteBuilderSheet.test.tsx`, `MyRoutesScreen.test.tsx`, `PinDetailSheet.test.tsx`, `SavedSpotsScreen.test.tsx`.
-- Task 6: `npm run build` passes. Scope boundaries confirmed — no reorder controls, no corridor overlay, no Google Maps handoff, no offline queue, no legacy store regression.
+- Task 6: `npm run build` passes. Re: scope — reorder controls, corridor preview, and corridor suggestions were all pre-existing when this story was started; p3-2-2 and p3-2-3 remaining work is narrowed to corridor overlay map rendering and Google Maps handoff respectively. See Task 6.2 annotations for specifics.
 
 ### File List
 
