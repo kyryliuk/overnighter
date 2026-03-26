@@ -322,6 +322,23 @@ describe('/api/trips/:id', () => {
     })
   })
 
+  it('returns 404 for GET when the trip is not found or belongs to another user', async () => {
+    setGetTripResult(null)
+    const { res, ctx } = mockRes()
+    await handler(mockReq('GET'), res)
+
+    expect(ctx.statusCode).toBe(404)
+    expect(ctx.body).toMatchObject({ error: 'NOT_FOUND', message: 'Trip not found' })
+  })
+
+  it('returns 400 for GET when the trip id param is not a valid UUID', async () => {
+    const { res, ctx } = mockRes()
+    await handler(mockReq('GET', {}, 'not-a-uuid'), res)
+
+    expect(ctx.statusCode).toBe(400)
+    expect(ctx.body).toMatchObject({ error: 'INVALID_PARAMS' })
+  })
+
   it('returns 400 when patch destination is missing', async () => {
     const { res, ctx } = mockRes()
     await handler(mockReq('PATCH', { stops: [] }), res)
