@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /onboarding
+
+Sitemap: https://overnighter.net/sitemap.xml
