@@ -61,11 +61,15 @@ export default function AccountScreen() {
     event.preventDefault()
     setSubmitError(null)
     setStatusMessage(null)
+    console.log('[AccountScreen] handleCreateAccount: submitting for', email.trim())
 
     try {
+      console.log('[AccountScreen] handleCreateAccount: calling signUp...')
       const result = await signUp(email.trim(), password)
+      console.log('[AccountScreen] handleCreateAccount: signUp result', result)
 
       if (result.status === 'email-confirmation-required') {
+        console.log('[AccountScreen] handleCreateAccount: email confirmation required for', result.email)
         setPassword('')
         setStatusMessage(`Account created. Check ${result.email} to confirm your email, then come back to back up your data.`)
         return
@@ -75,13 +79,16 @@ export default function AccountScreen() {
       setPassword('')
 
       if (result.migrationError) {
+        console.warn('[AccountScreen] handleCreateAccount: migration error', result.migrationError)
         setStatusMessage(result.migrationError)
         return
       }
 
       const count = result.migrationResult?.spotsCount ?? 0
+      console.log('[AccountScreen] handleCreateAccount: success, migrated spots:', count)
       setStatusMessage(count > 0 ? `${count} spot${count === 1 ? '' : 's'} backed up` : 'Account created successfully.')
     } catch (error) {
+      console.error('[AccountScreen] handleCreateAccount: error', error)
       setSubmitError(error instanceof Error ? error.message : 'Failed to create account')
     }
   }
@@ -90,14 +97,19 @@ export default function AccountScreen() {
     event.preventDefault()
     setSubmitError(null)
     setStatusMessage(null)
+    console.log('[AccountScreen] handleSignIn: submitting for', email.trim())
 
     try {
+      console.log('[AccountScreen] handleSignIn: calling signIn...')
       await signIn(email.trim(), password)
+      console.log('[AccountScreen] handleSignIn: success, session established')
       setPassword('')
       if (returnTo) {
+        console.log('[AccountScreen] handleSignIn: redirecting to', returnTo)
         navigate(returnTo, { replace: true })
       }
     } catch (error) {
+      console.error('[AccountScreen] handleSignIn: error', error)
       setSubmitError(error instanceof Error ? error.message : 'Failed to sign in')
     }
   }

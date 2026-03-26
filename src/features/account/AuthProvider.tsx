@@ -300,20 +300,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (email: string, password: string): Promise<SignUpResult> => {
     setIsSigningUp(true)
     setSyncError(null)
+    console.log('[AuthProvider] signUp: start for', email)
 
     try {
+      console.log('[AuthProvider] signUp: calling signUpWithPassword...')
       const result = await signUpWithPassword(email, password)
+      console.log('[AuthProvider] signUp: signUpWithPassword result — needsEmailConfirmation:', result.needsEmailConfirmation)
 
       if (result.needsEmailConfirmation) {
+        console.log('[AuthProvider] signUp: email confirmation required — no session created yet')
         return {
           status: 'email-confirmation-required',
           email,
         }
       }
 
+      console.log('[AuthProvider] signUp: session created, userId:', result.session.user.id)
+
       try {
+        console.log('[AuthProvider] signUp: calling ensureProfile...')
         await ensureProfile(result.session.user.id)
+        console.log('[AuthProvider] signUp: ensureProfile success')
       } catch (error) {
+        console.error('[AuthProvider] signUp: ensureProfile failed', error)
         try {
           await signOutAuth()
           setSession(null)
@@ -332,6 +341,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const rigState = useRigStore.getState()
       const spots = useSpotsStore.getState().savedSpots
+      console.log('[AuthProvider] signUp: migrating local data — spots:', spots.length, 'hasRig:', !!rigState.rigProfile.rigType)
 
       let migrationError: string | null = null
       let migratedSpotsCount = 0
@@ -345,11 +355,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         migratedSpotsCount = migrationResult.migratedSpotsCount
         migrationCompletedRef.current = true
-      } catch {
+        console.log('[AuthProvider] signUp: migration success — migratedSpotsCount:', migratedSpotsCount)
+      } catch (migrationErr) {
+        console.error('[AuthProvider] signUp: migration failed', migrationErr)
         migrationError = 'Account created. Data sync failed — will retry on next sign-in.'
       }
 
       setSession(result.session)
+      console.log('[AuthProvider] signUp: session set, returning status: authenticated')
 
       if (migrationError) {
         return { status: 'authenticated', migrationError }
@@ -364,10 +377,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     setIsSigningIn(true)
     setSyncError(null)
+    console.log('[AuthProvider] signIn: start for', email)
 
     try {
+      console.log('[AuthProvider] signIn: calling signInWithPassword...')
       const result = await signInWithPassword(email, password)
+      console.log('[AuthProvider] signIn: success — userId:', result.session.user.id, 'email confirmed:', result.session.user.email_confirmed_at ?? 'NOT confirmed')
       setSession(result.session)
+    } catch (error) {
+      console.error('[AuthProvider] signIn: error', error)
+      throw error
     } finally {
       setIsSigningIn(false)
     }
