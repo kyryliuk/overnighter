@@ -612,8 +612,7 @@ describe('MyRoutesScreen', () => {
     }))
   })
 
-  it('adds corridor suggestions through the normalized update flow with suggested source metadata', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue({
+  it('adds corridor suggestions through the normalized update flow with suggested source metadata', async () => {    const mutateAsync = vi.fn().mockResolvedValue({
       ...SAMPLE_TRIP,
       revision: 2,
     })
@@ -651,5 +650,32 @@ describe('MyRoutesScreen', () => {
         ],
       }),
     }))
+  })
+
+  it('shows the Open in Google Maps link in the active planner for an authenticated premium user', async () => {
+    mockUseTripQuery.mockReturnValue({
+      ...DEFAULT_TRIP_QUERY_RESULT,
+      data: SAMPLE_TRIP,
+      refetch: vi.fn(),
+    })
+
+    renderScreen('/trips?tripId=trip-123')
+
+    await waitFor(() => expect(screen.getByRole('dialog', { name: /resume route/i })).toBeInTheDocument())
+    const link = screen.getByRole('link', { name: /open in google maps/i })
+    const href = link.getAttribute('href') ?? ''
+    expect(href).toContain('destination=33.6%2C-114.2')
+    expect(href).toContain('origin=35.1983%2C-111.6513')
+    expect(href).toContain('waypoints=34.4839%2C-114.3225')
+  })
+
+  it('does not show the Google Maps link when the planner is in create mode (no trip loaded)', async () => {
+    const user = userEvent.setup()
+
+    renderScreen()
+
+    await user.click(screen.getByRole('button', { name: /create route/i }))
+    expect(screen.getByRole('dialog', { name: /create route/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /open in google maps/i })).not.toBeInTheDocument()
   })
 })

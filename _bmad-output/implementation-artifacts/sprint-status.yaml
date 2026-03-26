@@ -158,7 +158,7 @@ development_status:
   p3-2-1-add-and-remove-route-stops: done
   p3-2-2-reorder-stops-and-render-corridor-overlay: done
   p3-2-3-corridor-suggestions-from-existing-route-logic: done
-  p3-2-4-ordered-google-maps-handoff: ready-for-dev
+  p3-2-4-ordered-google-maps-handoff: done
   p3-epic-2-retrospective: optional
 
   # ── Phase 3 Epic 3: Route Library Management ──────────────────────────────

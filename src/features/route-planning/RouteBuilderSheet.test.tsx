@@ -8,6 +8,7 @@ import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
 import type { Trip } from '@/types/trip'
 import RouteBuilderSheet from './RouteBuilderSheet'
 import { MAX_TRIP_STOPS_MESSAGE } from './routePlanning'
+import { GOOGLE_MAPS_MAX_WAYPOINTS } from '@/lib/maps/googleMaps'
 
 const mockUsePinsQuery = vi.fn()
 
@@ -365,6 +366,44 @@ function buildTripWithMaxWaypoints(): Trip {
   }
 }
 
+function buildTripJustOverHandoffLimit(): Trip {
+  const overLimitCount = GOOGLE_MAPS_MAX_WAYPOINTS + 1
+  return {
+    ...RESTORED_TRIP,
+    id: 'trip-over-limit',
+    stopCount: overLimitCount + 1,
+    stops: [
+      ...Array.from({ length: overLimitCount }, (_, index) => ({
+        id: `stop-${index + 1}`,
+        stopOrder: index,
+        stopKind: 'waypoint' as const,
+        source: 'manual' as const,
+        pinId: `pin-over-${index + 1}`,
+        place: {
+          id: `pin-over-${index + 1}`,
+          name: `Stop ${index + 1}`,
+          latitude: 30 + index,
+          longitude: -110 - index,
+        },
+        notes: '',
+        createdAt: '2026-03-25T00:00:00.000Z',
+        updatedAt: '2026-03-25T00:00:00.000Z',
+      })),
+      {
+        id: 'stop-destination',
+        stopOrder: overLimitCount,
+        stopKind: 'destination' as const,
+        source: 'manual' as const,
+        pinId: null,
+        place: RESTORED_TRIP.destination,
+        notes: '',
+        createdAt: '2026-03-25T00:00:00.000Z',
+        updatedAt: '2026-03-25T00:00:00.000Z',
+      },
+    ],
+  }
+}
+
 describe('RouteBuilderSheet', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -663,5 +702,56 @@ describe('RouteBuilderSheet', () => {
     await user.click(screen.getByRole('button', { name: /add desert oasis as a suggested stop/i }))
 
     expect(screen.getByRole('alert')).toHaveTextContent(MAX_TRIP_STOPS_MESSAGE)
+  })
+
+  it('renders an Open in Google Maps link with the correct origin, destination, and waypoint coordinates', () => {
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP} />)
+
+    const link = screen.getByRole('link', { name: /open in google maps/i })
+    const href = link.getAttribute('href') ?? ''
+
+    expect(href).toContain('destination=33.6639%2C-114.229')
+    expect(href).toContain('origin=35.1983%2C-111.6513')
+    expect(href).toContain('waypoints=34.4839%2C-114.3225')
+  })
+
+  it('shows a waypoint-limit warning and no navigation link when the route exceeds Google Maps capacity', () => {
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={buildTripWithMaxWaypoints()} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      new RegExp(`more than ${GOOGLE_MAPS_MAX_WAYPOINTS} stops`, 'i'),
+    )
+    expect(screen.queryByRole('link', { name: /open in google maps/i })).not.toBeInTheDocument()
+  })
+
+  it('shows a waypoint-limit warning at the boundary of GOOGLE_MAPS_MAX_WAYPOINTS + 1 stops', () => {
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={buildTripJustOverHandoffLimit()} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      new RegExp(`more than ${GOOGLE_MAPS_MAX_WAYPOINTS} stops`, 'i'),
+    )
+    expect(screen.queryByRole('link', { name: /open in google maps/i })).not.toBeInTheDocument()
+  })
+
+  it('does not show the Google Maps link in create mode', () => {
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} />)
+
+    expect(screen.queryByRole('link', { name: /open in google maps/i })).not.toBeInTheDocument()
+  })
+
+  it('updates the directions URL when waypoints are reordered', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP_WITH_MULTIPLE_WAYPOINTS} />,
+    )
+
+    const initialHref = screen.getByRole('link', { name: /open in google maps/i }).getAttribute('href') ?? ''
+    expect(initialHref).toContain('waypoints=34.4839%2C-114.3225%7C35.1894%2C-114.053')
+
+    await user.click(screen.getByRole('button', { name: /move stop 2 up/i }))
+
+    const updatedHref = screen.getByRole('link', { name: /open in google maps/i }).getAttribute('href') ?? ''
+    expect(updatedHref).toContain('waypoints=35.1894%2C-114.053%7C34.4839%2C-114.3225')
   })
 })

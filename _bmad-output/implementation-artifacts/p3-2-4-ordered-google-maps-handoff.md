@@ -8,7 +8,7 @@ So that Overnighter remains the planning tool while existing navigation apps han
 
 ## Status
 
-**Ready for Dev**
+**Done**
 
 ## Context
 
@@ -82,10 +82,10 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\SharedTripPlanScreen.tsx`
 - `src\features\route-planning\routePlanning.test.ts`
 
-- [ ] 1.1 Reuse `buildDirectionsUrl(...)` as the canonical handoff helper for Phase 3
-- [ ] 1.2 Adapt the normalized active-trip data shape into the existing helper contract without creating a second URL builder
-- [ ] 1.3 Preserve the visible waypoint order from the normalized trip when building the handoff URL
-- [ ] 1.4 Keep current-location / origin behavior aligned with the existing helper rules already used by legacy route planning and shared-trip flows
+- [x] 1.1 Reuse `buildDirectionsUrl(...)` as the canonical handoff helper for Phase 3
+- [x] 1.2 Adapt the normalized active-trip data shape into the existing helper contract without creating a second URL builder
+- [x] 1.3 Preserve the visible waypoint order from the normalized trip when building the handoff URL
+- [x] 1.4 Keep current-location / origin behavior aligned with the existing helper rules already used by legacy route planning and shared-trip flows
 
 **Acceptance Criteria:** AC 1, AC 3
 
@@ -99,10 +99,10 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\RouteBuilderSheet.test.tsx`
 - `src\features\route-planning\MyRoutesScreen.test.tsx`
 
-- [ ] 2.1 Add an explicit handoff CTA in the active normalized planner experience
-- [ ] 2.2 Keep the CTA disabled or guarded when there is insufficient destination / route context to build a safe link
-- [ ] 2.3 Ensure the CTA uses the current in-memory route order rather than a stale cached value
-- [ ] 2.4 Preserve create-mode and premium-gate behavior; the CTA belongs only to a valid active trip state
+- [x] 2.1 Add an explicit handoff CTA in the active normalized planner experience
+- [x] 2.2 Keep the CTA disabled or guarded when there is insufficient destination / route context to build a safe link
+- [x] 2.3 Ensure the CTA uses the current in-memory route order rather than a stale cached value
+- [x] 2.4 Preserve create-mode and premium-gate behavior; the CTA belongs only to a valid active trip state
 
 **Acceptance Criteria:** AC 1, AC 3
 
@@ -115,9 +115,9 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\RouteBuilderSheet.tsx`
 - `src\features\route-planning\routePlanning.test.ts`
 
-- [ ] 3.1 Determine the supported Google Maps waypoint count based on the current helper behavior and encode the limit explicitly if not already present
-- [ ] 3.2 If the normalized trip exceeds the safe handoff size, block or degrade with a clear user-facing message instead of silently dropping waypoints
-- [ ] 3.3 Keep the error / guidance behavior non-destructive: the route itself remains intact even if handoff is unavailable
+- [x] 3.1 Determine the supported Google Maps waypoint count based on the current helper behavior and encode the limit explicitly if not already present
+- [x] 3.2 If the normalized trip exceeds the safe handoff size, block or degrade with a clear user-facing message instead of silently dropping waypoints
+- [x] 3.3 Keep the error / guidance behavior non-destructive: the route itself remains intact even if handoff is unavailable
 
 **Acceptance Criteria:** AC 2
 
@@ -131,10 +131,10 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\MyRoutesScreen.test.tsx`
 - `src\features\route-planning\SharedTripPlanScreen.tsx`
 
-- [ ] 4.1 Verify the generated handoff URL preserves the same stop order shown in the normalized planner
-- [ ] 4.2 Verify reordered and newly suggested stops are reflected in the next generated URL
-- [ ] 4.3 Verify waypoint-limit edge cases are surfaced explicitly and do not create a broken link
-- [ ] 4.4 Verify the CTA remains unavailable when the trip lacks a destination or otherwise cannot be handed off safely
+- [x] 4.1 Verify the generated handoff URL preserves the same stop order shown in the normalized planner
+- [x] 4.2 Verify reordered and newly suggested stops are reflected in the next generated URL
+- [x] 4.3 Verify waypoint-limit edge cases are surfaced explicitly and do not create a broken link
+- [x] 4.4 Verify the CTA remains unavailable when the trip lacks a destination or otherwise cannot be handed off safely
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3
 
@@ -142,16 +142,16 @@ This story must **not** pull later capabilities forward:
 
 ### Task 5 — Validate scope boundaries
 
-- [ ] 5.1 Run the existing project validation commands after implementation:
+- [x] 5.1 Run the existing project validation commands after implementation:
   - `npm run test`
   - `npm run lint`
   - `npm run build`
-- [ ] 5.2 Confirm this story does **not** add:
+- [x] 5.2 Confirm this story does **not** add:
   - a new routing provider
   - ETA optimization or route optimization
   - offline sync / queue logic
   - trip-library management work
-- [ ] 5.3 Confirm handoff continues to reuse shared helper logic rather than duplicating Google Maps URL assembly inside the planner
+- [x] 5.3 Confirm handoff continues to reuse shared helper logic rather than duplicating Google Maps URL assembly inside the planner
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3
 
@@ -237,17 +237,31 @@ This story must **not** pull later capabilities forward:
 
 ### Agent Model Used
 
-GPT-5.4
+claude-sonnet-4-6
 
 ### Debug Log References
 
-- Existing handoff logic already lives in legacy and shared-trip planner surfaces via `buildDirectionsUrl(...)`
+- `buildDirectionsUrl` in `googleMaps.ts` was silently slicing waypoints to 5 with a magic number; exported `GOOGLE_MAPS_MAX_WAYPOINTS = 5` to make the limit explicit and reusable
+- No handoff CTA existed in `RouteBuilderSheet.tsx` or `MyRoutesScreen.tsx` — fully new implementation
+- `directionsUrl` useMemo deps include `waypoints` state so URL recomputes on every reorder/add/remove (AC 3)
 
 ### Completion Notes List
 
-- Story context created from the Phase 3 epic artifact, direct code reuse points, and the immediately preceding `p3-2-3` story artifact
-- Story scope was intentionally constrained to ordered handoff from the normalized planner
+- Task 1: Exported `GOOGLE_MAPS_MAX_WAYPOINTS = 5` from `googleMaps.ts`; replaced magic number in `buildDirectionsUrl`. `directionsUrl` useMemo in `RouteBuilderSheet.tsx` maps normalized `TripWaypointInput[]` to `MapCoordinate[]` (no second URL builder). Waypoint order mirrors `waypoints` state order (compact stopOrder sequence). Origin passed as nullable — omitted when null, matching existing legacy/shared-trip behavior.
+- Task 2: Added "Open in Google Maps" `<a>` link in the buttons area of `RouteBuilderSheet.tsx`, inside a `directionsUrl ? ... : null` guard. Only rendered in resume mode with a destination; not shown in create mode. `directionsUrl` is derived from `waypoints` state so it always reflects the latest in-memory route. Premium gate ownership unchanged (unchanged `MyRoutesScreen` PremiumGate wrapping).
+- Task 3: `waypointOverLimit = isResumeMode && waypoints.length > GOOGLE_MAPS_MAX_WAYPOINTS` computed before the early return. When true, a `role="status"` warning replaces the link and the link is not rendered — route data is untouched. `buildDirectionsUrl` continues to cap internally as a safety net.
+- Task 4: 49/49 tests pass. `routePlanning.test.ts` adds cap-limit verification for `buildDirectionsUrl`. `RouteBuilderSheet.test.tsx` adds: correct URL coords (AC 1), over-limit warning + no link (AC 2), create-mode guard (AC 2/3), reorder updates URL (AC 3).
+- Task 5: `npm run lint` clean, `npm run build` passes. No routing provider, no ETA, no offline/sync logic, no library management. Handoff still goes through `buildDirectionsUrl` exclusively.
+
+### Review Follow-ups (AI)
+
+- [ ] [AI-Review][MEDIUM] `RoutePlanningScreen.tsx:159` calls `buildDirectionsUrl` without a waypoint-count guard — users with >5 legacy-planner stops receive a silently truncated link. Add an explicit limit check and user-facing warning mirroring the `RouteBuilderSheet` pattern [src\features\route-planning\RoutePlanningScreen.tsx:158-170]
 
 ### File List
 
 - `_bmad-output\implementation-artifacts\p3-2-4-ordered-google-maps-handoff.md`
+- `src\lib\maps\googleMaps.ts`
+- `src\features\route-planning\RouteBuilderSheet.tsx`
+- `src\features\route-planning\RouteBuilderSheet.test.tsx`
+- `src\features\route-planning\routePlanning.test.ts`
+- `src\features\route-planning\MyRoutesScreen.test.tsx`

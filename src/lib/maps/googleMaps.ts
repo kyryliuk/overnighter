@@ -17,6 +17,8 @@ export function buildMapsUrl(lat: number, lng: number): string {
   return `https://maps.google.com/?q=${lat},${lng}`
 }
 
+export const GOOGLE_MAPS_MAX_WAYPOINTS = 5
+
 export function buildDirectionsUrl({ destination, origin, waypoints = [] }: DirectionsOptions): string {
   const params = new URLSearchParams({
     api: '1',
@@ -32,7 +34,7 @@ export function buildDirectionsUrl({ destination, origin, waypoints = [] }: Dire
     params.set(
       'waypoints',
       waypoints
-        .slice(0, 5)
+        .slice(0, GOOGLE_MAPS_MAX_WAYPOINTS)
         .map((waypoint) => formatCoordinate(waypoint))
         .join('|'),
     )
