@@ -4,6 +4,7 @@ import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
 import type { Pin } from '@/types/pin'
 import type { Trip, TripPlaceSnapshot, TripStopSource, TripWritePayload } from '@/types/trip'
+import { buildDirectionsUrl, GOOGLE_MAPS_MAX_WAYPOINTS } from '@/lib/maps/googleMaps'
 import {
   appendTripWaypoint,
   buildRouteSuggestions,
@@ -242,6 +243,16 @@ export default function RouteBuilderSheet({
       limit: DEFAULT_ROUTE_SUGGESTION_LIMIT,
     })
   }, [destinationPoint, isResumeMode, originPoint, rigProfile, suggestionPins])
+  const waypointOverLimit = isResumeMode && waypoints.length > GOOGLE_MAPS_MAX_WAYPOINTS
+  const directionsUrl = useMemo(() => {
+    if (!isResumeMode || !destination || waypointOverLimit) return null
+    return buildDirectionsUrl({
+      origin: origin ? { latitude: origin.latitude, longitude: origin.longitude } : null,
+      destination: { latitude: destination.latitude, longitude: destination.longitude },
+      waypoints: waypoints.map((w) => ({ latitude: w.place.latitude, longitude: w.place.longitude })),
+    })
+  }, [destination, isResumeMode, origin, waypoints, waypointOverLimit])
+
   const suggestionStatusMessage = useMemo(() => {
     if (!isResumeMode) return null
     if (!destinationPoint) return 'Choose a destination to review corridor suggestions.'
@@ -632,6 +643,11 @@ export default function RouteBuilderSheet({
 
           {validationError ? <p role="alert" className="text-sm text-red-300">{validationError}</p> : null}
           {errorMessage ? <p role="alert" className="text-sm text-red-300">{errorMessage}</p> : null}
+          {isResumeMode && waypointOverLimit ? (
+            <p className="text-sm text-yellow-300" role="status">
+              This route has more than {GOOGLE_MAPS_MAX_WAYPOINTS} stops. Remove some stops to enable Google Maps navigation.
+            </p>
+          ) : null}
 
           <div className="flex flex-wrap gap-3 pt-2">
             {onSave ? (
@@ -658,6 +674,16 @@ export default function RouteBuilderSheet({
             >
               Cancel
             </button>
+            {directionsUrl ? (
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-h-[44px] flex items-center rounded-full border border-sky-400/40 px-5 text-sm font-medium text-sky-200"
+              >
+                Open in Google Maps
+              </a>
+            ) : null}
           </div>
         </div>
       </form>

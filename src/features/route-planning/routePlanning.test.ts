@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDirectionsUrl } from '@/lib/maps/googleMaps'
+import { buildDirectionsUrl, GOOGLE_MAPS_MAX_WAYPOINTS } from '@/lib/maps/googleMaps'
 import type { Pin } from '@/types/pin'
 import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
 import type { TripPlanPlace } from '@/types/tripPlan'
@@ -94,6 +94,21 @@ describe('buildDirectionsUrl', () => {
 
     expect(url).toContain('destination=41%2C-110')
     expect(url).not.toContain('origin=')
+  })
+
+  it('acts as a safety-net cap at GOOGLE_MAPS_MAX_WAYPOINTS — callers should guard before reaching this limit', () => {
+    const waypoints = Array.from({ length: GOOGLE_MAPS_MAX_WAYPOINTS + 2 }, (_, i) => ({
+      latitude: 39 + i * 0.5,
+      longitude: -105 - i * 0.5,
+    }))
+
+    const url = buildDirectionsUrl({
+      destination: { latitude: 41, longitude: -110 },
+      waypoints,
+    })
+
+    const waypointsParam = new URL(url).searchParams.get('waypoints') ?? ''
+    expect(waypointsParam.split('|')).toHaveLength(GOOGLE_MAPS_MAX_WAYPOINTS)
   })
 })
 
