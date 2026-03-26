@@ -294,6 +294,28 @@ describe('AccountScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/trips?tripId=trip-456', { replace: true })
   })
 
+  it('redirects to returnTo after successful account creation', async () => {
+    authState.signUp.mockResolvedValue({ status: 'authenticated', migrationResult: { spotsCount: 0 } })
+    mockUseLocation.mockReturnValue({
+      pathname: '/account',
+      search: '?returnTo=%2Ftrips',
+      hash: '',
+      state: null,
+      key: 'account',
+    })
+
+    renderScreen()
+
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } })
+    fireEvent.submit(screen.getByRole('button', { name: /create account and back up/i }).closest('form')!)
+
+    await waitFor(() => {
+      expect(authState.signUp).toHaveBeenCalledWith('user@example.com', 'password123')
+    })
+    expect(mockNavigate).toHaveBeenCalledWith('/trips', { replace: true })
+  })
+
   it('renders authenticated account actions when a session exists', () => {
     authState.isAuthenticated = true
     authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }

@@ -87,6 +87,10 @@ export default function AccountScreen() {
       const count = result.migrationResult?.spotsCount ?? 0
       console.log('[AccountScreen] handleCreateAccount: success, migrated spots:', count)
       setStatusMessage(count > 0 ? `${count} spot${count === 1 ? '' : 's'} backed up` : 'Account created successfully.')
+      if (returnTo) {
+        console.log('[AccountScreen] handleCreateAccount: redirecting to', returnTo)
+        navigate(returnTo, { replace: true })
+      }
     } catch (error) {
       console.error('[AccountScreen] handleCreateAccount: error', error)
       setSubmitError(error instanceof Error ? error.message : 'Failed to create account')

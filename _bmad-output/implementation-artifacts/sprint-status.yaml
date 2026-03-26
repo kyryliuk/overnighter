@@ -148,8 +148,8 @@ development_status:
   # ── Phase 3 Epic 1: Premium Trip Workspace ────────────────────────────────
   p3-epic-1: in-progress
   p3-1-1-normalized-trip-model-foundation: ready-for-dev
-  p3-1-2-gated-my-routes-entry-point: ready-for-dev
-  p3-1-3-create-a-new-trip-plan: ready-for-dev
+  p3-1-2-gated-my-routes-entry-point: done
+  p3-1-3-create-a-new-trip-plan: done
   p3-1-4-resume-an-existing-trip: ready-for-dev
   p3-epic-1-retrospective: optional
 
