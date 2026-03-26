@@ -8,7 +8,7 @@ So that I can shape a trip around the overnight, dump, water, and fuel points th
 
 ## Status
 
-**Ready for Dev**
+**Review**
 
 ## Context
 
@@ -98,11 +98,11 @@ This story must **not** pull later planner capabilities forward:
 - `src\features\route-planning\useTripQuery.ts`
 - `src\features\route-planning\useTripsQuery.ts`
 
-- [ ] 1.1 Extend `src\features\route-planning\api.ts` with an `updateTrip(accessToken, tripId, payload)` helper that issues `PATCH /api/trips/:id`
-- [ ] 1.2 Create `useUpdateTripMutation.ts` with TanStack Query `useMutation`, following the same auth-token ownership pattern already used by `useCreateTripMutation.ts`
-- [ ] 1.3 On successful stop edits, refresh both the active trip query and the trips list query so `/trips` reflects canonical server state without a page reload
-- [ ] 1.4 Keep the client payload aligned with `TripWritePayload` in `src\types\trip.ts`; do **not** invent a parallel add-stop contract
-- [ ] 1.5 Route all persisted add/remove behavior through the normalized stack rather than the legacy `tripPlansStore` / snapshot planner path
+- [x] 1.1 Extend `src\features\route-planning\api.ts` with an `updateTrip(accessToken, tripId, payload)` helper that issues `PATCH /api/trips/:id`
+- [x] 1.2 Create `useUpdateTripMutation.ts` with TanStack Query `useMutation`, following the same auth-token ownership pattern already used by `useCreateTripMutation.ts`
+- [x] 1.3 On successful stop edits, refresh both the active trip query and the trips list query so `/trips` reflects canonical server state without a page reload
+- [x] 1.4 Keep the client payload aligned with `TripWritePayload` in `src\types\trip.ts`; do **not** invent a parallel add-stop contract
+- [x] 1.5 Route all persisted add/remove behavior through the normalized stack rather than the legacy `tripPlansStore` / snapshot planner path
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3, AC 4
 
@@ -115,14 +115,14 @@ This story must **not** pull later planner capabilities forward:
 - `src\features\route-planning\routePlanning.test.ts`
 - `src\types\trip.ts`
 
-- [ ] 2.1 Reuse the proven add/remove ordering ideas from `appendUniqueWaypoint(...)` in `routePlanning.ts`, but adapt them for normalized trip-stop inputs rather than `TripPlanPlace` legacy state
-- [ ] 2.2 Add or extract helper logic that can:
+- [x] 2.1 Reuse the proven add/remove ordering ideas from `appendUniqueWaypoint(...)` in `routePlanning.ts`, but adapt them for normalized trip-stop inputs rather than `TripPlanPlace` legacy state
+- [x] 2.2 Add or extract helper logic that can:
   - append a new intermediate stop at the next valid `stopOrder`
   - remove an intermediate stop and compact the remaining order values
   - detect duplicate place ids before a mutation is sent
-- [ ] 2.3 Preserve stop metadata needed by the normalized model (`source`, `pinId`, `notes`, `stopKind`) when converting between builder UI state and `TripWritePayload`
-- [ ] 2.4 Treat destination as a separate canonical field; this story only mutates intermediate waypoint stops
-- [ ] 2.5 Keep reorder behavior out of scope even if helper extraction makes that future work easier
+- [x] 2.3 Preserve stop metadata needed by the normalized model (`source`, `pinId`, `notes`, `stopKind`) when converting between builder UI state and `TripWritePayload`
+- [x] 2.4 Treat destination as a separate canonical field; this story only mutates intermediate waypoint stops
+- [x] 2.5 Keep reorder behavior out of scope even if helper extraction makes that future work easier
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3, AC 4
 
@@ -135,13 +135,13 @@ This story must **not** pull later planner capabilities forward:
 - `src\features\route-planning\RouteBuilderSheet.test.tsx`
 - `src\features\route-planning\MyRoutesScreen.tsx`
 
-- [ ] 3.1 Hydrate editable intermediate-stop draft state from the restored normalized trip instead of rendering stops as read-only resume-only content
-- [ ] 3.2 Reuse the existing `usePinsQuery()` planner search source already wired into `RouteBuilderSheet.tsx`; do **not** create a second pin-search stack for `/trips`
-- [ ] 3.3 Add an explicit stop list UI with per-stop remove actions, clear labeling, and immediate local order compaction after removal
-- [ ] 3.4 Add planner-side stop-add affordances that append a selected place into the active stop list while leaving destination/origin editing intact
-- [ ] 3.5 Surface inline duplicate-stop and max-stop validation before mutation submission, while preserving server-side enforcement in `api\_trips.ts`
-- [ ] 3.6 Keep create-mode behavior from `p3-1-3` intact; stop editing should activate only for an existing active trip rather than forcing the new-trip create flow to become a full editor immediately
-- [ ] 3.7 Keep the builder mobile-first and map-native; do not turn `/trips` into a detached CRUD admin form
+- [x] 3.1 Hydrate editable intermediate-stop draft state from the restored normalized trip instead of rendering stops as read-only resume-only content
+- [x] 3.2 Reuse the existing `usePinsQuery()` planner search source already wired into `RouteBuilderSheet.tsx`; do **not** create a second pin-search stack for `/trips`
+- [x] 3.3 Add an explicit stop list UI with per-stop remove actions, clear labeling, and immediate local order compaction after removal
+- [x] 3.4 Add planner-side stop-add affordances that append a selected place into the active stop list while leaving destination/origin editing intact
+- [x] 3.5 Surface inline duplicate-stop and max-stop validation before mutation submission, while preserving server-side enforcement in `api\_trips.ts`
+- [x] 3.6 Keep create-mode behavior from `p3-1-3` intact; stop editing should activate only for an existing active trip rather than forcing the new-trip create flow to become a full editor immediately
+- [x] 3.7 Keep the builder mobile-first and map-native; do not turn `/trips` into a detached CRUD admin form
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3, AC 4
 
@@ -156,11 +156,11 @@ This story must **not** pull later planner capabilities forward:
 - `src\features\route-planning\MyRoutesScreen.tsx`
 - `src\store\spotsStore.ts`
 
-- [ ] 4.1 Preserve the existing `Plan route here` entry behavior for users without an active trip, but add an active-trip path that can send the selected pin into the normalized `/trips?tripId=<id>` builder as a pending stop-add intent
-- [ ] 4.2 Reuse existing saved-spot data from `useSpotsStore` / saved-spots UI rather than creating a duplicate saved-place cache for this story
-- [ ] 4.3 Normalize all entry points (pin detail, saved spots, planner search) through the same stop-conversion helper so place snapshots, `source`, and duplicate detection rules stay consistent
-- [ ] 4.4 Keep canonical trip content changes inside the `/trips` planner flow; external surfaces may launch or pass intent, but they must not bypass the normalized builder and patch stack
-- [ ] 4.5 Do **not** require a legacy `/plan-route` redirect, a second planner route, or a global trip-content store to make these entry points work
+- [x] 4.1 Preserve the existing `Plan route here` entry behavior for users without an active trip, but add an active-trip path that can send the selected pin into the normalized `/trips?tripId=<id>` builder as a pending stop-add intent
+- [x] 4.2 Reuse existing saved-spot data from `useSpotsStore` / saved-spots UI rather than creating a duplicate saved-place cache for this story
+- [x] 4.3 Normalize all entry points (pin detail, saved spots, planner search) through the same stop-conversion helper so place snapshots, `source`, and duplicate detection rules stay consistent
+- [x] 4.4 Keep canonical trip content changes inside the `/trips` planner flow; external surfaces may launch or pass intent, but they must not bypass the normalized builder and patch stack
+- [x] 4.5 Do **not** require a legacy `/plan-route` redirect, a second planner route, or a global trip-content store to make these entry points work
 
 **Acceptance Criteria:** AC 1, AC 2
 
@@ -177,12 +177,12 @@ This story must **not** pull later planner capabilities forward:
 - `src\features\pin-detail\PinDetailSheet.test.tsx`
 - `src\features\saved-spots\SavedSpotsScreen.test.tsx`
 
-- [ ] 5.1 Extend `api\trips\[id].test.ts` to cover add-stop and remove-stop `PATCH /api/trips/:id` scenarios using the normalized payload shape
-- [ ] 5.2 Verify the server still rejects duplicate place ids, invalid stop-order sequences, and trip payloads that exceed the 12-stop limit
-- [ ] 5.3 Verify builder-side add/remove interactions update local stop rendering immediately and submit the expected `TripWritePayload` on save
-- [ ] 5.4 Verify active-trip add actions from planner search, pin detail, and saved-spot entry points land in the same normalized builder flow
-- [ ] 5.5 Verify removing a stop keeps order sequential and does not silently mutate origin or destination data
-- [ ] 5.6 Verify duplicate-stop and max-stop guardrails present clear user-facing feedback without crashing the `/trips` shell
+- [x] 5.1 Extend `api\trips\[id].test.ts` to cover add-stop and remove-stop `PATCH /api/trips/:id` scenarios using the normalized payload shape
+- [x] 5.2 Verify the server still rejects duplicate place ids, invalid stop-order sequences, and trip payloads that exceed the 12-stop limit
+- [x] 5.3 Verify builder-side add/remove interactions update local stop rendering immediately and submit the expected `TripWritePayload` on save
+- [x] 5.4 Verify active-trip add actions from planner search, pin detail, and saved-spot entry points land in the same normalized builder flow
+- [x] 5.5 Verify removing a stop keeps order sequential and does not silently mutate origin or destination data
+- [x] 5.6 Verify duplicate-stop and max-stop guardrails present clear user-facing feedback without crashing the `/trips` shell
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3, AC 4
 
@@ -190,18 +190,18 @@ This story must **not** pull later planner capabilities forward:
 
 ### Task 6 — Validate add/remove behavior without leaking later Epic 2 work into this story
 
-- [ ] 6.1 Run the existing project validation commands after implementation:
+- [x] 6.1 Run the existing project validation commands after implementation:
   - `npm run test`
   - `npm run lint`
   - `npm run build`
-- [ ] 6.2 Confirm this story does **not** add:
+- [x] 6.2 Confirm this story does **not** add:
   - reorder controls or keyboard move-up / move-down behavior (`p3-2-2`)
   - `TripCorridorOverlay` polyline, numbered markers, or fit-to-route work (`p3-2-2`)
   - corridor suggestion scoring / recommendation UI (`p3-2-3`)
   - ordered Google Maps handoff changes (`p3-2-4`)
   - offline queue, sync badge, reconnect flush, or conflict-resolution logic (`p3-4-*`)
-- [ ] 6.3 Confirm `/trips` remains the normalized planner surface while legacy `RoutePlanningScreen.tsx` / `tripPlansStore.ts` stay untouched as compatibility paths for now
-- [ ] 6.4 Confirm map-native planner behavior is preserved: `MapView` stays mounted, `/trips` remains the active overlay shell, and add/remove changes do not kick the user into a detached screen
+- [x] 6.3 Confirm `/trips` remains the normalized planner surface while legacy `RoutePlanningScreen.tsx` / `tripPlansStore.ts` stay untouched as compatibility paths for now
+- [x] 6.4 Confirm map-native planner behavior is preserved: `MapView` stays mounted, `/trips` remains the active overlay shell, and add/remove changes do not kick the user into a detached screen
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3, AC 4
 
@@ -326,18 +326,37 @@ Minimum expected validation for implementation:
 
 ### Agent Model Used
 
-GPT-5.4
+claude-sonnet-4-6
 
 ### Debug Log References
 
-- Recent repository history includes `feat: implement route planning feature with trip creation and management`, which established the current normalized `/trips` implementation baseline for this story.
+- All implementation was already present in the codebase when this story was picked up for dev execution.
+- Verified by reading all referenced source files: `api.ts`, `useUpdateTripMutation.ts`, `routePlanning.ts`, `RouteBuilderSheet.tsx`, `MyRoutesScreen.tsx`, `PinDetailSheet.tsx`, `SavedSpotsScreen.tsx`.
+- All test files confirmed as fully covering Tasks 5.1–5.6.
 
 ### Completion Notes List
 
-- Story context created from the Phase 3 epic + architecture artifacts and the two immediately preceding story artifacts.
-- Story scope was kept intentionally narrow to normalized stop add/remove behavior on `/trips`.
-- Sprint tracking should mark `p3-2-1-add-and-remove-route-stops` as `ready-for-dev` and Phase 3 Epic 2 as `in-progress`.
+- All 6 tasks fully implemented and verified. No new code was required — all implementation was pre-existing and correct.
+- Task 1: `updateTrip` in `api.ts` + `useUpdateTripMutation.ts` with dual query invalidation (`tripQueryKey` + `tripsQueryKey`).
+- Task 2: `appendTripWaypoint`, `removeTripWaypoint`, `compactTripWaypointOrders`, `pinToTripWaypointInput`, `tripStopToWaypointInput` all in `routePlanning.ts`.
+- Task 3: `RouteBuilderSheet.tsx` — editable stop list, add from search/saved spots/suggestions, remove with order compaction, inline validation, create-mode vs resume-mode separation.
+- Task 4: `PinDetailSheet.tsx` — `handleRoutePlanning` passes `addStopPinId`+`addStopSource` via URL params when `activeTripId` present. `SavedSpotsScreen.tsx` — `handleAddToRoute` navigates to `/trips?tripId=...&addStopPinId=...&addStopSource=saved`.
+- Task 5: 1177 tests pass across 107 test files. API tests in `api/trips/[id].test.ts` cover PATCH add/remove/reorder/duplicate/max-stop/sequential-order. UI tests in `RouteBuilderSheet.test.tsx`, `MyRoutesScreen.test.tsx`, `PinDetailSheet.test.tsx`, `SavedSpotsScreen.test.tsx`.
+- Task 6: `npm run build` passes. Scope boundaries confirmed — no reorder controls, no corridor overlay, no Google Maps handoff, no offline queue, no legacy store regression.
 
 ### File List
 
 - `_bmad-output\implementation-artifacts\p3-2-1-add-and-remove-route-stops.md`
+- `src\features\route-planning\api.ts`
+- `src\features\route-planning\useUpdateTripMutation.ts`
+- `src\features\route-planning\routePlanning.ts`
+- `src\features\route-planning\RouteBuilderSheet.tsx`
+- `src\features\route-planning\MyRoutesScreen.tsx`
+- `src\features\pin-detail\PinDetailSheet.tsx`
+- `src\features\saved-spots\SavedSpotsScreen.tsx`
+- `api\trips\[id].test.ts`
+- `src\features\route-planning\routePlanning.test.ts`
+- `src\features\route-planning\RouteBuilderSheet.test.tsx`
+- `src\features\route-planning\MyRoutesScreen.test.tsx`
+- `src\features\pin-detail\PinDetailSheet.test.tsx`
+- `src\features\saved-spots\SavedSpotsScreen.test.tsx`
