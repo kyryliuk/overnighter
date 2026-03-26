@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import Sitemap from 'vite-plugin-sitemap'
 import path from 'path'
 
 const isVitest = process.env.VITEST === 'true'
@@ -11,6 +12,14 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    !isVitest &&
+      Sitemap({
+        hostname: 'https://overnighter.net',
+        dynamicRoutes: ['/saved', '/account'],
+        exclude: ['/admin', '/onboarding', '/rig-edit', '/premium-welcome'],
+        changefreq: 'weekly',
+        priority: 0.8,
+      }),
     !isVitest &&
       VitePWA({
         strategies: 'injectManifest',
