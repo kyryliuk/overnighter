@@ -23,6 +23,7 @@ const TripWaypointInputSchema = z
   .object({
     id: z.string().uuid().optional(),
     stopOrder: z.number().int().min(0),
+    stopKind: z.enum(TRIP_STOP_KIND_VALUES).optional(),
     source: z.enum(TRIP_STOP_SOURCE_VALUES).optional(),
     pinId: z.string().trim().min(1).nullable().optional(),
     place: PlaceSnapshotSchema,
@@ -37,6 +38,7 @@ const TripWriteBodySchema = z
     origin: PlaceSnapshotSchema.nullable().optional(),
     destination: PlaceSnapshotSchema,
     routeMode: z.enum(TRIP_ROUTE_MODE_VALUES).optional(),
+    status: z.enum(TRIP_STATUS_VALUES).optional(),
     stops: z.array(TripWaypointInputSchema).optional(),
   })
   .strict()

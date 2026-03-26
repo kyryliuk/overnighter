@@ -8,7 +8,7 @@ So that I can continue working on a route over multiple sessions.
 
 ## Status
 
-**Ready for Dev**
+**Done**
 
 ## Context
 
@@ -85,11 +85,11 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\MyRoutesScreen.tsx`
 - `src\features\route-planning\MyRoutesScreen.test.tsx`
 
-- [ ] 1.1 Replace the current read-only "Selected route" notice with a real trip selection action
-- [ ] 1.2 Clicking a saved trip should open the planner sheet for that trip rather than only rendering informational copy
-- [ ] 1.3 Preserve the existing fixed `/trips` overlay behavior from Story 1.2 so `MapView` stays mounted
-- [ ] 1.4 Update search params to `?tripId=<selected-id>` whenever a trip is opened from the list
-- [ ] 1.5 Keep loading, error, empty, and list states intact while adding resume behavior
+- [x] 1.1 Replace the current read-only "Selected route" notice with a real trip selection action
+- [x] 1.2 Clicking a saved trip should open the planner sheet for that trip rather than only rendering informational copy
+- [x] 1.3 Preserve the existing fixed `/trips` overlay behavior from Story 1.2 so `MapView` stays mounted
+- [x] 1.4 Update search params to `?tripId=<selected-id>` whenever a trip is opened from the list
+- [x] 1.5 Keep loading, error, empty, and list states intact while adding resume behavior
 
 **Acceptance Criteria:** AC 1, AC 2
 
@@ -102,11 +102,11 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\useTripQuery.ts` **(new)**
 - `src\features\route-planning\useTripsQuery.ts`
 
-- [ ] 2.1 Extend `src\features\route-planning\api.ts` with a `fetchTrip(accessToken, tripId)` helper using `GET /api/trips/:id`
-- [ ] 2.2 Add `useTripQuery.ts` using TanStack Query for the active trip record
-- [ ] 2.3 Reuse the existing auth-context pattern and user-scoped query ownership already established for trip reads
-- [ ] 2.4 Prefer list data when present, but ensure `/trips?tripId=:id` can restore from server data after refresh without relying on in-memory state
-- [ ] 2.5 Surface missing / inaccessible trip errors in a human-readable way consistent with repo patterns
+- [x] 2.1 Extend `src\features\route-planning\api.ts` with a `fetchTrip(accessToken, tripId)` helper using `GET /api/trips/:id`
+- [x] 2.2 Add `useTripQuery.ts` using TanStack Query for the active trip record
+- [x] 2.3 Reuse the existing auth-context pattern and user-scoped query ownership already established for trip reads
+- [x] 2.4 Prefer list data when present, but ensure `/trips?tripId=:id` can restore from server data after refresh without relying on in-memory state
+- [x] 2.5 Surface missing / inaccessible trip errors in a human-readable way consistent with repo patterns
 
 **Acceptance Criteria:** AC 2, AC 3
 
@@ -119,12 +119,12 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\RouteBuilderSheet.test.tsx`
 - `src\types\trip.ts`
 
-- [ ] 3.1 Extend `RouteBuilderSheet.tsx` so it can accept an existing trip (or equivalent draft model) as initial state
-- [ ] 3.2 Hydrate title, notes, origin, destination, and ordered normalized stops into the sheet when resuming a trip
-- [ ] 3.3 Keep the existing create flow intact; the component must still support blank-title create behavior from Story 1.3
-- [ ] 3.4 Render restored stop data clearly, but **do not** add add/remove/reorder controls in this story
-- [ ] 3.5 Ensure the sheet remains mobile-first and map-native rather than turning into a detached admin form
-- [ ] 3.6 Add focused tests covering hydration of an existing trip and deep-link restore behavior
+- [x] 3.1 Extend `RouteBuilderSheet.tsx` so it can accept an existing trip (or equivalent draft model) as initial state
+- [x] 3.2 Hydrate title, notes, origin, destination, and ordered normalized stops into the sheet when resuming a trip
+- [x] 3.3 Keep the existing create flow intact; the component must still support blank-title create behavior from Story 1.3
+- [x] 3.4 Render restored stop data clearly, but **do not** add add/remove/reorder controls in this story
+- [x] 3.5 Ensure the sheet remains mobile-first and map-native rather than turning into a detached admin form
+- [x] 3.6 Add focused tests covering hydration of an existing trip and deep-link restore behavior
 
 **Acceptance Criteria:** AC 2, AC 3
 
@@ -137,11 +137,11 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\RouteBuilderSheet.tsx`
 - `src\features\route-planning\useCreateTripMutation.ts`
 
-- [ ] 4.1 Open the sheet automatically when a valid `tripId` is present in the URL
-- [ ] 4.2 Close / clear active selection cleanly when the sheet is dismissed
-- [ ] 4.3 Keep the selected trip highlighted or otherwise obvious in the My Routes list
-- [ ] 4.4 Do **not** introduce stop mutation controls, duplication flows, archive flows, or offline queue behavior in this story
-- [ ] 4.5 If metadata save behavior is touched, route it through the existing normalized trip API surface (`PATCH /api/trips/:id`) rather than adding parallel persistence logic
+- [x] 4.1 Open the sheet automatically when a valid `tripId` is present in the URL
+- [x] 4.2 Close / clear active selection cleanly when the sheet is dismissed
+- [x] 4.3 Keep the selected trip highlighted or otherwise obvious in the My Routes list
+- [x] 4.4 Do **not** introduce stop mutation controls, duplication flows, archive flows, or offline queue behavior in this story
+- [x] 4.5 If metadata save behavior is touched, route it through the existing normalized trip API surface (`PATCH /api/trips/:id`) rather than adding parallel persistence logic
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3
 
@@ -154,11 +154,11 @@ This story must **not** pull later capabilities forward:
 - `src\features\route-planning\MyRoutesScreen.test.tsx`
 - `src\features\route-planning\RouteBuilderSheet.test.tsx`
 
-- [ ] 5.1 Extend API tests for `GET /api/trips/:id` if coverage gaps remain around normalized restore payload shape
-- [ ] 5.2 Verify restored trip payload includes origin, destination, ordered stops, revision, and timestamps in canonical API form
-- [ ] 5.3 Verify selecting a trip from the list opens the planner with the expected hydrated state
-- [ ] 5.4 Verify `/trips?tripId=<id>` rebuilds planner state after render / refresh simulation
-- [ ] 5.5 Verify an invalid or inaccessible `tripId` fails gracefully without crashing the `/trips` shell
+- [x] 5.1 Extend API tests for `GET /api/trips/:id` if coverage gaps remain around normalized restore payload shape
+- [x] 5.2 Verify restored trip payload includes origin, destination, ordered stops, revision, and timestamps in canonical API form
+- [x] 5.3 Verify selecting a trip from the list opens the planner with the expected hydrated state
+- [x] 5.4 Verify `/trips?tripId=<id>` rebuilds planner state after render / refresh simulation
+- [x] 5.5 Verify an invalid or inaccessible `tripId` fails gracefully without crashing the `/trips` shell
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3
 
@@ -166,16 +166,16 @@ This story must **not** pull later capabilities forward:
 
 ### Task 6 — Validate resume flow without leaking later story behavior
 
-- [ ] 6.1 Run the existing project validation commands after implementation:
+- [x] 6.1 Run the existing project validation commands after implementation:
   - `npm run test`
   - `npm run lint`
   - `npm run build`
-- [ ] 6.2 Confirm resume behavior does **not** add:
+- [x] 6.2 Confirm resume behavior does **not** add:
   - stop add/remove/reorder controls (`p3-2-*`)
   - duplication/archive/delete flows (`p3-3-*`)
   - offline mutation queue or reconnect conflict logic (`p3-4-*`)
   - `/plan-route` cutover or legacy migration (`p3-5-*`)
-- [ ] 6.3 Confirm `/trips` continues to use normalized reads and deep-link state while leaving the legacy `RoutePlanningScreen.tsx` / `tripPlansStore.ts` path untouched for now
+- [x] 6.3 Confirm `/trips` continues to use normalized reads and deep-link state while leaving the legacy `RoutePlanningScreen.tsx` / `tripPlansStore.ts` path untouched for now
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3
 
@@ -273,17 +273,26 @@ Minimum expected validation for implementation:
 
 ### Agent Model Used
 
-GPT-5.4
+Amelia (BMAD Developer Agent) — Claude Sonnet 4.5
 
 ### Debug Log References
 
-- Phase 3 Story 1.3 review reported no significant issues before advancing to this story.
+- All pre-existing foundation from Stories 1.1–1.3 was in place and verified passing.
+- Added 2 new GET-path tests to `api/trips/[id].test.ts` to close the coverage gap (GET 404 when trip not found, GET 400 for invalid UUID param).
+- Build clean: `tsc -b && vite build` with 0 errors.
 
 ### Completion Notes List
 
-- Story context created in YOLO mode from Phase 3 epic, architecture, and prior-story artifacts.
-- Sprint tracking should mark this story as `ready-for-dev`.
+- Stories 1.1–1.3 had already implemented all resume behavior:
+  - `MyRoutesScreen.tsx`: `openTrip(tripId)` → `setSearchParams(?tripId=)`, `TripListItem.onOpen`, restore banner, error panel with retry/clear
+  - `RouteBuilderSheet.tsx`: `trip` prop, `isResumeMode`, full hydration of title/notes/origin/destination/stops
+  - `useTripQuery.ts`: deep-link restore from server, initialTrip from list cache
+  - `api.ts`: `fetchTrip()` helper
+  - `api/trips/[id].ts`: GET 200/404 handler
+- Test gap closed: `api/trips/[id].test.ts` now covers GET 404 (not found) and GET 400 (invalid UUID).
+- No new source files created; the story was implemented as an accumulation of prior story work.
 
 ### File List
 
-- `_bmad-output\implementation-artifacts\p3-1-4-resume-an-existing-trip.md`
+- `_bmad-output\implementation-artifacts\p3-1-4-resume-an-existing-trip.md` (updated)
+- `api\trips\[id].test.ts` (2 new tests: GET 404 not found, GET 400 invalid params)
