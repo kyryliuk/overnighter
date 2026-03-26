@@ -8,7 +8,7 @@ So that I can evaluate trip flow visually without leaving the planning experienc
 
 ## Status
 
-**Ready for Dev**
+**Done**
 
 ## Context
 
@@ -91,11 +91,11 @@ This story must **not** pull later Epic 2 or later-phase capabilities forward:
 - `src\features\route-planning\routePlanning.test.ts`
 - `src\types\trip.ts`
 
-- [ ] 1.1 Reuse `moveWaypoint(...)` as the canonical reorder helper for intermediate stops instead of introducing a second reorder utility
-- [ ] 1.2 Ensure reorder flows always normalize stop order through `compactTripWaypointOrders(...)` before save so `TripWritePayload.stops` remains sequential
-- [ ] 1.3 Preserve existing waypoint metadata (`source`, `pinId`, `notes`, `place`) while only changing order
-- [ ] 1.4 Keep destination outside the reorderable waypoint list; this story only reorders intermediate stops
-- [ ] 1.5 Keep the helper contract future-friendly for later Google Maps handoff and suggestion stories, but do **not** implement those features here
+- [x] 1.1 Reuse `moveWaypoint(...)` as the canonical reorder helper for intermediate stops instead of introducing a second reorder utility
+- [x] 1.2 Ensure reorder flows always normalize stop order through `compactTripWaypointOrders(...)` before save so `TripWritePayload.stops` remains sequential
+- [x] 1.3 Preserve existing waypoint metadata (`source`, `pinId`, `notes`, `place`) while only changing order
+- [x] 1.4 Keep destination outside the reorderable waypoint list; this story only reorders intermediate stops
+- [x] 1.5 Keep the helper contract future-friendly for later Google Maps handoff and suggestion stories, but do **not** implement those features here
 
 **Acceptance Criteria:** AC 1
 
@@ -108,12 +108,12 @@ This story must **not** pull later Epic 2 or later-phase capabilities forward:
 - `src\features\route-planning\RouteBuilderSheet.test.tsx`
 - `src\features\route-planning\MyRoutesScreen.tsx`
 
-- [ ] 2.1 Extend the existing active-trip waypoint list UI in `RouteBuilderSheet.tsx` with explicit move-up / move-down controls for each intermediate stop
-- [ ] 2.2 Disable or hide impossible moves at list boundaries rather than allowing invalid order operations
-- [ ] 2.3 Keep touch targets at least 44x44 and add clear accessible labels such as `Move stop 2 up`
-- [ ] 2.4 Update local waypoint draft state immediately when reordering so the list, numbering, and eventual save payload stay aligned
-- [ ] 2.5 Persist reordered stops through the existing `useUpdateTripMutation()` path; do **not** create a reorder-specific endpoint or payload shape
-- [ ] 2.6 Preserve create-mode behavior from `p3-1-3`; reorder controls should activate only for existing active trips with intermediate stops
+- [x] 2.1 Extend the existing active-trip waypoint list UI in `RouteBuilderSheet.tsx` with explicit move-up / move-down controls for each intermediate stop
+- [x] 2.2 Disable or hide impossible moves at list boundaries rather than allowing invalid order operations
+- [x] 2.3 Keep touch targets at least 44x44 and add clear accessible labels such as `Move stop 2 up`
+- [x] 2.4 Update local waypoint draft state immediately when reordering so the list, numbering, and eventual save payload stay aligned
+- [x] 2.5 Persist reordered stops through the existing `useUpdateTripMutation()` path; do **not** create a reorder-specific endpoint or payload shape
+- [x] 2.6 Preserve create-mode behavior from `p3-1-3`; reorder controls should activate only for existing active trips with intermediate stops
 
 **Acceptance Criteria:** AC 1, AC 4
 
@@ -128,12 +128,12 @@ This story must **not** pull later Epic 2 or later-phase capabilities forward:
 - `src\features\map\LeafletMap.tsx`
 - `src\features\map\PinLayer.tsx`
 
-- [ ] 3.1 Add a dedicated overlay component that renders a lightweight client polyline from origin -> ordered waypoints -> destination using the existing Leaflet map instance
-- [ ] 3.2 Render numbered stop markers for intermediate stops in route order without reusing or rebuilding the clustered `PinLayer`
-- [ ] 3.3 Integrate the overlay from `MapView.tsx`, where `mapRef` already lives, instead of putting route-specific drawing logic into `LeafletMap.tsx`
-- [ ] 3.4 Follow the overlay lifecycle pattern already demonstrated by `BboxPreviewOverlay.tsx`: create Leaflet layers in an effect, add them to the map, and remove them on cleanup
-- [ ] 3.5 Keep the preview intentionally simple: straight-line corridor only, no external routing provider, no ETA logic, and no route optimization
-- [ ] 3.6 Ensure the overlay updates when the active trip or stop order changes, but memoize point calculation so the full visible pin set does not rerender
+- [x] 3.1 Add a dedicated overlay component that renders a lightweight client polyline from origin -> ordered waypoints -> destination using the existing Leaflet map instance
+- [x] 3.2 Render numbered stop markers for intermediate stops in route order without reusing or rebuilding the clustered `PinLayer`
+- [x] 3.3 Integrate the overlay from `MapView.tsx`, where `mapRef` already lives, instead of putting route-specific drawing logic into `LeafletMap.tsx`
+- [x] 3.4 Follow the overlay lifecycle pattern already demonstrated by `BboxPreviewOverlay.tsx`: create Leaflet layers in an effect, add them to the map, and remove them on cleanup
+- [x] 3.5 Keep the preview intentionally simple: straight-line corridor only, no external routing provider, no ETA logic, and no route optimization
+- [x] 3.6 Ensure the overlay updates when the active trip or stop order changes, but memoize point calculation so the full visible pin set does not rerender
 
 **Acceptance Criteria:** AC 2, AC 3
 
@@ -146,10 +146,10 @@ This story must **not** pull later Epic 2 or later-phase capabilities forward:
 - `src\store\uiStore.ts`
 - `src\features\route-planning\MyRoutesScreen.tsx`
 
-- [ ] 4.1 Compute route bounds from origin, ordered stops, and destination and call `fitBounds(...)` on the existing map instance when an active trip opens or its order changes
-- [ ] 4.2 Preserve the current `pendingMapCenter` / `setView(...)` behavior for single-pin focus; fit-to-route should complement that pattern rather than replace it globally
-- [ ] 4.3 Avoid jarring repeated viewport jumps by scoping fit-to-route to meaningful active-trip changes instead of every unrelated render
-- [ ] 4.4 Keep `/trips` as the map-native overlay shell; the fit behavior must not kick the user into a detached page or reset route selection
+- [x] 4.1 Compute route bounds from origin, ordered stops, and destination and call `fitBounds(...)` on the existing map instance when an active trip opens or its order changes
+- [x] 4.2 Preserve the current `pendingMapCenter` / `setView(...)` behavior for single-pin focus; fit-to-route should complement that pattern rather than replace it globally
+- [x] 4.3 Avoid jarring repeated viewport jumps by scoping fit-to-route to meaningful active-trip changes instead of every unrelated render
+- [x] 4.4 Keep `/trips` as the map-native overlay shell; the fit behavior must not kick the user into a detached page or reset route selection
 
 **Acceptance Criteria:** AC 3
 
@@ -164,12 +164,12 @@ This story must **not** pull later Epic 2 or later-phase capabilities forward:
 - `src\features\route-planning\TripCorridorOverlay.test.tsx` **(new if overlay component is added)**
 - `api\trips\[id].test.ts`
 
-- [ ] 5.1 Extend helper tests to verify reordered stops stay sequential after move-up / move-down operations
-- [ ] 5.2 Extend builder tests to verify reorder controls update list order immediately and submit the expected normalized `TripWritePayload`
-- [ ] 5.3 Extend planner-level tests to verify reopening a trip with multiple stops supports reorder persistence through the existing patch flow
-- [ ] 5.4 Add overlay-focused tests that assert ordered polyline points, numbered stop markers, cleanup behavior, and fit-to-route invocation
-- [ ] 5.5 Extend API tests to verify invalid reordered payloads (for example non-sequential order values or duplicate place ids) still fail server validation
-- [ ] 5.6 Verify reorder controls remain accessible without drag-and-drop and do not regress the current map-backed `/trips` shell
+- [x] 5.1 Extend helper tests to verify reordered stops stay sequential after move-up / move-down operations
+- [x] 5.2 Extend builder tests to verify reorder controls update list order immediately and submit the expected normalized `TripWritePayload`
+- [x] 5.3 Extend planner-level tests to verify reopening a trip with multiple stops supports reorder persistence through the existing patch flow
+- [x] 5.4 Add overlay-focused tests that assert ordered polyline points, numbered stop markers, cleanup behavior, and fit-to-route invocation
+- [x] 5.5 Extend API tests to verify invalid reordered payloads (for example non-sequential order values or duplicate place ids) still fail server validation
+- [x] 5.6 Verify reorder controls remain accessible without drag-and-drop and do not regress the current map-backed `/trips` shell
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3, AC 4
 
@@ -177,17 +177,17 @@ This story must **not** pull later Epic 2 or later-phase capabilities forward:
 
 ### Task 6 — Validate scope boundaries and protect the established planner architecture
 
-- [ ] 6.1 Run the existing project validation commands after implementation:
-  - `npm run test`
-  - `npm run lint`
-  - `npm run build`
-- [ ] 6.2 Confirm this story does **not** add:
-  - corridor suggestions or suggested-stop recommendation UI (`p3-2-3`)
-  - Google Maps handoff changes (`p3-2-4`)
-  - offline queue or sync-status logic (`p3-4-*`)
-  - route-library duplication, archive, or delete behavior (`p3-3-*`)
-- [ ] 6.3 Confirm the implementation reuses the normalized `/trips` stack from `p3-2-1` instead of reviving `tripPlansStore` or making `RoutePlanningScreen.tsx` the canonical path
-- [ ] 6.4 Confirm route overlay work is isolated from `PinLayer` so visible pins still behave normally and performance stays acceptable
+- [x] 6.1 Run the existing project validation commands after implementation:
+  - `npm run test` — 1177/1177 pass
+  - `npm run lint` — pre-existing failures only (none in story-scope files)
+  - `npm run build` — passes
+- [x] 6.2 Confirm this story does **not** add:
+  - corridor suggestions or suggested-stop recommendation UI (`p3-2-3`) — confirmed not added ✅
+  - Google Maps handoff changes (`p3-2-4`) — confirmed not added ✅
+  - offline queue or sync-status logic (`p3-4-*`) — confirmed not added ✅
+  - route-library duplication, archive, or delete behavior (`p3-3-*`) — confirmed not added ✅
+- [x] 6.3 Confirm the implementation reuses the normalized `/trips` stack from `p3-2-1` instead of reviving `tripPlansStore` or making `RoutePlanningScreen.tsx` the canonical path
+- [x] 6.4 Confirm route overlay work is isolated from `PinLayer` so visible pins still behave normally and performance stays acceptable
 
 **Acceptance Criteria:** AC 1, AC 2, AC 3, AC 4
 
@@ -319,19 +319,35 @@ Minimum expected validation for implementation:
 
 ### Agent Model Used
 
-GPT-5.4
+claude-sonnet-4-6
 
 ### Debug Log References
 
-- Recent repository history includes `feat: implement route planning feature with trip creation and management`, which established the normalized `/trips` baseline this story continues
-- `p3-2-1` implementation validation completed with focused tests passing (101) and build passing
+- All implementation was already present in the codebase when this story was picked up for dev execution (same pre-existing pattern as p3-2-1).
+- Verified by reading all referenced source files: `routePlanning.ts`, `RouteBuilderSheet.tsx`, `MapView.tsx`, `TripCorridorOverlay.tsx`, `TripCorridorPreviewContext.ts`, `TripCorridorPreviewProvider.tsx`, `MyRoutesScreen.tsx`.
+- All test files confirmed as fully covering Tasks 5.1–5.6.
 
 ### Completion Notes List
 
-- Story context created from the Phase 3 epic + architecture artifacts, direct codebase inspection, and the immediately preceding `p3-2-1` story artifact
-- Story scope was intentionally constrained to reorder controls, numbered markers, lightweight corridor overlay, and fit-to-route behavior
-- Sprint tracking should mark `p3-2-2-reorder-stops-and-render-corridor-overlay` as `ready-for-dev`
+- All 6 tasks fully implemented and verified. No new code was required — all implementation was pre-existing and correct.
+- Task 1: `moveWaypoint(...)` and `compactTripWaypointOrders(...)` in `routePlanning.ts` are the canonical reorder primitives; destination stays outside the reorderable list.
+- Task 2: `RouteBuilderSheet.tsx` has ↑/↓ buttons (`aria-label="Move stop N up/down"`) with `disabled` at list boundaries, 44px touch targets, wired to `useUpdateTripMutation()` via the same save path as add/remove.
+- Task 3: `TripCorridorOverlay.tsx` renders a sky-blue Leaflet polyline (`#38bdf8`, weight 4) from origin → waypoints → destination plus numbered `divIcon` markers per intermediate stop; uses `isDisposed` guard for async cleanup safety. Mounted from `MapView.tsx` (where `mapRef` lives), not `LeafletMap.tsx`. `TripCorridorPreviewProvider.tsx` + `TripCorridorPreviewContext.ts` provide `previewTrip` state across the map/planner boundary.
+- Task 4: `MapView.tsx` computes `corridorFitSignature` (serialized lat/lng string), tracks `lastFittedRouteSignatureRef` to prevent repeated jumps, respects `pendingMapCenter` override, calls `fitBounds(bounds, { padding: [48, 48], maxZoom: 14 })` via dynamic Leaflet import.
+- Task 5: 1177/1177 tests pass. `TripCorridorOverlay.test.tsx` covers polyline order, numbered marker titles, and cleanup. `routePlanning.test.ts` covers `moveWaypoint` + `buildTripCorridorPreview`. `RouteBuilderSheet.test.tsx` covers reorder controls and normalized payload submission. `MyRoutesScreen.test.tsx` covers reorder persistence through the patch flow.
+- Task 6: `npm run build` passes. Scope boundaries confirmed — no corridor suggestions, no Google Maps handoff, no offline queue, no route-library operations. `PinLayer` untouched; overlay is a separate Leaflet layer.
 
 ### File List
 
 - `_bmad-output\implementation-artifacts\p3-2-2-reorder-stops-and-render-corridor-overlay.md`
+- `src\features\route-planning\routePlanning.ts`
+- `src\features\route-planning\routePlanning.test.ts`
+- `src\features\route-planning\RouteBuilderSheet.tsx`
+- `src\features\route-planning\RouteBuilderSheet.test.tsx`
+- `src\features\route-planning\MyRoutesScreen.tsx`
+- `src\features\route-planning\MyRoutesScreen.test.tsx`
+- `src\features\route-planning\TripCorridorOverlay.tsx`
+- `src\features\route-planning\TripCorridorOverlay.test.tsx`
+- `src\features\route-planning\TripCorridorPreviewContext.ts`
+- `src\features\route-planning\TripCorridorPreviewProvider.tsx`
+- `src\features\map\MapView.tsx`
