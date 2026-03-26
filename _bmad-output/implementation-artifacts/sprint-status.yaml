@@ -156,8 +156,8 @@ development_status:
   # ── Phase 3 Epic 2: Corridor Stop Builder ─────────────────────────────────
   p3-epic-2: in-progress
   p3-2-1-add-and-remove-route-stops: done
-  p3-2-2-reorder-stops-and-render-corridor-overlay: ready-for-dev
-  p3-2-3-corridor-suggestions-from-existing-route-logic: ready-for-dev
+  p3-2-2-reorder-stops-and-render-corridor-overlay: done
+  p3-2-3-corridor-suggestions-from-existing-route-logic: done
   p3-2-4-ordered-google-maps-handoff: ready-for-dev
   p3-epic-2-retrospective: optional
 

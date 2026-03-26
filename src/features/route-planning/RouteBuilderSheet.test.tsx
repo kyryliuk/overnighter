@@ -625,4 +625,43 @@ describe('RouteBuilderSheet', () => {
     expect(screen.getByText(/suggestions are unavailable until map pins are loaded for this route/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/add a stop/i)).toBeInTheDocument()
   })
+
+  it('shows a non-blocking message when the route is too short for corridor suggestions', () => {
+    render(
+      <RouteBuilderSheet
+        isOpen
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        trip={{
+          ...RESTORED_TRIP,
+          destination: { id: 'pin-near', name: 'Near Place', latitude: 35.3, longitude: -111.8 },
+        }}
+      />,
+    )
+
+    expect(screen.getByText(/this route is too short for meaningful corridor suggestions/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/add a stop/i)).toBeInTheDocument()
+  })
+
+  it('shows a non-blocking empty-state message when no overnight stops score well for this corridor', () => {
+    mockUsePinsQuery.mockReturnValue({
+      data: [{ ...PINS[2], amenities: { ...PINS[2].amenities, overnight: false } }],
+      isLoading: false,
+    })
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP} />)
+
+    expect(screen.getByText(/no strong overnight suggestions were found on this corridor yet/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/add a stop/i)).toBeInTheDocument()
+  })
+
+  it('blocks adding a corridor suggestion when the route is already at max stop capacity', async () => {
+    const user = userEvent.setup()
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={buildTripWithMaxWaypoints()} />)
+
+    await user.click(screen.getByRole('button', { name: /add desert oasis as a suggested stop/i }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent(MAX_TRIP_STOPS_MESSAGE)
+  })
 })
