@@ -32,7 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const rows = await listTripRows(supabase, user.id)
+      const statusParam = typeof req.query?.status === 'string' ? req.query.status : undefined
+      if (statusParam !== undefined && statusParam !== 'all') {
+        return res.status(400).json({ error: 'INVALID_PARAMETER', message: 'status must be "all" or omitted', status: 400 })
+      }
+      const includeArchived = statusParam === 'all'
+      const rows = await listTripRows(supabase, user.id, { includeArchived })
       return res.status(200).json({ trips: rows.map(mapTripRowToApiTrip) })
     } catch (error) {
       console.error('[api/trips][GET]', error)
@@ -66,6 +71,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!tripId) {
       console.error('[api/trips][POST] Missing trip id from RPC response', data)
       return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Something went wrong', status: 500 })
+    }
+
+    if (parsedBody.data.sourceTripId) {
+      const { error: sourceError } = await supabase
+        .from('trips')
+        .update({ source_trip_id: parsedBody.data.sourceTripId })
+        .eq('id', tripId)
+        .eq('user_id', user.id)
+
+      if (sourceError) {
+        console.error('[api/trips][POST] Failed to set source_trip_id', { tripId, sourceTripId: parsedBody.data.sourceTripId, error: sourceError })
+      }
     }
 
     const tripRow = await getTripRow(supabase, user.id, tripId)

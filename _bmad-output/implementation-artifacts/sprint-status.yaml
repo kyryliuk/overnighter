@@ -1,4 +1,4 @@
-# generated: 2026-03-25
+# generated: 2026-03-31
 # project: Overnighter
 # project_key: NOKEY
 # tracking_system: file-system
@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Phase 2 story keys are prefixed with 'p2-' to avoid collisions with Phase 1 story files
 
-generated: 2026-03-25
+generated: 2026-03-31
 project: Overnighter
 project_key: NOKEY
 tracking_system: file-system
@@ -154,7 +154,7 @@ development_status:
   p3-epic-1-retrospective: optional
 
   # ── Phase 3 Epic 2: Corridor Stop Builder ─────────────────────────────────
-  p3-epic-2: in-progress
+  p3-epic-2: done
   p3-2-1-add-and-remove-route-stops: done
   p3-2-2-reorder-stops-and-render-corridor-overlay: done
   p3-2-3-corridor-suggestions-from-existing-route-logic: done
@@ -162,10 +162,10 @@ development_status:
   p3-epic-2-retrospective: optional
 
   # ── Phase 3 Epic 3: Route Library Management ──────────────────────────────
-  p3-epic-3: backlog
-  p3-3-1-my-routes-library-view: backlog
-  p3-3-2-duplicate-a-trip-for-what-if-planning: backlog
-  p3-3-3-archive-and-delete-route-plans: backlog
+  p3-epic-3: done
+  p3-3-1-my-routes-library-view: done
+  p3-3-2-duplicate-a-trip-for-what-if-planning: done
+  p3-3-3-archive-and-delete-route-plans: done
   p3-epic-3-retrospective: optional
 
   # ── Phase 3 Epic 4: Offline Drafting & Sync Resilience ────────────────────

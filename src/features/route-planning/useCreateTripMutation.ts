@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import type { TripWritePayload } from '@/types/trip'
 import { createTrip } from './api'
-import { tripsQueryKey } from './useTripsQuery'
 
 export function useCreateTripMutation() {
   const queryClient = useQueryClient()
@@ -19,11 +18,14 @@ export function useCreateTripMutation() {
       return createTrip(accessToken, payload)
     },
     onSuccess: (createdTrip) => {
-      queryClient.setQueryData(tripsQueryKey(userId), (currentTrips: unknown) => {
-        const trips = Array.isArray(currentTrips) ? currentTrips : []
-        return [createdTrip, ...trips.filter((trip) => trip && typeof trip === 'object' && 'id' in trip && trip.id !== createdTrip.id)]
-      })
-      void queryClient.invalidateQueries({ queryKey: ['trips'] })
+      queryClient.setQueriesData<unknown>(
+        { queryKey: ['trips', userId] },
+        (currentTrips: unknown) => {
+          const trips = Array.isArray(currentTrips) ? currentTrips : []
+          return [createdTrip, ...trips.filter((trip) => trip && typeof trip === 'object' && 'id' in trip && trip.id !== createdTrip.id)]
+        },
+      )
+      void queryClient.invalidateQueries({ queryKey: ['trips', userId] })
     },
   })
 }

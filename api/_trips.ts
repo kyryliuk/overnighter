@@ -40,6 +40,7 @@ const TripWriteBodySchema = z
     routeMode: z.enum(TRIP_ROUTE_MODE_VALUES).optional(),
     status: z.enum(TRIP_STATUS_VALUES).optional(),
     stops: z.array(TripWaypointInputSchema).optional(),
+    sourceTripId: z.string().uuid().optional(),
   })
   .strict()
 
@@ -68,6 +69,7 @@ export interface TripWriteInput {
   destination: TripPlaceSnapshot
   routeMode: (typeof TRIP_ROUTE_MODE_VALUES)[number]
   stops: TripWaypointInput[]
+  sourceTripId: string | null
 }
 
 export interface DbTripStopRow {
@@ -246,6 +248,7 @@ export function parseTripWriteBody(rawBody: unknown) {
       origin: parsed.data.origin ?? null,
       destination: parsed.data.destination,
       routeMode: parsed.data.routeMode ?? 'corridor',
+      sourceTripId: parsed.data.sourceTripId ?? null,
       stops: stops.map((stop) => ({
         id: stop.id ?? null,
         stopOrder: stop.stopOrder,
@@ -291,13 +294,18 @@ export async function getTripRow(
 export async function listTripRows(
   supabase: ServiceSupabaseClient,
   userId: string,
+  options?: { includeArchived?: boolean },
 ): Promise<DbTripRow[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('trips')
     .select(TRIP_SELECT)
     .eq('user_id', userId)
-    .neq('status', 'archived')
-    .order('updated_at', { ascending: false })
+
+  if (!options?.includeArchived) {
+    query = query.neq('status', 'archived')
+  }
+
+  const { data, error } = await query.order('updated_at', { ascending: false })
 
   if (error) {
     throw error
