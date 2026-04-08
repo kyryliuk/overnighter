@@ -10,8 +10,15 @@ interface TripResponse {
   message?: string
 }
 
-export async function fetchTrips(accessToken: string) {
-  const response = await fetch('/api/trips', {
+export async function fetchTrips(accessToken: string, options?: { includeArchived?: boolean }) {
+  const params = new URLSearchParams()
+  if (options?.includeArchived) {
+    params.set('status', 'all')
+  }
+  const qs = params.toString()
+  const url = qs ? `/api/trips?${qs}` : '/api/trips'
+
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -86,4 +93,37 @@ export async function updateTrip(accessToken: string, tripId: string, payload: T
   }
 
   return responsePayload.trip
+}
+
+export async function updateTripStatus(accessToken: string, tripId: string, status: 'draft' | 'archived') {
+  const response = await fetch(`/api/trips/${encodeURIComponent(tripId)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ status }),
+  })
+
+  const payload = await response.json().catch(() => ({} satisfies TripResponse)) as TripResponse
+
+  if (!response.ok || !payload.trip) {
+    throw new Error(payload.message ?? 'Unable to update this route status.')
+  }
+
+  return payload.trip
+}
+
+export async function deleteTrip(accessToken: string, tripId: string) {
+  const response = await fetch(`/api/trips/${encodeURIComponent(tripId)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as { message?: string }
+    throw new Error(payload.message ?? 'Unable to delete this route.')
+  }
 }

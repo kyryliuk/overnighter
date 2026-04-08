@@ -248,15 +248,9 @@ function setDeleteTripResult(row: unknown | null) {
           }
         }),
       })),
-      update: vi.fn(() => ({
+      delete: vi.fn(() => ({
         eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              select: vi.fn(() => ({
-                maybeSingle: vi.fn().mockResolvedValue({ data: row, error: null }),
-              })),
-            })),
-          })),
+          eq: vi.fn().mockResolvedValue({ error: null }),
         })),
       })),
     }
@@ -559,22 +553,13 @@ describe('/api/trips/:id', () => {
     expect(mockRpc).not.toHaveBeenCalled()
   })
 
-  it('returns 200 with archived trip payload on delete', async () => {
-    setDeleteTripResult({
-      ...DB_TRIP_ROW,
-      status: 'archived',
-      updated_at: '2026-03-25T03:00:00.000Z',
-    })
+  it('returns 200 with deleted: true on hard delete', async () => {
+    setDeleteTripResult(DB_TRIP_ROW)
 
     const { res, ctx } = mockRes()
     await handler(mockReq('DELETE'), res)
 
     expect(ctx.statusCode).toBe(200)
-    expect(ctx.body).toEqual({
-      trip: expect.objectContaining({
-        status: 'archived',
-        updatedAt: '2026-03-25T03:00:00.000Z',
-      }),
-    })
+    expect(ctx.body).toEqual({ deleted: true })
   })
 })

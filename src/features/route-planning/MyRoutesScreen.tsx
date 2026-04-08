@@ -4,10 +4,13 @@ import { PremiumGate } from '@/components/PremiumGate'
 import { useUIStore } from '@/store/uiStore'
 import type { Trip, TripWritePayload } from '@/types/trip'
 import RouteBuilderSheet, { type PendingRouteStopIntent } from './RouteBuilderSheet'
+import { buildDuplicateTripPayload } from './routePlanning'
 import { useTripCorridorPreview } from './TripCorridorPreviewContext'
 import { useCreateTripMutation } from './useCreateTripMutation'
+import { useDeleteTripMutation } from './useDeleteTripMutation'
 import { useTripQuery } from './useTripQuery'
 import { useTripsQuery } from './useTripsQuery'
+import { useTripStatusMutation } from './useTripStatusMutation'
 import { useUpdateTripMutation } from './useUpdateTripMutation'
 
 function formatUpdatedAt(updatedAt: string) {
@@ -121,27 +124,78 @@ function PlannerShell({
   )
 }
 
+function StatusBadge({ status }: { status: Trip['status'] }) {
+  const label = status === 'archived' ? 'Archived' : 'Draft'
+  const classes =
+    status === 'archived'
+      ? 'bg-zinc-700/60 text-zinc-300'
+      : 'bg-sky-500/15 text-sky-300'
+
+  return (
+    <span
+      data-testid="trip-status-badge"
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold leading-4 ${classes}`}
+    >
+      {label}
+    </span>
+  )
+}
+
+function SyncIndicator() {
+  return (
+    <span
+      data-testid="trip-sync-indicator"
+      className="inline-flex items-center gap-1 text-[11px] text-emerald-400"
+    >
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      Synced
+    </span>
+  )
+}
+
 function TripListItem({
   trip,
   isSelected,
   onOpen,
+  onDuplicate,
+  isDuplicating,
+  onArchive,
+  onUnarchive,
+  onDelete,
+  isArchiving,
+  isDeleting,
 }: {
   trip: Trip
   isSelected: boolean
   onOpen: (tripId: string) => void
+  onDuplicate: (tripId: string) => void
+  isDuplicating: boolean
+  onArchive: (tripId: string) => void
+  onUnarchive: (tripId: string) => void
+  onDelete: (tripId: string) => void
+  isArchiving: boolean
+  isDeleting: boolean
 }) {
+  const isArchived = trip.status === 'archived'
+
   return (
     <article
-      className={`rounded-2xl border bg-secondary p-4 transition ${isSelected ? 'border-sky-400/70 ring-1 ring-sky-400/40' : 'border-border'}`}
+      className={`rounded-2xl border bg-secondary p-4 transition ${isSelected ? 'border-sky-400/70 ring-1 ring-sky-400/40' : 'border-border'} ${isArchived ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold">{trip.title}</h2>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <h2 className="truncate text-base font-semibold">{trip.title}</h2>
+            <StatusBadge status={trip.status} />
+          </div>
           <p className="text-sm text-muted-foreground">
-            Destination: {trip.destination.name} · {trip.stopCount} stop{trip.stopCount === 1 ? '' : 's'}
+            {trip.destination.name} · {trip.stopCount} stop{trip.stopCount === 1 ? '' : 's'}
           </p>
         </div>
-        <span className="text-xs text-muted-foreground">Updated {formatUpdatedAt(trip.updatedAt)}</span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className="text-xs text-muted-foreground">Updated {formatUpdatedAt(trip.updatedAt)}</span>
+          <SyncIndicator />
+        </div>
       </div>
       {trip.notes ? (
         <p className="mt-3 text-sm text-muted-foreground">{trip.notes}</p>
@@ -150,14 +204,60 @@ function TripListItem({
         {isSelected ? (
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-sky-400">Open in planner</p>
         ) : <span />}
-        <button
-          type="button"
-          onClick={() => onOpen(trip.id)}
-          aria-pressed={isSelected}
-          className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium transition hover:border-sky-400"
-        >
-          {isSelected ? 'Reopen route' : 'Resume route'}
-        </button>
+        <div className="flex gap-2">
+          {!isArchived && (
+            <button
+              type="button"
+              data-testid="archive-trip-button"
+              onClick={() => onArchive(trip.id)}
+              disabled={isArchiving}
+              className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium transition hover:border-amber-400 disabled:opacity-50"
+            >
+              {isArchiving ? 'Archiving…' : 'Archive'}
+            </button>
+          )}
+          {isArchived && (
+            <button
+              type="button"
+              data-testid="unarchive-trip-button"
+              onClick={() => onUnarchive(trip.id)}
+              disabled={isArchiving}
+              className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium transition hover:border-sky-400 disabled:opacity-50"
+            >
+              {isArchiving ? 'Restoring…' : 'Unarchive'}
+            </button>
+          )}
+          {isArchived && (
+            <button
+              type="button"
+              data-testid="delete-trip-button"
+              onClick={() => onDelete(trip.id)}
+              disabled={isDeleting}
+              className="min-h-[44px] rounded-full border border-red-500/50 px-4 text-sm font-medium text-red-300 transition hover:border-red-400 hover:bg-red-500/10 disabled:opacity-50"
+            >
+              {isDeleting ? 'Deleting…' : 'Delete permanently'}
+            </button>
+          )}
+          {!isArchived ? (
+            <button
+              type="button"
+              data-testid="duplicate-trip-button"
+              disabled={isDuplicating}
+              onClick={() => onDuplicate(trip.id)}
+              className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium transition hover:border-sky-400 disabled:opacity-50"
+            >
+              {isDuplicating ? 'Duplicating…' : 'Duplicate'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onOpen(trip.id)}
+            aria-pressed={isSelected}
+            className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium transition hover:border-sky-400"
+          >
+            {isArchived ? 'Reopen route' : (isSelected ? 'Reopen route' : 'Resume route')}
+          </button>
+        </div>
       </div>
     </article>
   )
@@ -170,13 +270,25 @@ function MyRoutesContent() {
   const { setPreviewTrip } = useTripCorridorPreview()
   const [isCreating, setIsCreating] = useState(false)
   const [draftPreviewPayload, setDraftPreviewPayload] = useState<TripWritePayload | null>(null)
+  const [includeArchived, setIncludeArchived] = useState(false)
+  const [sortOrder, setSortOrder] = useState<'recent' | 'oldest'>('recent')
+  const [duplicatingTripId, setDuplicatingTripId] = useState<string | null>(null)
+  const [duplicateError, setDuplicateError] = useState<string | null>(null)
+  const [archivingTripId, setArchivingTripId] = useState<string | null>(null)
+  const [deletingTrip, setDeletingTrip] = useState<Trip | null>(null)
   const requestedTripId = searchParams.get('tripId')
   const pendingAddStopPinId = searchParams.get('addStopPinId')
   const pendingAddStopSource = searchParams.get('addStopSource')
-  const tripsQuery = useTripsQuery()
+  const tripsQuery = useTripsQuery({ includeArchived })
   const createTripMutation = useCreateTripMutation()
   const updateTripMutation = useUpdateTripMutation()
-  const trips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data])
+  const tripStatusMutation = useTripStatusMutation()
+  const deleteTripMutation = useDeleteTripMutation()
+  const rawTrips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data])
+  const trips = useMemo(() => {
+    if (sortOrder === 'oldest') return [...rawTrips].reverse()
+    return rawTrips
+  }, [rawTrips, sortOrder])
   const listSelectedTrip = useMemo(
     () => trips.find((trip) => trip.id === requestedTripId) ?? null,
     [requestedTripId, trips],
@@ -225,6 +337,15 @@ function MyRoutesContent() {
     }
   }, [activeTrip, draftPreviewPayload, isCreating, requestedTripId, setPreviewTrip])
 
+  useEffect(() => {
+    if (!deletingTrip) return
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setDeletingTrip(null)
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [deletingTrip])
+
   function openCreateBuilder() {
     setIsCreating(true)
     setDraftPreviewPayload(null)
@@ -247,6 +368,66 @@ function MyRoutesContent() {
   const handlePendingAddStopHandled = useCallback(() => {
     setSearchParams((currentParams) => clearPendingStopParams(currentParams))
   }, [setSearchParams])
+
+  async function handleDuplicateTrip(tripId: string) {
+    const tripToDuplicate = trips.find((t) => t.id === tripId)
+    if (!tripToDuplicate) return
+
+    setDuplicatingTripId(tripId)
+    setDuplicateError(null)
+    try {
+      const payload = buildDuplicateTripPayload(tripToDuplicate)
+      const createdTrip = await createTripMutation.mutateAsync(payload)
+      openTrip(createdTrip.id)
+    } catch (error) {
+      setDuplicateError(error instanceof Error ? error.message : 'Unable to duplicate this route right now.')
+    } finally {
+      setDuplicatingTripId(null)
+    }
+  }
+
+  async function handleArchiveTrip(tripId: string) {
+    setArchivingTripId(tripId)
+    try {
+      await tripStatusMutation.mutateAsync({ tripId, status: 'archived' })
+      if (tripId === requestedTripId) {
+        closeBuilder()
+      }
+    } catch {
+      // Mutation error is tracked via tripStatusMutation state
+    } finally {
+      setArchivingTripId(null)
+    }
+  }
+
+  async function handleUnarchiveTrip(tripId: string) {
+    setArchivingTripId(tripId)
+    try {
+      await tripStatusMutation.mutateAsync({ tripId, status: 'draft' })
+    } catch {
+      // Mutation error is tracked via tripStatusMutation state
+    } finally {
+      setArchivingTripId(null)
+    }
+  }
+
+  function handleRequestDeleteTrip(tripId: string) {
+    const tripToDelete = trips.find((t) => t.id === tripId)
+    if (tripToDelete) setDeletingTrip(tripToDelete)
+  }
+
+  async function handleConfirmDelete(tripId: string) {
+    try {
+      await deleteTripMutation.mutateAsync(tripId)
+      if (tripId === requestedTripId) {
+        closeBuilder()
+      }
+    } catch {
+      // Mutation error is tracked via deleteTripMutation state
+    } finally {
+      setDeletingTrip(null)
+    }
+  }
 
   if (tripsQuery.isLoading) {
     return (
@@ -336,6 +517,20 @@ function MyRoutesContent() {
           </div>
         ) : null}
 
+        {duplicateError ? (
+          <div className="space-y-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3" role="alert" data-testid="duplicate-error">
+            <p className="text-sm font-medium text-red-200">Duplication failed</p>
+            <p className="text-sm text-red-100/80">{duplicateError}</p>
+            <button
+              type="button"
+              onClick={() => setDuplicateError(null)}
+              className="min-h-[36px] rounded-full border border-red-200/40 px-3 text-xs font-medium text-red-50"
+            >
+              Dismiss
+            </button>
+          </div>
+        ) : null}
+
         {trips.length === 0 ? (
           <div className="space-y-4 rounded-3xl border border-border bg-secondary p-5" data-testid="my-routes-empty-state">
             <div className="space-y-2">
@@ -363,6 +558,24 @@ function MyRoutesContent() {
           </div>
         ) : (
           <>
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                data-testid="archive-filter-toggle"
+                onClick={() => setIncludeArchived((prev) => !prev)}
+                className="min-h-[36px] rounded-full border border-border px-3 text-xs font-medium transition hover:border-sky-400"
+              >
+                {includeArchived ? 'Hide archived' : 'Show archived'}
+              </button>
+              <button
+                type="button"
+                data-testid="sort-control"
+                onClick={() => setSortOrder((prev) => (prev === 'recent' ? 'oldest' : 'recent'))}
+                className="min-h-[36px] rounded-full border border-border px-3 text-xs font-medium transition hover:border-sky-400"
+              >
+                {sortOrder === 'recent' ? 'Most recent' : 'Oldest first'}
+              </button>
+            </div>
             <div className="space-y-3">
               {trips.map((trip) => (
                 <TripListItem
@@ -370,6 +583,13 @@ function MyRoutesContent() {
                   trip={trip}
                   isSelected={trip.id === activeTrip?.id}
                   onOpen={openTrip}
+                  onDuplicate={handleDuplicateTrip}
+                  isDuplicating={duplicatingTripId === trip.id}
+                  onArchive={handleArchiveTrip}
+                  onUnarchive={handleUnarchiveTrip}
+                  onDelete={handleRequestDeleteTrip}
+                  isArchiving={archivingTripId === trip.id}
+                  isDeleting={deletingTrip?.id === trip.id && deleteTripMutation.isPending}
                 />
               ))}
             </div>
@@ -392,6 +612,39 @@ function MyRoutesContent() {
           </>
         )}
       </div>
+      {deletingTrip && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          data-testid="delete-confirm-dialog"
+        >
+          <div className="mx-4 max-w-sm rounded-2xl border border-border bg-secondary p-6 space-y-4">
+            <h2 className="text-lg font-semibold">Delete permanently?</h2>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{deletingTrip.title}</span> and all its stops
+              will be permanently removed. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                data-testid="delete-cancel-button"
+                onClick={() => setDeletingTrip(null)}
+                className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                data-testid="delete-confirm-button"
+                onClick={() => handleConfirmDelete(deletingTrip.id)}
+                disabled={deleteTripMutation.isPending}
+                className="min-h-[44px] rounded-full bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-50"
+              >
+                {deleteTripMutation.isPending ? 'Deleting…' : 'Delete permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <RouteBuilderSheet
         key={isCreating ? 'create-route' : activeTrip?.id ?? 'route-builder-closed'}
         isOpen={isBuilderOpen}

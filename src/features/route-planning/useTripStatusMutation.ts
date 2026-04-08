@@ -1,32 +1,24 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
-import type { TripWritePayload } from '@/types/trip'
-import { updateTrip } from './api'
+import { updateTripStatus } from './api'
 import { tripQueryKey } from './useTripQuery'
 
-interface UpdateTripMutationInput {
-  tripId: string
-  payload: TripWritePayload
-}
-
-export function useUpdateTripMutation() {
+export function useTripStatusMutation() {
   const queryClient = useQueryClient()
   const { isAuthenticated, session } = useAuth()
   const accessToken = session?.access_token
   const userId = session?.user.id ?? null
 
   return useMutation({
-    mutationFn: async ({ tripId, payload }: UpdateTripMutationInput) => {
+    mutationFn: async ({ tripId, status }: { tripId: string; status: 'draft' | 'archived' }) => {
       if (!isAuthenticated || !accessToken) {
         throw new Error('Sign in again to update your route.')
       }
-
-      return updateTrip(accessToken, tripId, payload)
+      return updateTripStatus(accessToken, tripId, status)
     },
     onSuccess: (updatedTrip) => {
       queryClient.setQueryData(tripQueryKey(userId, updatedTrip.id), updatedTrip)
       void queryClient.invalidateQueries({ queryKey: ['trips', userId] })
-      void queryClient.invalidateQueries({ queryKey: tripQueryKey(userId, updatedTrip.id) })
     },
   })
 }

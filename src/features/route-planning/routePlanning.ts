@@ -1,7 +1,7 @@
 import { doesPinFitRig } from '@/lib/pins/doesPinFitRig'
 import type { Pin } from '@/types/pin'
 import type { RigProfile } from '@/types/rigProfile'
-import type { Trip, TripPlaceSnapshot, TripStop, TripStopSource, TripWaypointInput } from '@/types/trip'
+import type { Trip, TripPlaceSnapshot, TripStop, TripStopSource, TripWaypointInput, TripWritePayload } from '@/types/trip'
 import type { TripPlanPlace } from '@/types/tripPlan'
 
 export interface RoutePoint {
@@ -178,6 +178,36 @@ export function removeTripWaypoint(
   stopIdentifier: string,
 ): TripWaypointInput[] {
   return compactTripWaypointOrders(currentStops.filter((stop) => stop.id !== stopIdentifier && stop.place.id !== stopIdentifier))
+}
+
+const DUPLICATE_TITLE_SUFFIX = ' (copy)'
+const MAX_TRIP_TITLE_LENGTH = 160
+
+export function buildDuplicateTripPayload(trip: Trip): TripWritePayload {
+  const maxBaseLength = MAX_TRIP_TITLE_LENGTH - DUPLICATE_TITLE_SUFFIX.length
+  const baseTitle = trip.title.length > maxBaseLength ? trip.title.slice(0, maxBaseLength) : trip.title
+  const title = `${baseTitle}${DUPLICATE_TITLE_SUFFIX}`
+
+  const waypointStops = trip.stops
+    .filter((stop) => stop.stopKind === 'waypoint')
+    .sort((a, b) => a.stopOrder - b.stopOrder)
+    .map((stop, index): TripWaypointInput => ({
+      stopOrder: index,
+      source: stop.source,
+      pinId: stop.pinId,
+      place: stop.place,
+      notes: stop.notes,
+    }))
+
+  return {
+    title,
+    notes: trip.notes,
+    origin: trip.origin,
+    destination: trip.destination,
+    routeMode: trip.routeMode,
+    stops: waypointStops,
+    sourceTripId: trip.id,
+  }
 }
 
 interface BuildRouteSuggestionsOptions {

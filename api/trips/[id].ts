@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { z } from 'zod'
 import { requirePremiumAuth } from '../_auth'
 import { createServiceClient } from '../_supabase'
 import {
@@ -50,6 +51,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'PATCH') {
+    // Status-only short-circuit: if body has exactly one key "status", bypass the full RPC flow
+    const body = req.body as Record<string, unknown> | undefined
+    const bodyKeys = body && typeof body === 'object' ? Object.keys(body) : []
+    if (bodyKeys.length === 1 && bodyKeys[0] === 'status') {
+      const statusResult = z.enum(['draft', 'archived']).safeParse(body!.status)
+      if (!statusResult.success) {
+        return res.status(400).json({ error: 'INVALID_BODY', message: 'Invalid status value', status: 400 })
+      }
+
+      try {
+        const existingTrip = await getTripRow(supabase, user.id, parsedTripId.tripId)
+        if (!existingTrip) {
+          return res.status(404).json({ error: 'NOT_FOUND', message: 'Trip not found', status: 404 })
+        }
+
+        if (existingTrip.status === statusResult.data) {
+          return res.status(200).json({ trip: mapTripRowToApiTrip(existingTrip) })
+        }
+
+        const { error } = await supabase
+          .from('trips')
+          .update({
+            status: statusResult.data,
+            revision: existingTrip.revision + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', parsedTripId.tripId)
+          .eq('user_id', user.id)
+
+        if (error) {
+          console.error('[api/trips/[id]][PATCH][status]', error)
+          return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Something went wrong', status: 500 })
+        }
+
+        const tripRow = await getTripRow(supabase, user.id, parsedTripId.tripId)
+        if (!tripRow) {
+          return res.status(404).json({ error: 'NOT_FOUND', message: 'Trip not found', status: 404 })
+        }
+
+        return res.status(200).json({ trip: mapTripRowToApiTrip(tripRow) })
+      } catch (error) {
+        console.error('[api/trips/[id]][PATCH][status]', error)
+        return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Something went wrong', status: 500 })
+      }
+    }
+
+    // Full RPC flow for bodies with keys other than just "status"
     const parsedBody = parseTripWriteBody(req.body)
     if (!parsedBody.success) {
       return res.status(400).json({ error: 'INVALID_BODY', message: parsedBody.message, status: 400 })
@@ -84,38 +132,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // DELETE — hard-delete the trip (ON DELETE CASCADE removes trip_stops)
   try {
     const existingTrip = await getTripRow(supabase, user.id, parsedTripId.tripId)
     if (!existingTrip) {
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Trip not found', status: 404 })
     }
 
-    if (existingTrip.status === 'archived') {
-      return res.status(200).json({ trip: mapTripRowToApiTrip(existingTrip) })
-    }
-
     const { error } = await supabase
       .from('trips')
-      .update({
-        status: 'archived',
-        revision: existingTrip.revision + 1,
-        updated_at: new Date().toISOString(),
-      })
+      .delete()
       .eq('id', parsedTripId.tripId)
       .eq('user_id', user.id)
-      .eq('status', 'draft')
 
     if (error) {
-      console.error('[api/trips/[id]][DELETE][update]', error)
+      console.error('[api/trips/[id]][DELETE]', error)
       return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Something went wrong', status: 500 })
     }
 
-    const tripRow = await getTripRow(supabase, user.id, parsedTripId.tripId)
-    if (!tripRow) {
-      return res.status(404).json({ error: 'NOT_FOUND', message: 'Trip not found', status: 404 })
-    }
-
-    return res.status(200).json({ trip: mapTripRowToApiTrip(tripRow) })
+    return res.status(200).json({ deleted: true })
   } catch (error) {
     console.error('[api/trips/[id]][DELETE]', error)
     return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Something went wrong', status: 500 })

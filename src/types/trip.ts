@@ -54,4 +54,5 @@ export interface TripWritePayload {
   destination: TripPlaceSnapshot
   routeMode?: TripRouteMode
   stops?: TripWaypointInput[]
+  sourceTripId?: string
 }

@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { buildDirectionsUrl, GOOGLE_MAPS_MAX_WAYPOINTS } from '@/lib/maps/googleMaps'
 import type { Pin } from '@/types/pin'
 import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
+import type { Trip } from '@/types/trip'
 import type { TripPlanPlace } from '@/types/tripPlan'
 import {
   appendTripWaypoint,
   appendUniqueWaypoint,
+  buildDuplicateTripPayload,
   buildTripCorridorPreview,
   buildRouteSuggestions,
   compactTripWaypointOrders,
@@ -310,5 +312,146 @@ describe('normalized trip stop helpers', () => {
       { stopOrder: 0, name: 'Lake Havasu', latitude: 34.4839, longitude: -114.3225 },
       { stopOrder: 1, name: 'Kingman', latitude: 35.1894, longitude: -114.053 },
     ])
+  })
+})
+
+describe('buildDuplicateTripPayload', () => {
+  const BASE_TRIP: Trip = {
+    id: 'trip-abc',
+    title: 'Desert Loop',
+    notes: 'Great overnight stops',
+    status: 'draft',
+    origin: { id: 'origin-1', name: 'Flagstaff', latitude: 35.1983, longitude: -111.6513 },
+    destination: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6639, longitude: -114.229 },
+    routeMode: 'corridor',
+    stopCount: 3,
+    revision: 1,
+    isPublic: true,
+    shareToken: 'tok-123',
+    sourceTripId: null,
+    sourceShareToken: null,
+    createdAt: '2026-03-24T10:00:00.000Z',
+    updatedAt: '2026-03-24T11:00:00.000Z',
+    stops: [
+      {
+        id: 'stop-1',
+        stopOrder: 0,
+        stopKind: 'waypoint',
+        source: 'saved',
+        pinId: 'saved-1',
+        place: { id: 'saved-1', name: 'Lake Havasu', latitude: 34.4839, longitude: -114.3225 },
+        notes: 'Top off fuel',
+        createdAt: '2026-03-24T10:00:00.000Z',
+        updatedAt: '2026-03-24T11:00:00.000Z',
+      },
+      {
+        id: 'stop-2',
+        stopOrder: 1,
+        stopKind: 'waypoint',
+        source: 'manual',
+        pinId: 'pin-k',
+        place: { id: 'pin-k', name: 'Kingman', latitude: 35.1894, longitude: -114.053 },
+        notes: 'Stretch break',
+        createdAt: '2026-03-24T10:00:00.000Z',
+        updatedAt: '2026-03-24T11:00:00.000Z',
+      },
+      {
+        id: 'stop-dest',
+        stopOrder: 2,
+        stopKind: 'destination',
+        source: 'manual',
+        pinId: null,
+        place: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6639, longitude: -114.229 },
+        notes: '',
+        createdAt: '2026-03-24T10:00:00.000Z',
+        updatedAt: '2026-03-24T11:00:00.000Z',
+      },
+    ],
+  }
+
+  it('appends " (copy)" suffix to the title', () => {
+    const payload = buildDuplicateTripPayload(BASE_TRIP)
+    expect(payload.title).toBe('Desert Loop (copy)')
+  })
+
+  it('copies notes, origin, destination, and routeMode', () => {
+    const payload = buildDuplicateTripPayload(BASE_TRIP)
+    expect(payload.notes).toBe('Great overnight stops')
+    expect(payload.origin).toEqual(BASE_TRIP.origin)
+    expect(payload.destination).toEqual(BASE_TRIP.destination)
+    expect(payload.routeMode).toBe('corridor')
+  })
+
+  it('maps waypoint stops only — excludes destination stop and omits server-assigned id', () => {
+    const payload = buildDuplicateTripPayload(BASE_TRIP)
+    expect(payload.stops).toHaveLength(2)
+    expect(payload.stops![0]).toEqual({
+      stopOrder: 0,
+      source: 'saved',
+      pinId: 'saved-1',
+      place: { id: 'saved-1', name: 'Lake Havasu', latitude: 34.4839, longitude: -114.3225 },
+      notes: 'Top off fuel',
+    })
+    expect(payload.stops![1]).toEqual({
+      stopOrder: 1,
+      source: 'manual',
+      pinId: 'pin-k',
+      place: { id: 'pin-k', name: 'Kingman', latitude: 35.1894, longitude: -114.053 },
+      notes: 'Stretch break',
+    })
+    // No server-assigned id on any stop
+    for (const stop of payload.stops!) {
+      expect(stop).not.toHaveProperty('id')
+    }
+  })
+
+  it('sets sourceTripId to the original trip id', () => {
+    const payload = buildDuplicateTripPayload(BASE_TRIP)
+    expect(payload.sourceTripId).toBe('trip-abc')
+  })
+
+  it('does NOT copy isPublic, shareToken, status, or id', () => {
+    const payload = buildDuplicateTripPayload(BASE_TRIP)
+    expect(payload).not.toHaveProperty('isPublic')
+    expect(payload).not.toHaveProperty('shareToken')
+    expect(payload).not.toHaveProperty('status')
+    expect(payload).not.toHaveProperty('id')
+  })
+
+  it('truncates title to 160 chars max when original title is very long', () => {
+    const longTitle = 'A'.repeat(200)
+    const trip = { ...BASE_TRIP, title: longTitle }
+    const payload = buildDuplicateTripPayload(trip)
+    expect(payload.title!.length).toBe(160)
+    expect(payload.title!.endsWith(' (copy)')).toBe(true)
+  })
+
+  it('re-indexes stopOrder from 0 for waypoint stops', () => {
+    const payload = buildDuplicateTripPayload(BASE_TRIP)
+    expect(payload.stops!.map((s) => s.stopOrder)).toEqual([0, 1])
+  })
+
+  it('handles a trip with only a destination stop (0 waypoints)', () => {
+    const destinationOnlyTrip: Trip = {
+      ...BASE_TRIP,
+      stopCount: 1,
+      stops: [
+        {
+          id: 'stop-dest',
+          stopOrder: 0,
+          stopKind: 'destination',
+          source: 'manual',
+          pinId: null,
+          place: { id: 'dest-1', name: 'Quartzsite', latitude: 33.6639, longitude: -114.229 },
+          notes: '',
+          createdAt: '2026-03-24T10:00:00.000Z',
+          updatedAt: '2026-03-24T11:00:00.000Z',
+        },
+      ],
+    }
+    const payload = buildDuplicateTripPayload(destinationOnlyTrip)
+    expect(payload.stops).toEqual([])
+    expect(payload.destination).toEqual(destinationOnlyTrip.destination)
+    expect(payload.sourceTripId).toBe('trip-abc')
   })
 })

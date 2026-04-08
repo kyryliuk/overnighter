@@ -11,9 +11,11 @@ const mockUseTripQuery = vi.fn()
 const mockUsePinsQuery = vi.fn()
 const mockUseCreateTripMutation = vi.fn()
 const mockUseUpdateTripMutation = vi.fn()
+const mockUseTripStatusMutation = vi.fn()
+const mockUseDeleteTripMutation = vi.fn()
 
 vi.mock('./useTripsQuery', () => ({
-  useTripsQuery: () => mockUseTripsQuery(),
+  useTripsQuery: (...args: unknown[]) => mockUseTripsQuery(...args),
 }))
 
 vi.mock('./useTripQuery', () => ({
@@ -26,6 +28,14 @@ vi.mock('./useCreateTripMutation', () => ({
 
 vi.mock('./useUpdateTripMutation', () => ({
   useUpdateTripMutation: () => mockUseUpdateTripMutation(),
+}))
+
+vi.mock('./useTripStatusMutation', () => ({
+  useTripStatusMutation: () => mockUseTripStatusMutation(),
+}))
+
+vi.mock('./useDeleteTripMutation', () => ({
+  useDeleteTripMutation: () => mockUseDeleteTripMutation(),
 }))
 
 vi.mock('@/hooks/usePinsQuery', () => ({
@@ -331,6 +341,16 @@ describe('MyRoutesScreen', () => {
       error: null,
     })
     mockUseUpdateTripMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+      error: null,
+    })
+    mockUseTripStatusMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+      error: null,
+    })
+    mockUseDeleteTripMutation.mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
       error: null,
@@ -677,5 +697,702 @@ describe('MyRoutesScreen', () => {
     await user.click(screen.getByRole('button', { name: /create route/i }))
     expect(screen.getByRole('dialog', { name: /create route/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /open in google maps/i })).not.toBeInTheDocument()
+  })
+
+  describe('Route cards (Story 3.1)', () => {
+    const ARCHIVED_TRIP: Trip = {
+      ...SAMPLE_TRIP,
+      id: 'trip-archived',
+      title: 'Old Desert Run',
+      status: 'archived',
+      updatedAt: '2026-01-10T08:00:00.000Z',
+    }
+
+    const NEWER_TRIP: Trip = {
+      ...SAMPLE_TRIP,
+      id: 'trip-newer',
+      title: 'Coastal Cruise',
+      updatedAt: '2026-04-01T12:00:00.000Z',
+      destination: { id: 'dest-2', name: 'San Diego', latitude: 32.7, longitude: -117.1 },
+      stopCount: 5,
+    }
+
+    it('renders title, destination, stop count, timestamp, status badge, and sync indicator for each trip', () => {
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      renderScreen()
+
+      expect(screen.getByText('Desert Loop')).toBeInTheDocument()
+      expect(screen.getByText(/quartzsite/i)).toBeInTheDocument()
+      expect(screen.getByText(/2 stops/i)).toBeInTheDocument()
+      expect(screen.getByText(/updated/i)).toBeInTheDocument()
+      expect(screen.getByTestId('trip-status-badge')).toHaveTextContent('Draft')
+      expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Synced')
+    })
+
+    it('excludes archived trips from the default view', () => {
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      renderScreen()
+
+      expect(screen.getByText('Desert Loop')).toBeInTheDocument()
+      expect(screen.queryByText('Old Desert Run')).not.toBeInTheDocument()
+      expect(mockUseTripsQuery).toHaveBeenCalledWith(expect.objectContaining({ includeArchived: false }))
+    })
+
+    it('toggles the archive filter and shows archived trips with distinct treatment', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      expect(screen.queryByText('Old Desert Run')).not.toBeInTheDocument()
+      const toggle = screen.getByTestId('archive-filter-toggle')
+      expect(toggle).toHaveTextContent('Show archived')
+
+      await user.click(toggle)
+
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+      expect(screen.getByTestId('archive-filter-toggle')).toHaveTextContent('Hide archived')
+
+      const badges = screen.getAllByTestId('trip-status-badge')
+      expect(badges).toHaveLength(2)
+      expect(badges[1]).toHaveTextContent('Archived')
+    })
+
+    it('sort toggle reverses trip order from most-recent to oldest-first', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockReturnValue({
+        data: [NEWER_TRIP, SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      renderScreen()
+
+      const sortControl = screen.getByTestId('sort-control')
+      expect(sortControl).toHaveTextContent('Most recent')
+
+      const titles = screen.getAllByRole('heading', { level: 2 })
+      expect(titles[0]).toHaveTextContent('Coastal Cruise')
+      expect(titles[1]).toHaveTextContent('Desert Loop')
+
+      await user.click(sortControl)
+
+      expect(screen.getByTestId('sort-control')).toHaveTextContent('Oldest first')
+      const sortedTitles = screen.getAllByRole('heading', { level: 2 })
+      expect(sortedTitles[0]).toHaveTextContent('Desert Loop')
+      expect(sortedTitles[1]).toHaveTextContent('Coastal Cruise')
+    })
+
+    it('selected trip card has active highlight treatment with aria-pressed', async () => {
+      const user = userEvent.setup()
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      mockUseTripQuery.mockReturnValue({
+        ...DEFAULT_TRIP_QUERY_RESULT,
+        data: SAMPLE_TRIP,
+        refetch: vi.fn(),
+      })
+
+      renderScreen('/trips')
+
+      await user.click(screen.getByRole('button', { name: /resume route/i }))
+
+      await waitFor(() => {
+        const reopenBtn = screen.getByRole('button', { name: /reopen route/i })
+        expect(reopenBtn).toHaveAttribute('aria-pressed', 'true')
+      })
+      expect(screen.getByText('Open in planner')).toBeInTheDocument()
+    })
+
+    it('closing the builder clears the tripId param and returns to library state', async () => {
+      const user = userEvent.setup()
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      mockUseTripQuery.mockReturnValue({
+        ...DEFAULT_TRIP_QUERY_RESULT,
+        data: SAMPLE_TRIP,
+        refetch: vi.fn(),
+      })
+
+      renderScreen('/trips?tripId=trip-123')
+
+      expect(screen.getByRole('dialog', { name: /resume route/i })).toBeInTheDocument()
+      expect(screen.getByTestId('location-search')).toHaveTextContent('?tripId=trip-123')
+
+      await user.click(screen.getByRole('button', { name: /cancel/i }))
+
+      await waitFor(() => expect(screen.getByTestId('location-search')).toHaveTextContent(''))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Duplicate trip (Story 3.2)', () => {
+    const ARCHIVED_TRIP: Trip = {
+      ...SAMPLE_TRIP,
+      id: 'trip-archived',
+      title: 'Old Desert Run',
+      status: 'archived',
+      updatedAt: '2026-01-10T08:00:00.000Z',
+    }
+
+    it('shows a Duplicate button on draft trip cards', () => {
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      renderScreen()
+
+      expect(screen.getByTestId('duplicate-trip-button')).toBeInTheDocument()
+      expect(screen.getByTestId('duplicate-trip-button')).toHaveTextContent('Duplicate')
+    })
+
+    it('does NOT show a Duplicate button on archived trip cards', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      const duplicateButtons = screen.getAllByTestId('duplicate-trip-button')
+      // Only one duplicate button — for the draft trip, not the archived one
+      expect(duplicateButtons).toHaveLength(1)
+    })
+
+    it('clicking Duplicate calls createTripMutation with the expected payload shape', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue({
+        id: 'trip-copy',
+        title: 'Desert Loop (copy)',
+      })
+      mockUseCreateTripMutation.mockReturnValue({
+        mutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      mockUseTripQuery.mockReturnValue({
+        ...DEFAULT_TRIP_QUERY_RESULT,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      renderScreen()
+
+      await user.click(screen.getByTestId('duplicate-trip-button'))
+
+      await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Desert Loop (copy)',
+        destination: SAMPLE_TRIP.destination,
+        sourceTripId: 'trip-123',
+        notes: 'Great overnight stops',
+        origin: SAMPLE_TRIP.origin,
+        routeMode: 'corridor',
+        stops: [
+          expect.objectContaining({
+            stopOrder: 0,
+            source: 'saved',
+            place: expect.objectContaining({ id: 'saved-1' }),
+          }),
+        ],
+      })))
+    })
+
+    it('after successful duplication, the new trip opens in the builder (tripId search param updates)', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue({
+        id: 'trip-copy',
+        title: 'Desert Loop (copy)',
+      })
+      mockUseCreateTripMutation.mockReturnValue({
+        mutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      mockUseTripQuery.mockReturnValue({
+        ...DEFAULT_TRIP_QUERY_RESULT,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      renderScreen()
+
+      await user.click(screen.getByTestId('duplicate-trip-button'))
+
+      await waitFor(() => expect(screen.getByTestId('location-search')).toHaveTextContent('?tripId=trip-copy'))
+    })
+
+    it('Duplicate button shows disabled/loading state while mutation is pending', async () => {
+      let resolveMutate: (value: unknown) => void = () => {}
+      const mutateAsync = vi.fn().mockImplementation(() => new Promise((resolve) => { resolveMutate = resolve }))
+      mockUseCreateTripMutation.mockReturnValue({
+        mutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      mockUseTripQuery.mockReturnValue({
+        ...DEFAULT_TRIP_QUERY_RESULT,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      renderScreen()
+
+      await user.click(screen.getByTestId('duplicate-trip-button'))
+
+      await waitFor(() => {
+        const btn = screen.getByTestId('duplicate-trip-button')
+        expect(btn).toBeDisabled()
+        expect(btn).toHaveTextContent('Duplicating…')
+      })
+
+      // Resolve to clean up
+      resolveMutate({ id: 'trip-copy', title: 'Desert Loop (copy)' })
+    })
+  })
+
+  describe('Archive, Unarchive, and Delete (Story 3.3)', () => {
+    const ARCHIVED_TRIP: Trip = {
+      ...SAMPLE_TRIP,
+      id: 'trip-archived',
+      title: 'Old Desert Run',
+      status: 'archived',
+      updatedAt: '2026-01-10T08:00:00.000Z',
+    }
+
+    it('shows Archive button on draft trip cards, NOT on archived trip cards', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      // Draft card has Archive button
+      expect(screen.getByTestId('archive-trip-button')).toBeInTheDocument()
+
+      // Show archived trips
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      // Only one Archive button (for the draft trip)
+      const archiveButtons = screen.getAllByTestId('archive-trip-button')
+      expect(archiveButtons).toHaveLength(1)
+    })
+
+    it('clicking Archive calls tripStatusMutation.mutateAsync with correct args', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue({ ...SAMPLE_TRIP, status: 'archived' })
+      mockUseTripStatusMutation.mockReturnValue({
+        mutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-trip-button'))
+
+      await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ tripId: 'trip-123', status: 'archived' }))
+    })
+
+    it('Archive button shows loading state while mutation is pending', async () => {
+      let resolveMutate: (value: unknown) => void = () => {}
+      const mutateAsync = vi.fn().mockImplementation(() => new Promise((resolve) => { resolveMutate = resolve }))
+      mockUseTripStatusMutation.mockReturnValue({
+        mutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-trip-button'))
+
+      await waitFor(() => {
+        const btn = screen.getByTestId('archive-trip-button')
+        expect(btn).toBeDisabled()
+        expect(btn).toHaveTextContent('Archiving…')
+      })
+
+      resolveMutate({ ...SAMPLE_TRIP, status: 'archived' })
+    })
+
+    it('shows Unarchive button on archived trip cards, NOT on draft cards', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      // No unarchive button on draft cards
+      expect(screen.queryByTestId('unarchive-trip-button')).not.toBeInTheDocument()
+
+      // Show archived trips
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      // Unarchive button appears for archived trip
+      const unarchiveButtons = screen.getAllByTestId('unarchive-trip-button')
+      expect(unarchiveButtons).toHaveLength(1)
+    })
+
+    it('clicking Unarchive calls tripStatusMutation.mutateAsync with correct args', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue({ ...ARCHIVED_TRIP, status: 'draft' })
+      mockUseTripStatusMutation.mockReturnValue({
+        mutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      const user = userEvent.setup()
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('unarchive-trip-button'))
+
+      await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ tripId: 'trip-archived', status: 'draft' }))
+    })
+
+    it('shows Delete permanently button on archived trip cards only', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      // No delete button on draft cards
+      expect(screen.queryByTestId('delete-trip-button')).not.toBeInTheDocument()
+
+      // Show archived trips
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      // Delete button appears for archived trip
+      const deleteButtons = screen.getAllByTestId('delete-trip-button')
+      expect(deleteButtons).toHaveLength(1)
+    })
+
+    it('clicking Delete permanently opens confirmation dialog with trip title', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('delete-trip-button'))
+
+      await waitFor(() => {
+        const dialog = screen.getByTestId('delete-confirm-dialog')
+        expect(dialog).toBeInTheDocument()
+        expect(screen.getByText('Delete permanently?')).toBeInTheDocument()
+        // Trip title appears in the dialog text
+        expect(dialog.textContent).toContain('Old Desert Run')
+      })
+    })
+
+    it('clicking Cancel in delete dialog closes it without calling the mutation', async () => {
+      const deleteMutateAsync = vi.fn()
+      mockUseDeleteTripMutation.mockReturnValue({
+        mutateAsync: deleteMutateAsync,
+        isPending: false,
+        error: null,
+      })
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('delete-trip-button'))
+      await waitFor(() => expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('delete-cancel-button'))
+
+      await waitFor(() => expect(screen.queryByTestId('delete-confirm-dialog')).not.toBeInTheDocument())
+      expect(deleteMutateAsync).not.toHaveBeenCalled()
+    })
+
+    it('clicking Delete permanently in the dialog calls deleteTripMutation.mutateAsync', async () => {
+      const deleteMutateAsync = vi.fn().mockResolvedValue(undefined)
+      mockUseDeleteTripMutation.mockReturnValue({
+        mutateAsync: deleteMutateAsync,
+        isPending: false,
+        error: null,
+      })
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('delete-trip-button'))
+      await waitFor(() => expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('delete-confirm-button'))
+
+      await waitFor(() => expect(deleteMutateAsync).toHaveBeenCalledWith('trip-archived'))
+    })
+
+    it('pressing Escape closes the delete confirmation dialog', async () => {
+      const user = userEvent.setup()
+
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+
+      renderScreen()
+
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getByText('Old Desert Run')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('delete-trip-button'))
+      await waitFor(() => expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument())
+
+      await user.keyboard('{Escape}')
+
+      await waitFor(() => expect(screen.queryByTestId('delete-confirm-dialog')).not.toBeInTheDocument())
+    })
+
+    it('archiving the currently active trip closes the builder', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue({ ...SAMPLE_TRIP, status: 'archived' })
+      mockUseTripStatusMutation.mockReturnValue({
+        mutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      mockUseTripQuery.mockReturnValue({
+        ...DEFAULT_TRIP_QUERY_RESULT,
+        data: SAMPLE_TRIP,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      renderScreen('/trips?tripId=trip-123')
+
+      // Verify trip is active
+      await waitFor(() => expect(screen.getByTestId('location-search')).toHaveTextContent('?tripId=trip-123'))
+
+      await user.click(screen.getByTestId('archive-trip-button'))
+
+      await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ tripId: 'trip-123', status: 'archived' }))
+      await waitFor(() => expect(screen.getByTestId('location-search')).toHaveTextContent(''))
+    })
+
+    it('deleting the currently active trip closes the builder', async () => {
+      const deleteMutateAsync = vi.fn().mockResolvedValue(undefined)
+      mockUseDeleteTripMutation.mockReturnValue({
+        mutateAsync: deleteMutateAsync,
+        isPending: false,
+        error: null,
+      })
+      mockUseTripsQuery.mockImplementation((opts?: { includeArchived?: boolean }) => {
+        const includeArchived = opts?.includeArchived ?? false
+        return {
+          data: includeArchived ? [SAMPLE_TRIP, ARCHIVED_TRIP] : [SAMPLE_TRIP],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }
+      })
+      mockUseTripQuery.mockReturnValue({
+        ...DEFAULT_TRIP_QUERY_RESULT,
+        data: ARCHIVED_TRIP,
+        refetch: vi.fn(),
+      })
+
+      const user = userEvent.setup()
+      renderScreen('/trips?tripId=trip-archived')
+
+      // Verify trip is active
+      await waitFor(() => expect(screen.getByTestId('location-search')).toHaveTextContent('?tripId=trip-archived'))
+
+      // Show archived, then delete
+      await user.click(screen.getByTestId('archive-filter-toggle'))
+      await waitFor(() => expect(screen.getAllByText('Old Desert Run').length).toBeGreaterThanOrEqual(1))
+
+      await user.click(screen.getByTestId('delete-trip-button'))
+      await waitFor(() => expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument())
+
+      await user.click(screen.getByTestId('delete-confirm-button'))
+
+      await waitFor(() => expect(deleteMutateAsync).toHaveBeenCalledWith('trip-archived'))
+      await waitFor(() => expect(screen.getByTestId('location-search')).toHaveTextContent(''))
+    })
   })
 })
