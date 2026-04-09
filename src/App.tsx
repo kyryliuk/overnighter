@@ -38,6 +38,7 @@ const RoutePlanningScreen = lazy(() => import('@/features/route-planning/RoutePl
 const SharedTripPlanScreen = lazy(() => import('@/features/route-planning/SharedTripPlanScreen'))
 const PremiumWelcomeScreen = lazy(() => import('@/features/subscription/PremiumWelcomeScreen'))
 const AdminDashboard = lazy(() => import('@/features/admin/AdminDashboard'))
+const FaucetCheckerPage = lazy(() => import('@/features/faucet-checker/FaucetCheckerPage'))
 
 export default function App() {
   useDeviceId() // Initialize anonymous device ID on first app load (Story 4.1)
@@ -88,6 +89,7 @@ export default function App() {
                 )}
               />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/faucet-checker" element={<FaucetCheckerPage />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
