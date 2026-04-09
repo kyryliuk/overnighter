@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+_bmad
+_bmad-output
+playwright-report
+test-results

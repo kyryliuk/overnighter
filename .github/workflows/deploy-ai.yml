@@ -1,0 +1,260 @@
+name: Deploy AI Infrastructure
+
+# Triggers on changes to IaC, ML code, or the inference API handler.
+# Also supports manual dispatch for dry-run (diff) or full deploy.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+      - 'ml/**'
+      - 'api/faucet-classify.ts'
+      - '.github/workflows/deploy-ai.yml'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'CDK action to perform'
+        required: false
+        default: 'diff'
+        type: choice
+        options:
+          - diff
+          - deploy
+
+# OIDC token required for keyless AWS authentication via IAM role assumption.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: overnighter-inference
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 1: Synthesize CDK templates to catch IaC errors without touching AWS.
+  # Required secrets: AWS_ACCOUNT_ID
+  # ─────────────────────────────────────────────────────────────────────────
+  validate-infra:
+    name: Validate CDK infrastructure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+
+      - name: Install infra dependencies
+        working-directory: infra
+        run: npm ci
+
+      - name: Compile TypeScript
+        working-directory: infra
+        run: npm run build
+
+      - name: Synthesize CDK stacks (no AWS calls)
+        working-directory: infra
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: us-east-1
+        run: npx cdk synth
+
+      - name: Upload CDK synth output
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-synth-output
+          path: infra/cdk.out
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: Build and push the inference Docker image to ECR.
+  # Only runs on push to main (not on manual workflow_dispatch diff runs).
+  # Required secrets: AWS_ROLE_ARN, AWS_ACCOUNT_ID
+  # ─────────────────────────────────────────────────────────────────────────
+  build-push-docker:
+    name: Build and push Docker image to ECR
+    runs-on: ubuntu-latest
+    needs: validate-infra
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    outputs:
+      image-uri: ${{ steps.image-meta.outputs.image-uri }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image metadata
+        id: image-meta
+        run: |
+          ECR_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${{ github.sha }}"
+          echo "image-uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
+          echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t "${{ steps.image-meta.outputs.registry }}/${ECR_REPOSITORY}:${{ github.sha }}" \
+            -t "${{ steps.image-meta.outputs.registry }}/${ECR_REPOSITORY}:latest" \
+            .
+
+      - name: Push Docker image (SHA and latest tags)
+        run: |
+          docker push "${{ steps.image-meta.outputs.registry }}/${ECR_REPOSITORY}:${{ github.sha }}"
+          docker push "${{ steps.image-meta.outputs.registry }}/${ECR_REPOSITORY}:latest"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 3: Deploy CDK stacks to AWS.
+  # Runs on push-to-main or when workflow_dispatch action == 'deploy'.
+  # Required secrets: AWS_ROLE_ARN, AWS_ACCOUNT_ID
+  # ─────────────────────────────────────────────────────────────────────────
+  cdk-deploy:
+    name: CDK deploy
+    runs-on: ubuntu-latest
+    needs: build-push-docker
+    if: github.event_name == 'push' || github.event.inputs.action == 'deploy'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Download CDK synth output
+        uses: actions/download-artifact@v4
+        with:
+          name: cdk-synth-output
+          path: infra/cdk.out
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+
+      - name: Install infra dependencies
+        working-directory: infra
+        run: npm ci
+
+      - name: Deploy CDK stacks
+        working-directory: infra
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: us-east-1
+        run: npx cdk deploy --require-approval never --outputs-file cdk-outputs.json
+
+      - name: Upload CDK outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs
+          path: infra/cdk-outputs.json
+          retention-days: 7
+
+      - name: Post CDK outputs to step summary
+        run: |
+          echo "## CDK Deploy Outputs" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat infra/cdk-outputs.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 4: Smoke-test the deployed API to confirm the classify endpoint works.
+  # Required secrets: AWS_ROLE_ARN
+  # ─────────────────────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke test classify endpoint
+    runs-on: ubuntu-latest
+    needs: cdk-deploy
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Download CDK outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: cdk-outputs
+          path: .
+
+      - name: Read API URL from CDK outputs
+        id: read-url
+        run: |
+          # Extract the first URL value found in cdk-outputs.json
+          API_URL=$(jq -r '.. | strings | select(startswith("https://"))' cdk-outputs.json | head -1)
+          echo "api-url=${API_URL}" >> "$GITHUB_OUTPUT"
+          echo "API URL: ${API_URL}"
+
+      - name: Run classify smoke test
+        id: smoke
+        run: |
+          RESPONSE=$(curl -sf -X POST "${{ steps.read-url.outputs.api-url }}/classify" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"test transaction smoke","amount":1.00}')
+          echo "response=${RESPONSE}" >> "$GITHUB_OUTPUT"
+          echo "Raw response: ${RESPONSE}"
+
+          # Assert the response contains a 'label' field
+          if echo "${RESPONSE}" | jq -e '.label' > /dev/null 2>&1; then
+            echo "✅ Smoke test passed — 'label' field present"
+            echo "status=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "❌ Smoke test failed — 'label' field missing"
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Comment smoke test result on commit
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ steps.smoke.outputs.status }}';
+            const icon   = status === 'passed' ? '✅' : '❌';
+            const body   = [
+              `## ${icon} Smoke Test — \`/classify\``,
+              '',
+              `**Status:** ${status}`,
+              `**Endpoint:** ${{ steps.read-url.outputs.api-url }}/classify`,
+              `**Commit:** ${{ github.sha }}`,
+              '',
+              '```json',
+              `${{ steps.smoke.outputs.response }}`,
+              '```',
+            ].join('\n');
+
+            await github.rest.repos.createCommitComment({
+              owner:      context.repo.owner,
+              repo:       context.repo.repo,
+              commit_sha: context.sha,
+              body,
+            });
