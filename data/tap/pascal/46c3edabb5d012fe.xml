@@ -1,0 +1,26 @@
+<annotation>
+  <folder>images</folder>
+  <filename>46c3edabb5d012fe.jpg</filename>
+  <path>C:\Users\kyryl\OneDrive\Desktop\Learning\bmad-analisys\overnighter\data\tap\images\46c3edabb5d012fe.jpg</path>
+  <source>
+    <database>OpenImages</database>
+  </source>
+  <size>
+    <width>4608</width>
+    <height>3456</height>
+    <depth>3</depth>
+  </size>
+  <segmented>0</segmented>
+  <object>
+    <name>tap</name>
+    <pose>Unspecified</pose>
+    <truncated>0</truncated>
+    <difficult>0</difficult>
+    <bndbox>
+      <xmin>840</xmin>
+      <xmax>1327</xmax>
+      <ymin>904</ymin>
+      <ymax>1604</ymax>
+    </bndbox>
+  </object>
+</annotation>
