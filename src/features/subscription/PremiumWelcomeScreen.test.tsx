@@ -89,7 +89,7 @@ describe('PremiumWelcomeScreen', () => {
 
     expect(screen.getByTestId('premium-welcome-confirmed')).toBeInTheDocument()
     expect(screen.getByText("You're now an Overnighter Premium member")).toBeInTheDocument()
-    expect(screen.getByText('Start Exploring')).toBeInTheDocument()
+    expect(screen.getByText('Start exploring')).toBeInTheDocument()
   })
 
   it('shows confirmed state for trialing users', async () => {
@@ -215,8 +215,8 @@ describe('PremiumWelcomeScreen', () => {
       expect(screen.getByTestId('premium-welcome-pending')).toBeInTheDocument()
     }, { timeout: 15000 })
 
-    expect(screen.getByText('Payment Processing')).toBeInTheDocument()
-    expect(screen.getByText('Back to Map')).toBeInTheDocument()
+    expect(screen.getByText('Payment processing')).toBeInTheDocument()
+    expect(screen.getByText('Back to map')).toBeInTheDocument()
   })
 
   it('navigates to returnTo from pending state', async () => {
@@ -238,7 +238,7 @@ describe('PremiumWelcomeScreen', () => {
       expect(screen.getByTestId('premium-welcome-pending')).toBeInTheDocument()
     }, { timeout: 15000 })
 
-    await user.click(screen.getByText('Back to Map'))
+    await user.click(screen.getByText('Back to map'))
     expect(mockNavigate).toHaveBeenCalledWith('/trips')
   })
 

@@ -111,7 +111,7 @@ export default function SearchBar({ mapRef, onExpandedChange }: SearchBarProps) 
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Escape') handleClose() }}
             placeholder="Search destination..."
-            className="w-full bg-surface border border-border rounded-full px-4 py-2 pr-10 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
+            className="w-full bg-secondary border border-border rounded-full px-4 py-2 pr-10 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
             aria-label="Search destination"
             aria-autocomplete="list"
             aria-controls="search-results"
@@ -134,14 +134,14 @@ export default function SearchBar({ mapRef, onExpandedChange }: SearchBarProps) 
         <ul
           id="search-results"
           role="listbox"
-          className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-lg overflow-hidden z-20 shadow-lg"
+          className="absolute top-full left-0 right-0 mt-1 bg-secondary border border-border rounded-lg overflow-hidden z-20 shadow-lg"
         >
           {results.map((result, idx) => (
             <li key={`${result.lat}-${result.lon}-${idx}`} role="option">
               <button
                 type="button"
                 onClick={() => selectResult(result)}
-                className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-surface-raised min-h-[44px]"
+                className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-secondary-raised min-h-[44px]"
               >
                 {result.display_name}
               </button>

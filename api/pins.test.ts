@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mock setup ──────────────────────────────────────────────────────────────
 
-const { mockRpc, mockFrom, mockEq, mockSelect } = vi.hoisted(() => {
+const { mockRpc, mockFrom, mockSelect } = vi.hoisted(() => {
   const mockEq = vi.fn()
   const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
   const mockFrom = vi.fn().mockReturnValue({ select: mockSelect })

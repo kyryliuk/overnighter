@@ -196,7 +196,7 @@ export default function AccountScreen() {
           )}
 
           {statusMessage && (
-            <p role="status" className="rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2 text-sm text-green-300">
+            <p role="status" className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm text-sky-400">
               {statusMessage}
             </p>
           )}
@@ -341,7 +341,7 @@ export default function AccountScreen() {
                       }
                     }}
                     disabled={isPushLoading}
-                    className="min-h-[44px] rounded-lg border border-border bg-background px-4 text-sm text-amber-300"
+                    className="min-h-[44px] rounded-lg border border-border bg-background px-4 text-sm text-muted-foreground"
                   >
                     {isPushLoading ? 'Disabling...' : 'Disable notifications'}
                   </button>

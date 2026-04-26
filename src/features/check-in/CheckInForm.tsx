@@ -147,7 +147,7 @@ export default function CheckInForm({ pinId, onClose }: CheckInFormProps) {
           />
 
           {!isOnline && (
-            <p role="status" className="text-sm text-amber-400 text-center mb-4">
+            <p role="status" className="text-sm text-muted-foreground text-center mb-4">
               Offline — your check-in will be saved and submitted when you reconnect.
             </p>
           )}
