@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Phase 2 story keys are prefixed with 'p2-' to avoid collisions with Phase 1 story files
 
-generated: 2026-03-31
+generated: 2026-04-26
 project: Overnighter
 project_key: NOKEY
 tracking_system: file-system
@@ -180,7 +180,7 @@ development_status:
   p3-5-1-backfill-legacy-trip-plans: done
   p3-5-2-dual-read-cutover-and-plan-route-redirect: done
   p3-5-3-shared-trip-compatibility-and-premium-import: done
-  p3-epic-5-retrospective: optional
+  p3-epic-5-retrospective: done
 
   # ══════════════════════════════════════════════════════════════════
   # EPIC 6 — WATER TAP DISCOVERY & ML PIPELINE
