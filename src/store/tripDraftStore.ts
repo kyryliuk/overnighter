@@ -60,23 +60,24 @@ export const useTripDraftStore = create<TripDraftStore>()(
       setActiveTripId: (tripId) => set({ activeTripId: tripId }),
 
       upsertDraft: (tripId, partial) =>
-        set((state) => ({
-          draftsById: {
-            ...state.draftsById,
-            [tripId]: {
-              tripId,
-              title: '',
-              notes: '',
-              origin: null,
-              destination: null,
-              stops: [],
-              lastSyncedRevision: null,
-              lastSyncedAt: null,
-              ...state.draftsById[tripId],
-              ...partial,
+        set((state) => {
+          const defaults: TripDraft = {
+            tripId,
+            title: '',
+            notes: '',
+            origin: null,
+            destination: null,
+            stops: [],
+            lastSyncedRevision: null,
+            lastSyncedAt: null,
+          }
+          return {
+            draftsById: {
+              ...state.draftsById,
+              [tripId]: { ...defaults, ...state.draftsById[tripId], ...partial },
             },
-          },
-        })),
+          }
+        }),
 
       hydrateDraftFromServer: (trip) => {
         if (get().dirtyTripIds.includes(trip.id)) return
