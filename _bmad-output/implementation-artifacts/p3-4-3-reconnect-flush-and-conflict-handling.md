@@ -230,3 +230,4 @@ All 5 tasks completed. 1484/1484 tests passing. Key implementation decisions:
 | Date | Change | Author |
 |------|--------|--------|
 | 2026-04-02 | Implemented all tasks; 1484 tests passing | Amelia (dev agent) |
+| 2026-04-26 | Code review fixes: swapped markClean before hydrateDraftFromServer (HIGH-1: was causing false conflict detection); read draftsById live from store in processMutation instead of stale closure (MEDIUM-3); added FIFO order test and lastSyncedRevision hydration test (MEDIUM-2) | Quinn (code review) |

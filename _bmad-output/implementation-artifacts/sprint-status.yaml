@@ -172,7 +172,7 @@ development_status:
   p3-epic-4: in-progress
   p3-4-1-local-draft-store-and-pending-mutation-queue: done
   p3-4-2-offline-editing-and-sync-status-ux: done
-  p3-4-3-reconnect-flush-and-conflict-handling: review
+  p3-4-3-reconnect-flush-and-conflict-handling: done
   p3-epic-4-retrospective: optional
 
   # ── Phase 3 Epic 5: Legacy Migration & Sharing Compatibility ──────────────

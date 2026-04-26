@@ -334,6 +334,73 @@ describe('useOfflineTripQueue', () => {
     expect(mockUpdateTrip).not.toHaveBeenCalled()
   })
 
+  it('flushes mutations in FIFO order (first appended is first sent)', async () => {
+    const TRIP_ID_A = 'trip-fifo-a'
+    const TRIP_ID_B = 'trip-fifo-b'
+    appendPendingTripMutation({
+      id: 'mut-a',
+      kind: 'update',
+      tripId: TRIP_ID_A,
+      payload: { title: 'A' },
+      queuedAt: '2026-04-02T10:00:00Z',
+    })
+    appendPendingTripMutation({
+      id: 'mut-b',
+      kind: 'update',
+      tripId: TRIP_ID_B,
+      payload: { title: 'B' },
+      queuedAt: '2026-04-02T10:00:01Z',
+    })
+    useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID_A, TRIP_ID_B] })
+
+    const callOrder: string[] = []
+    mockUpdateTrip.mockImplementation((_, tripId: string) => {
+      callOrder.push(tripId)
+      return Promise.resolve({ ...BASE_TRIP, id: tripId, revision: 2 })
+    })
+
+    mockIsOnline = true
+    renderHook(() => useOfflineTripQueue(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    await waitFor(() => expect(mockUpdateTrip).toHaveBeenCalledTimes(2))
+    expect(callOrder).toEqual([TRIP_ID_A, TRIP_ID_B])
+  })
+
+  it('hydrateDraftFromServer updates lastSyncedRevision after successful flush', async () => {
+    appendPendingTripMutation(UPDATE_MUTATION)
+    useTripDraftStore.setState({
+      dirtyTripIds: [TRIP_ID],
+      draftsById: {
+        [TRIP_ID]: {
+          tripId: TRIP_ID,
+          title: 'Local changes',
+          notes: '',
+          origin: null,
+          destination: BASE_TRIP.destination,
+          stops: [],
+          lastSyncedRevision: 1,
+          lastSyncedAt: '2026-04-01T10:00:00Z',
+        },
+      },
+    })
+    const updatedTrip = { ...BASE_TRIP, revision: 2, updatedAt: '2026-04-02T11:00:00Z' }
+    mockUpdateTrip.mockResolvedValue(updatedTrip)
+
+    mockIsOnline = true
+    renderHook(() => useOfflineTripQueue(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    await waitFor(() => expect(mockUpdateTrip).toHaveBeenCalledTimes(1))
+    await waitFor(() => {
+      const draft = useTripDraftStore.getState().draftsById[TRIP_ID]
+      return expect(draft?.lastSyncedRevision).toBe(2)
+    })
+    expect(useTripDraftStore.getState().dirtyTripIds).not.toContain(TRIP_ID)
+  })
+
   it('exposes triggerFlush that can be called manually', async () => {
     appendPendingTripMutation(UPDATE_MUTATION)
     useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID] })
