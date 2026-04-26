@@ -125,7 +125,7 @@ export default function PWAInstallPrompt() {
             <button
               type="button"
               onClick={handleInstall}
-              className="flex-1 min-h-11 min-w-11 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-900"
+              className="flex-1 min-h-11 min-w-11 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white"
             >
               Add to Home Screen
             </button>

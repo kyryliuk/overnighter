@@ -70,7 +70,7 @@ export function BboxPreviewOverlay({
           type="button"
           onClick={onConfirm}
           disabled={overCap}
-          className="flex-1 bg-blue-500 text-white rounded-lg min-h-11 min-w-11 font-medium disabled:opacity-50"
+          className="flex-1 bg-sky-500 text-white rounded-lg min-h-11 min-w-11 font-medium disabled:opacity-50"
           data-testid="bbox-confirm"
         >
           Download

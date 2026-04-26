@@ -13,10 +13,10 @@ describe('CachedSpotBadge', () => {
     expect(screen.getByTestId('cached-spot-badge')).toBeInTheDocument()
   })
 
-  it('applies blue-500 background styling', () => {
+  it('applies sky-500 background styling', () => {
     render(<CachedSpotBadge />)
     const badge = screen.getByTestId('cached-spot-badge')
-    expect(badge.className).toContain('bg-blue-500')
+    expect(badge.className).toContain('bg-sky-500')
     expect(badge.className).toContain('text-white')
   })
 

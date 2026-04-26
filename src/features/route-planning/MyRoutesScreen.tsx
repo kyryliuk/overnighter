@@ -133,7 +133,7 @@ function StatusBadge({ status }: { status: Trip['status'] }) {
   const label = status === 'archived' ? 'Archived' : 'Draft'
   const classes =
     status === 'archived'
-      ? 'bg-zinc-700/60 text-zinc-300'
+      ? 'bg-secondary border border-border text-muted-foreground'
       : 'bg-sky-500/15 text-sky-300'
 
   return (
@@ -204,7 +204,7 @@ function TripListItem({
               data-testid="archive-trip-button"
               onClick={() => onArchive(trip.id)}
               disabled={isArchiving}
-              className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium transition hover:border-amber-400 disabled:opacity-50"
+              className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium transition hover:border-sky-500 disabled:opacity-50"
             >
               {isArchiving ? 'Archiving…' : 'Archive'}
             </button>
@@ -466,9 +466,9 @@ function MyRoutesContent() {
           className="space-y-3 rounded-2xl border border-border bg-secondary p-5"
           data-testid="my-routes-loading"
         >
-          <div className="h-5 w-32 animate-pulse rounded bg-zinc-700" />
-          <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-700" />
-          <div className="h-24 animate-pulse rounded-2xl bg-zinc-800/70" />
+          <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded-2xl bg-muted/70" />
         </div>
       </PlannerShell>
     )
@@ -490,7 +490,7 @@ function MyRoutesContent() {
             <button
               type="button"
               onClick={() => tripsQuery.refetch()}
-              className="min-h-[44px] rounded-lg bg-white px-4 text-sm font-medium text-zinc-900"
+              className="min-h-[44px] rounded-lg bg-sky-500 px-4 text-sm font-medium text-white"
             >
               Try again
             </button>

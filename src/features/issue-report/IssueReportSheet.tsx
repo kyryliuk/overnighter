@@ -103,7 +103,7 @@ export default function IssueReportSheet({ pinId, onClose }: IssueReportSheetPro
           />
 
           {!isOnline && (
-            <p role="status" className="text-sm text-amber-400 text-center mb-4">
+            <p role="status" className="text-sm text-muted-foreground text-center mb-4">
               Offline mode: reports require a connection.
             </p>
           )}

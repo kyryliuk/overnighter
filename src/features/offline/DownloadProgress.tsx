@@ -34,7 +34,7 @@ export function DownloadProgress({
         <button
           type="button"
           onClick={onRetry}
-          className="text-sm text-blue-500 font-medium min-h-11 min-w-11"
+          className="text-sm text-sky-500 font-medium min-h-11 min-w-11"
         >
           Retry
         </button>
@@ -71,7 +71,7 @@ export function DownloadProgress({
         aria-valuemax={100}
       >
         <div
-          className="h-full bg-blue-500 rounded-full transition-all"
+          className="h-full bg-sky-500 rounded-full transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
