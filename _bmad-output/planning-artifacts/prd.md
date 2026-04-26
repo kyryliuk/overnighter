@@ -1,16 +1,26 @@
 ---
-stepsCompleted: ['step-01b-continue.md', 'step-02-discovery.md', 'step-02b-vision.md', 'step-02c-executive-summary.md', 'step-03-success.md', 'step-04-journeys.md', 'step-05-domain.md', 'step-06-innovation.md', 'step-07-project-type.md', 'step-08-scoping.md', 'step-09-functional.md', 'step-10-nonfunctional.md', 'step-11-polish.md', 'step-12-complete.md']
+stepsCompleted: ['step-01b-continue.md', 'step-02-discovery.md', 'step-02b-vision.md', 'step-02c-executive-summary.md', 'step-03-success.md', 'step-04-journeys.md', 'step-05-domain.md', 'step-06-innovation.md', 'step-07-project-type.md', 'step-08-scoping.md', 'step-09-functional.md', 'step-10-nonfunctional.md', 'step-11-polish.md', 'step-12-complete.md', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
 workflow_completed: true
 lastStep: 12
 inputDocuments:
   - 'product-brief-bmad-analisys-2026-03-17.md'
   - 'market-rv-travel-companion-app-research-2026-03-17.md'
   - 'brainstorming-session-2026-03-15-0600.md'
+  - 'brainstorming-session-2026-04-25-1000.md'
 workflowType: 'prd'
+classification:
+  domain: general
+  projectType: web_app
+  complexity: medium
+date: '2026-03-17'
+lastEdited: '2026-04-26'
+editHistory:
+  - date: '2026-04-26'
+    changes: 'Scope pivot — elevated water tap discovery to primary product focus; added ML-powered faucet detection pipeline, FL Keys corridor pilot, Journey 6; applied validation fixes (FR32, FR20, FR24, FR37, FR28, NFR-SC4)'
 documentCounts:
   briefCount: 1
   researchCount: 1
-  brainstormingCount: 1
+  brainstormingCount: 2
   projectDocsCount: 0
 ---
 
@@ -23,13 +33,15 @@ documentCounts:
 
 **Overnighter** is a rig-aware RV travel utility — a mobile-first web app that answers the one question every full-time and budget-focused RVer asks every travel day: *"Where am I stopping tonight, and where do I dump and fill water?"* It replaces the 30–60-minute, 4–5-app daily planning ritual with a single map that already knows your rig's length, height, and class, shows only what actually fits you, and leads with a freshness signal — not buried reviews — as the primary trust mechanism.
 
-The core users are full-time RVers (Marcus, Class A, 35ft — living this problem daily), boondockers (Sarah, Sprinter van — planning dump/water transitions from BLM stays), and new full-timers (Jamie — drowning in fragmented app recommendations). The product serves a US market of ~1 million full-time RVers within an 8.1M household RV owner base, piloting in the Florida corridor before expanding nationally.
+The primary launch mission is solving the most dangerous gap in the existing data landscape: **publicly accessible water taps**. In remote corridors like the Florida Keys (Homestead → Key West), finding a working outdoor faucet at a gas station, campground, or rest stop can mean the difference between a safe travel day and an emergency. No existing app, database, or API has comprehensive ground-truth coverage of these taps. Overnighter builds it from scratch using a custom-trained ML faucet classifier that scans street-level imagery to discover taps that no one has ever recorded in any database.
 
-The product is greenfield, bootstrapped, and founder-authentic — built by a full-timer living the exact problem it solves.
+The core users are full-time RVers (Marcus, Class A, 35ft — living this problem daily), boondockers (Sarah, Sprinter van — planning dump/water transitions from BLM stays), new full-timers (Jamie — drowning in fragmented app recommendations), and Keys corridor travelers (Alex — solo overlander who has run dry on US-1 with no reliable source). The product serves a US market of ~1 million full-time RVers within an 8.1M household RV owner base, piloting in the Florida Keys corridor before expanding to other high-need desert and remote corridors nationally.
+
+The product is greenfield, bootstrapped, and founder-authentic — built by a full-timer who has personally experienced the water scarcity problem in the Florida Keys.
 
 ### What Makes This Special
 
-Three capabilities no single US competitor has simultaneously:
+Four capabilities no single US competitor has simultaneously:
 
 1. **Rig-aware at the data layer** — every pin pre-filtered against the saved rig profile (height, length, class) before it renders. Not a UI filter bolt-on. Spots that don't fit are greyed out, not hidden. No US competitor does this.
 
@@ -37,9 +49,11 @@ Three capabilities no single US competitor has simultaneously:
 
 3. **Multi-source aggregation on one map** — BLM/USFS/NPS public APIs + OpenStreetMap Overpass + community-seeded spots, showing overnight parking, dump stations, water fills, fuel, and propane in a single unified view. The user is no longer the integration layer.
 
-The market proof: park4night executed this model in Europe, reaching €2M revenue bootstrapped without US presence. The US market is unserved. iOverlander shut down in 2025, creating an active gap. The founder is the only person who can build this with authentic authority.
+4. **ML-powered water tap discovery** — a custom-trained faucet classifier (trained on field-collected photos from the Florida Keys corridor) automatically scans street-level imagery from Mapillary and Google Places Photos to detect publicly accessible outdoor water taps at gas stations, campgrounds, and restaurants. Pins are created from ML ground truth, not from crowd-sourced reports. No US competitor applies machine learning to discover amenities rather than display them.
 
-**Classification:** Web App (mobile-first PWA/SPA) · Consumer Travel & Outdoor Utilities · Medium complexity · Greenfield
+The market proof: park4night executed this model in Europe, reaching €2M revenue bootstrapped without US presence. The US market is unserved. iOverlander shut down in 2025, creating an active gap. The founder is the only person who can build this with authentic authority and personal Keys corridor ground truth.
+
+**Classification:** Web App (mobile-first PWA/SPA) · Consumer Travel & Outdoor Utilities · Medium complexity · Greenfield · ML-assisted data pipeline
 
 ## Success Criteria
 
@@ -98,6 +112,16 @@ Success is behavioral replacement — a user has succeeded when they stop openin
 | Uptime (MVP) | >99% during active hours (6am–10pm) | RVers plan in the morning before driving |
 | Check-in write success rate | >99.5% | Lost check-ins directly degrade the data flywheel |
 
+### Water Tap Discovery Success
+
+| Metric | Target | What It Measures |
+|---|---|---|
+| Confirmed water tap pins in Homestead→Marathon corridor | ≥30 pins within 60 days of launch | Sufficient coverage for Keys corridor travelers |
+| ML faucet detection precision on FL Keys ground truth | ≥80% | Model quality before auto-pinning |
+| Water tap filter usage rate | ≥40% of active users use water tap filter at least once per trip | Feature adoption and utility |
+| User tap photo submission rate | ≥10% of active users submit ≥1 tap photo per month | Community validation loop activating |
+| Stale tap pin rate | <10% of water tap pins unverified for >90 days | Data freshness maintained via community decay prompts |
+
 ### MVP Validation Gates
 
 The MVP is validated when ALL five gates pass:
@@ -112,15 +136,17 @@ Gates 1–3 failing → fix product before marketing. Gates 4–5 failing → fi
 
 ## Product Scope
 
-**MVP philosophy:** Problem-solving MVP — the minimum that eliminates the 30–60-minute daily research pain for Marcus. Pure utility. No platform features, no paywall, no social layer at launch.
+**MVP philosophy:** Problem-solving MVP — the minimum that eliminates the 30–60-minute daily research pain for Marcus AND solves the water tap desert problem in the Florida Keys corridor. Pure utility. No platform features, no paywall, no social layer at launch.
 
-**MVP rule:** If Marcus can plan his next stop without it, it waits.
+**MVP rule:** If Marcus can plan his next stop without it, it waits. If a Keys traveler could run dry without it, it ships.
 
 **Resource constraint:** Solo founder (Kyryl). No admin UI at MVP — founder uses direct database access for data quality operations.
 
+**Geographic focus:** Homestead → Marathon corridor (US-1, Mile Markers 0–50) as primary pilot. Highest personal pain point, highest validation value, personally verifiable ground truth.
+
 ### MVP — Must-Have Capabilities
 
-**Core journeys supported:** Marcus J1 (daily planning), Marcus J2 (spot failure recovery), Sarah J3 (BLM transition planning), Jamie J4 (first travel day).
+**Core journeys supported:** Marcus J1 (daily planning), Marcus J2 (spot failure recovery), Sarah J3 (BLM transition planning), Jamie J4 (first travel day), Alex J6 (Keys corridor water tap planning).
 
 | # | Capability | MVP Rationale |
 |---|---|---|
@@ -134,6 +160,9 @@ Gates 1–3 failing → fix product before marketing. Gates 4–5 failing → fi
 | 8 | Departure check-in (3-tap: open/closed/changed) | Community flywheel starts day one |
 | 9 | In-spot issue reporting + immediate badge degradation | Edge case recovery (Marcus J2) |
 | 10 | Basic search (address + "Near me" GPS) | Can't use the map without finding locations |
+| 11 | Water tap ML batch discovery pipeline (Overpass enumeration → image sourcing → faucet classifier → PostGIS pins) | Primary water tap data source; no existing database covers Keys corridor |
+| 12 | User water tap photo submission + ML re-validation | Community-sourced tap discovery supplements ML batch scans |
+| 13 | Water tap pin detail (confidence score, source, access type, seasonal notes, Mile Marker) | Keys-specific metadata enables informed go/no-go decisions |
 
 ### Explicitly Deferred
 
@@ -143,23 +172,28 @@ Gates 1–3 failing → fix product before marketing. Gates 4–5 failing → fi
 | User accounts / auth | localStorage sufficient; auth adds complexity |
 | Offline map tiles | Service worker complexity; Phase 2 premium feature |
 | Trip route planning | Multi-stop builder is Phase 2 |
-| Photo uploads | Storage cost + moderation; Phase 2 |
+| Photo uploads (general) | Storage cost + moderation; Phase 2 (water tap photo submission is MVP exception) |
 | Social features | Community is check-ins only; social is Phase 3 |
 | Native iOS/Android apps | Validate demand on web first |
 | Push notifications | No push without native app |
 | Cell signal data | Not core to stop-planning use case for MVP |
+| Real-time ML inference API | Batch-only in v1; real-time endpoint is Phase 2 after batch proven |
+| Multi-state tap discovery expansion | Florida Keys pilot must validate model accuracy first; Phase 2 |
+| Multi-amenity ML detection (air pumps, showers, dump) | Same pipeline, different model; Phase 3 after water tap pipeline matures |
 
 ### Phase 2 — Growth (Months 3–6, after MVP gates pass)
 
 - User accounts + cloud sync (rig profile, saved spots, check-in history)
 - Premium subscription tier ($19.99/year, 30-day free trial)
 - Offline map tile caching (PWA service worker)
-- Route corridor planning (multi-stop)
+- Route corridor planning (multi-stop) with water tap density overlay
 - Push notifications for saved spot status changes
 - Photo uploads on check-ins
 - Crowd-sourced new spot submissions + moderation
 - Basic admin UI (pin flag queue, badge override, archive)
-- US geographic expansion beyond Florida pilot
+- Real-time ML inference API endpoint for user photo submissions
+- Water tap discovery expansion to full Florida state + high-need desert corridors (Arizona, Nevada, West Texas) — prioritized by water stress ranking
+- Automated confidence decay: tap pins older than 6 months trigger nearby-user re-verification prompts
 
 ### Phase 3 — Vision (Year 2+)
 
@@ -280,6 +314,24 @@ Gates 1–3 failing → fix product before marketing. Gates 4–5 failing → fi
 
 ---
 
+### Journey 6: Alex — The Keys Corridor Traveler, Water Planning
+
+*Where we meet them:* Alex is driving a camper van southbound on US-1, leaving Homestead for the first time. They have a 5-gallon water jug, currently at half-full. The Florida Keys stretch ahead — 113 miles of two-lane highway with no towns, no grocery stores, and no reliable information about where outdoor faucets exist. A Facebook group post from 3 weeks ago says "the Marathon rest stop has a tap" but Alex doesn't know if it's still working.
+
+*The old reality:* No app has this data. iOverlander is gone. Google Maps shows "water" at some marinas but they're locked. The only option is stopping at every gas station and walking around the building hoping to find a spigot. Alex budgets an extra hour and just hopes.
+
+*With Overnighter:*
+1. Opens the app. Taps the 💧 Water filter. The map shows 8 confirmed water tap pins between Homestead and Marathon — gas stations at MM 6 and MM 18, a campground at MM 31, and five others, each with a green or yellow badge.
+2. Taps the MM 18 pin: Shell station, outdoor spigot on the south wall, confirmed 4 days ago, free, year-round access, Mile Marker 18.2. Photo of the actual faucet visible in the pin detail.
+3. Plans a fill-up stop at MM 18 and a backup at MM 31. Closes the app in 4 minutes.
+4. Arrives at MM 18. Tap is exactly where the photo shows. Fills up. Submits a check-in: "Still open, works great." Badge stays green for the next traveler.
+
+*Resolution:* Alex drives the rest of the Keys with confidence. No emergency, no wasted stops, no anxiety. They tell their van life group: "Overnighter has actual faucet locations in the Keys."
+
+**Capabilities revealed:** Water tap filter chip, ML-sourced tap pins with confidence badge, tap photo in pin detail, Mile Marker field, seasonal access notes, user tap photo submission, departure check-in.
+
+---
+
 ### Journey Requirements Summary
 
 | Capability Area | Driven By |
@@ -287,7 +339,7 @@ Gates 1–3 failing → fix product before marketing. Gates 4–5 failing → fi
 | Rig profile setup + localStorage persistence | Marcus J1, Jamie J4 |
 | Pre-filtered map render (rig-aware) | Marcus J1, J2 |
 | Recency badge as dominant visual + three states | Marcus J1, J2, Sarah J3 |
-| Multi-amenity filter chips (scrollable, multi-select) | Sarah J3, Marcus J2 |
+| Multi-amenity filter chips (scrollable, multi-select) | Sarah J3, Marcus J2, Alex J6 |
 | Pin detail view (amenities, fee, restrictions, badge) | Marcus J1, Sarah J3 |
 | One-tap directions | Marcus J1 |
 | Departure-triggered check-in (3-tap) | Marcus J1, Sarah J3 |
@@ -295,6 +347,8 @@ Gates 1–3 failing → fix product before marketing. Gates 4–5 failing → fi
 | Onboarding flow (first-time rig setup) | Jamie J4 |
 | Pin save/bookmark | Jamie J4 |
 | Admin: pin flag queue + badge override + archive | Admin J5 |
+| Water tap ML-sourced pins (confidence badge, photo, Mile Marker, seasonal notes) | Alex J6 |
+| User water tap photo submission + check-in | Alex J6 |
 
 ## Domain-Specific Requirements
 
@@ -317,10 +371,20 @@ Gates 1–3 failing → fix product before marketing. Gates 4–5 failing → fi
 | Integration | Purpose | Notes |
 |---|---|---|
 | Leaflet.js + CartoDB Dark Matter tiles | Map rendering | `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`; `tap: false` on iOS |
-| OpenStreetMap Overpass API | Fuel, dump, water point queries | Server-side proxy + caching required in production |
+| OpenStreetMap Overpass API | Fuel, dump, water point queries + location enumeration for ML pipeline | Server-side proxy + caching required in production |
 | BLM/USFS/NPS APIs | Public land boundaries, dispersed camping | 24-hour refresh cycle |
 | Browser Geolocation API | "Near me" GPS | Requires HTTPS + user permission |
 | Native maps handoff | One-tap directions | `maps://` (iOS), `geo://` (Android), web URL (desktop) |
+| Mapillary API | Street-level imagery for ML faucet detection pipeline | CC-BY-SA license; attribution required per Mapillary ToS; no bulk download — API calls per location only |
+| Google Places Photos API | Business photos for ML faucet detection when Mapillary coverage insufficient | Official commercial API; rate limits per Google Maps Platform terms; $0.007/photo at standard pricing; API key server-side only |
+| Faucet Classifier ML Model | Binary classification of outdoor water tap presence in photos | Custom-trained on field-collected Florida Keys photos; hosted on AWS Lambda (real-time) or AWS Batch (nightly scan); model weights are proprietary |
+
+### ML Pipeline Compliance
+
+- **Training data privacy** — photos used for model training must not contain identifiable faces or license plates; field-collected photos must be reviewed before inclusion in training set
+- **Mapillary attribution** — all map views using Mapillary-sourced tap discoveries must display Mapillary attribution per CC-BY-SA terms
+- **Google Places API commercial use** — photo fetching for ML inference is permitted under Google Maps Platform ToS; batch automated requests must respect per-second rate limits via server-side throttling
+- **Model ownership** — custom-trained faucet classifier weights are proprietary; model is not open-sourced at MVP
 
 ## Innovation & Novel Patterns
 
@@ -338,11 +402,15 @@ Community apps ask for reviews voluntarily. Overnighter ties the contribution pr
 **4. Multi-Source Aggregation as the Product**
 The product's value is not a new data source — it's a new lens over existing sources simultaneously (BLM/USFS/NPS + OpenStreetMap Overpass + community). The user was previously the integration layer. Overnighter makes the integration invisible.
 
+**5. ML-Powered Water Tap Discovery (Ground-Truth from Imagery)**
+The existing RV ecosystem relies entirely on crowd-sourced or manually entered amenity data. No competitor trains a machine learning model to proactively scan imagery and discover amenities that no one has reported. Overnighter's faucet classifier ingests street-level photos of gas stations, campgrounds, and restaurants, runs them through a custom-trained binary classifier, and auto-creates tap pins at confidence ≥0.75 — without any human having to first find and report the tap. The model was trained on field-collected photos from the Florida Keys corridor, giving it ground-truth accuracy for the exact pilot region. This is a data moat: the dataset grows with every scan and every user submission, making it progressively harder to replicate.
+
 ### Market Context
 
 - **park4night** (EU) executed the closest comparable model — community-verified spots, multi-amenity, recency signals — and reached €2M bootstrapped. US market is unserved.
 - **iOverlander** attempted the community data model with no rig awareness and a 97% lurker rate; shut down in 2025 — validating the gap and the need for a better contribution loop.
 - **The Dyrt** raised $11M VC and moved away from free camping — creating a premium-tier gap in the free/utility segment Overnighter addresses directly.
+- **No competitor** — including iOverlander, Campendium, AllStays, or park4night — has applied ML to discover amenities from imagery. The water tap discovery pipeline is uncontested.
 
 ### Innovation Validation
 
@@ -419,31 +487,31 @@ Overnighter is a **mobile-first SPA** built for on-the-road use on iOS Safari an
 - **FR17:** The system displays a freshness badge on every pin indicating how recently it was verified (green: <7 days, yellow: 8–30 days, red: 30+ days or never)
 - **FR18:** The system aggregates spot data from BLM/USFS/NPS public APIs, OpenStreetMap Overpass, and community-submitted check-ins
 - **FR19:** The system displays multi-amenity information on a single pin when a location offers multiple services (e.g., dump + water + overnight)
-- **FR20:** The system updates a pin's recency badge immediately when a community check-in is submitted
+- **FR20:** The system updates a pin's recency badge within 500ms of a community check-in submission (per NFR-P4)
 
 ### Pin Detail & Navigation
 
 - **FR21:** A user can tap a pin to view its detail: name, stop type, amenities, fee, rig restrictions, last verified date, and community notes
 - **FR22:** A user can initiate navigation to a spot with a single tap, handing off to the device's native maps application
 - **FR23:** A user can report an issue on a spot directly from the pin detail view
-- **FR24:** The system immediately degrades the recency badge to red when an issue report is submitted
+- **FR24:** The system degrades the recency badge to red within 500ms of an issue report submission (per NFR-P4)
 
 ### Community Check-In
 
 - **FR25:** The system prompts a user to submit a check-in when they depart a location they previously viewed or saved
 - **FR26:** A user can submit a check-in confirming a spot's status (Still open / Closed / Changed)
 - **FR27:** A user can add an optional text note to a check-in (e.g., updated fee, hours change)
-- **FR28:** The system records check-ins without requiring user account creation (device-fingerprinted for MVP)
+- **FR28:** The system records check-ins without requiring user account creation
 - **FR29:** The system uses check-in data to update the pin's recency badge and last-verified date
 
 ### Spot Saving
 
-- **FR30:** A user can save a spot pin for quick reference
+- **FR30:** A user can save a spot pin for later reference
 - **FR31:** A user can view their saved spots in a list
 
 ### Data Quality & Moderation
 
-- **FR32:** The system flags a pin for admin review when it receives a threshold number of "Closed" or issue reports within a defined time window
+- **FR32:** The system flags a pin for admin review when it receives ≥3 "Closed" or issue reports within a 48-hour period
 - **FR33:** An admin can view and manage flagged pins (review, archive, or override badge status)
 - **FR34:** An admin can manually create and publish new spot pins with admin-verified status
 - **FR35:** An admin can edit existing pin data (amenities, restrictions, coordinates, fee)
@@ -451,8 +519,20 @@ Overnighter is a **mobile-first SPA** built for on-the-road use on iOS Safari an
 ### Onboarding
 
 - **FR36:** A first-time user is guided through rig profile setup before accessing the full map
-- **FR37:** The system immediately demonstrates rig-aware filtering after onboarding completes (map re-renders with rig filter applied)
+- **FR37:** The system re-renders the map with the rig filter applied within 500ms of onboarding completion (per NFR-P4)
 - **FR38:** A user can skip rig profile setup and access the map without a rig profile (with reduced filter capability)
+
+### Water Tap Discovery Pipeline
+
+- **FR39:** The system enumerates all `amenity=fuel`, `amenity=campsite`, and `tourism=camp_site` nodes within a configured geographic bounding box using the OpenStreetMap Overpass API
+- **FR40:** For each enumerated location, the system fetches up to 5 street-level photos per location from Mapillary API and Google Places Photos API (Mapillary queried first; Google Places used as fallback when Mapillary coverage is insufficient)
+- **FR41:** The system runs each fetched photo through the faucet classifier ML model and records a confidence score (0.0–1.0) per photo per location
+- **FR42:** The system creates a water tap map pin for any location where at least one photo returns a classifier confidence score ≥0.75, recording the highest-confidence photo, score, source API, and scan timestamp
+- **FR43:** The system stores each water tap pin with location coordinates, place name, place type, access classification (unverified at ML-creation time), confidence score, data source, photos, seasonal availability notes, geographic reference (Mile Marker for Florida Keys), active status, and last verified date
+- **FR44:** The system links each water tap pin to a business location record to inherit business name, address, and operating hours
+- **FR45:** A user can submit a photo of an outdoor water tap at any location via the app; the system runs the photo through the faucet classifier and, if confidence ≥0.75, creates or confirms a tap pin at that location
+- **FR46:** A user can confirm or deny an existing water tap pin ("Still here" / "No longer here") from the pin detail view; each response is recorded as a verification event in an append-only log
+- **FR47:** The system displays a water tap pin's confidence source visually: ML-discovered pins show a model confidence indicator; user-confirmed pins show a community verification count; pins confirmed by ≥2 independent users are promoted to "verified" status
 
 ## Non-Functional Requirements
 
@@ -480,7 +560,7 @@ Overnighter is a **mobile-first SPA** built for on-the-road use on iOS Safari an
 - **NFR-SC1:** The system must support 200 MAU at MVP launch without infrastructure changes
 - **NFR-SC2:** The system must be architectable to support 5,000 MAU (12-month target) with horizontal scaling only
 - **NFR-SC3:** Overpass API requests must be cached server-side with a minimum 24-hour TTL to stay within public API rate limits at scale
-- **NFR-SC4:** Check-in writes must use a serverless/queue architecture to absorb spikes without database contention
+- **NFR-SC4:** Check-in writes must handle burst traffic of ≥10× baseline write rate without degrading map read latency beyond NFR-P1 thresholds
 
 ### Accessibility
 
@@ -505,3 +585,11 @@ Overnighter is a **mobile-first SPA** built for on-the-road use on iOS Safari an
 - **NFR-R2:** Check-in write failures must be retried automatically up to 3 times before surfacing an error to the user
 - **NFR-R3:** Map must remain functional (browsable with cached data) even if data API calls fail
 - **NFR-R4:** No user-submitted check-in data may be silently lost; failed writes must be queued for retry or logged for admin recovery
+
+### ML Pipeline
+
+- **NFR-ML1:** The water tap ML batch scan pipeline must complete a full bounding box scan of ≤500 locations within 2 hours of scheduled trigger
+- **NFR-ML2:** The faucet classifier must achieve ≥80% precision on the Florida Keys ground truth validation set before any auto-created pins are published to the map
+- **NFR-ML3:** The batch scan pipeline must re-scan the Florida Keys corridor (Homestead → Marathon bounding box) at minimum every 30 days to detect newly installed or removed taps
+- **NFR-ML4:** The ML batch pipeline image sourcing must remain within each API provider's published rate limits at all times; rate limit violations must not cause pipeline scan failures or data loss
+- **NFR-ML5:** ML model weights and training data must not be accessible to end users or exposed via any client-facing interface

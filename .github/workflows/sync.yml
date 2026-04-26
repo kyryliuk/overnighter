@@ -1,0 +1,47 @@
+name: Scheduled Jobs
+
+# Combined schedule for BLM/USFS/NPS daily sync and ML tap scan monthly cron.
+# Each job guards on the schedule expression so only the matching job runs.
+on:
+  schedule:
+    - cron: '0 2 * * *'    # BLM/USFS/NPS daily sync (unchanged from sync-gov.yml)
+    - cron: '0 3 1 * *'    # ML tap scan — 1st of month, 3am UTC (NFR-ML3)
+  workflow_dispatch:        # Manual trigger for testing
+
+jobs:
+  # ── BLM/USFS/NPS daily sync (unchanged) ─────────────────────────────────────
+  # Mirrors sync-gov.yml exactly. Runs only on the 0 2 * * * schedule.
+  sync-gov:
+    name: Sync pin data from BLM/USFS/NPS APIs
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sync-gov endpoint
+        run: |
+          curl -f -X POST "${{ secrets.SYNC_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 180
+
+  # ── Monthly ML tap scan ──────────────────────────────────────────────────────
+  # Chunked scan of the Florida Keys bounding box.
+  # Calls POST /api/ml-scan sequentially at offset 0, 50, 100…
+  # until processed < limit (all locations exhausted).
+  # ML_SCAN_URL and ADMIN_SECRET are repository secrets — never VITE_ prefixed (NFR-ML5).
+  ml-scan:
+    name: Monthly ML water tap scan
+    if: github.event.schedule == '0 3 1 * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run ML scan (chunked)
+        run: |
+          OFFSET=0; LIMIT=50
+          while true; do
+            RESP=$(curl -s -X POST "${{ secrets.ML_SCAN_URL }}?offset=$OFFSET&limit=$LIMIT" \
+              -H "Authorization: Bearer ${{ secrets.ADMIN_SECRET }}" \
+              -H "Content-Type: application/json" \
+              -d '{"bbox":{"north":25.7,"south":24.5,"east":-80.1,"west":-81.8}}')
+            PROCESSED=$(echo $RESP | jq '.processed')
+            OFFSET=$((OFFSET + LIMIT))
+            [ "$PROCESSED" -lt "$LIMIT" ] && break
+          done

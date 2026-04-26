@@ -49,7 +49,26 @@ const GOV_SVG =
     `<rect x="10" y="17" width="4" height="5" rx="1" fill="#92400e"/>` +
   `</svg>`
 
+// SVG faucet icon for water tap pins — distinct from the regular 💧 water emoji
+// Uses a pipe + spout design at 18×18px (same size as GOV_SVG) for visual consistency.
+// Color #0369a1 (sky-700) aligns with the brand accent palette.
+const FAUCET_SVG =
+  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">` +
+    // Horizontal pipe body
+    `<rect x="2" y="9" width="14" height="4" rx="1" fill="#0369a1"/>` +
+    // Vertical spout
+    `<rect x="13" y="13" width="3" height="5" rx="1" fill="#0369a1"/>` +
+    // Tap handle (cross-bar)
+    `<rect x="7" y="6" width="5" height="3" rx="1" fill="#0284c7"/>` +
+    // Water drop falling from spout
+    `<ellipse cx="14.5" cy="20" rx="1.5" ry="2" fill="#38bdf8" opacity="0.9"/>` +
+  `</svg>`
+
 function getCategoryEmoji(pin: Pin): { icon: string; label: string } {
+  // Water tap pins: always use the faucet SVG with 'water tap' aria-label (AC7 NFR-A2)
+  if (pin.pinCategory === 'water_tap') {
+    return { icon: FAUCET_SVG, label: 'water tap' }
+  }
   if (pin.pinType === 'blm' || pin.pinType === 'usfs' || pin.pinType === 'nps') {
     return { icon: GOV_SVG, label: 'gov campground' }
   }
@@ -150,7 +169,12 @@ export function createPinMarker(pin: Pin, rigProfile: RigProfile): L.Marker {
   marker.on('click', () => {
     // Must use .getState() here — Leaflet callbacks run outside React render context
     // so useUIStore() hook cannot be used directly (hooks are React-only)
-    useUIStore.getState().setSelectedPin(pin.id)
+    // Single conditional: water_tap pins route to /tap/:id; all others to /pin/:id (AC1 Story 6.4)
+    if (pin.pinCategory === 'water_tap') {
+      useUIStore.getState().setSelectedTapPin(pin.id)
+    } else {
+      useUIStore.getState().setSelectedPin(pin.id)
+    }
   })
   return marker
 }
