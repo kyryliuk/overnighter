@@ -328,8 +328,11 @@ describe('MapView AmenityFilterBar integration', () => {
     useAmenityFilterStore.setState({ activeFilters: [] })
   })
 
-  it('renders AmenityFilterBar with all 7 chips in MapView', () => {
+  it('renders AmenityFilterBar filter button and shows chips after clicking it', () => {
     render(<MapView />, { wrapper: Wrapper })
+    const filterBtn = screen.getByRole('button', { name: /filters/i })
+    expect(filterBtn).toBeInTheDocument()
+    fireEvent.click(filterBtn)
     expect(screen.getByRole('button', { name: /water/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /dump/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /overnight/i })).toBeInTheDocument()
