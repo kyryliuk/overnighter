@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PremiumGate } from '@/components/PremiumGate'
 import { useUIStore } from '@/store/uiStore'
+import { useTripDraftStore } from '@/store/tripDraftStore'
+import { OFFLINE_QUEUED_ERROR } from '@/lib/offline/pendingTripMutations'
 import type { Trip, TripWritePayload } from '@/types/trip'
 import RouteBuilderSheet, { type PendingRouteStopIntent } from './RouteBuilderSheet'
 import { buildDuplicateTripPayload } from './routePlanning'
@@ -268,6 +270,7 @@ function MyRoutesContent() {
   const [searchParams, setSearchParams] = useSearchParams()
   const setActiveTripId = useUIStore((state) => state.setActiveTripId)
   const { setPreviewTrip } = useTripCorridorPreview()
+  const { hydrateDraftFromServer, removeDraft } = useTripDraftStore()
   const [isCreating, setIsCreating] = useState(false)
   const [draftPreviewPayload, setDraftPreviewPayload] = useState<TripWritePayload | null>(null)
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -346,6 +349,13 @@ function MyRoutesContent() {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [deletingTrip])
 
+  // Hydrate draft store when server trip data arrives (no-op if already dirty locally)
+  useEffect(() => {
+    if (activeTrip) {
+      hydrateDraftFromServer(activeTrip)
+    }
+  }, [activeTrip, hydrateDraftFromServer])
+
   function openCreateBuilder() {
     setIsCreating(true)
     setDraftPreviewPayload(null)
@@ -380,6 +390,10 @@ function MyRoutesContent() {
       const createdTrip = await createTripMutation.mutateAsync(payload)
       openTrip(createdTrip.id)
     } catch (error) {
+      if (error instanceof Error && error.message === OFFLINE_QUEUED_ERROR) {
+        // Queued offline — user will see the duplicate once back online
+        return
+      }
       setDuplicateError(error instanceof Error ? error.message : 'Unable to duplicate this route right now.')
     } finally {
       setDuplicatingTripId(null)
@@ -390,10 +404,17 @@ function MyRoutesContent() {
     setArchivingTripId(tripId)
     try {
       await tripStatusMutation.mutateAsync({ tripId, status: 'archived' })
+      removeDraft(tripId)
       if (tripId === requestedTripId) {
         closeBuilder()
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === OFFLINE_QUEUED_ERROR) {
+        // Queued offline — draft removed optimistically, builder closed if open
+        removeDraft(tripId)
+        if (tripId === requestedTripId) closeBuilder()
+        return
+      }
       // Mutation error is tracked via tripStatusMutation state
     } finally {
       setArchivingTripId(null)
@@ -419,10 +440,17 @@ function MyRoutesContent() {
   async function handleConfirmDelete(tripId: string) {
     try {
       await deleteTripMutation.mutateAsync(tripId)
+      removeDraft(tripId)
       if (tripId === requestedTripId) {
         closeBuilder()
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === OFFLINE_QUEUED_ERROR) {
+        // Queued offline — remove draft optimistically and close builder if open
+        removeDraft(tripId)
+        if (tripId === requestedTripId) closeBuilder()
+        return
+      }
       // Mutation error is tracked via deleteTripMutation state
     } finally {
       setDeletingTrip(null)
@@ -650,8 +678,8 @@ function MyRoutesContent() {
         isOpen={isBuilderOpen}
         isSaving={isCreating ? createTripMutation.isPending : updateTripMutation.isPending}
         errorMessage={isCreating
-          ? (createTripMutation.error instanceof Error ? createTripMutation.error.message : null)
-          : (updateTripMutation.error instanceof Error ? updateTripMutation.error.message : null)}
+          ? (createTripMutation.error instanceof Error && createTripMutation.error.message !== OFFLINE_QUEUED_ERROR ? createTripMutation.error.message : null)
+          : (updateTripMutation.error instanceof Error && updateTripMutation.error.message !== OFFLINE_QUEUED_ERROR ? updateTripMutation.error.message : null)}
         onClose={closeBuilder}
         onSave={isCreating
           ? async (payload: TripWritePayload) => {

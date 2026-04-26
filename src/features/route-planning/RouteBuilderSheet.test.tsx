@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useRigStore } from '@/store/rigStore'
+import { useTripDraftStore, INITIAL_TRIP_DRAFT_STATE } from '@/store/tripDraftStore'
 import type { Pin } from '@/types/pin'
 import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
 import type { Trip } from '@/types/trip'
@@ -409,6 +410,7 @@ describe('RouteBuilderSheet', () => {
     vi.clearAllMocks()
     mockUsePinsQuery.mockReturnValue({ data: PINS, isLoading: false })
     useSpotsStore.setState({ savedSpots: [PINS[3]] })
+    useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE })
     useRigStore.setState({
       rigProfile: DEFAULT_RIG_PROFILE,
       onboardingDismissed: false,
@@ -474,6 +476,35 @@ describe('RouteBuilderSheet', () => {
       },
       stops: [],
     }))
+  })
+
+  it('calls markClean after a successful save in resume mode', async () => {
+    useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE, dirtyTripIds: [RESTORED_TRIP.id] })
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const user = userEvent.setup()
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={onSave} trip={RESTORED_TRIP} />)
+
+    await user.click(screen.getByRole('button', { name: /update route/i }))
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled())
+    expect(useTripDraftStore.getState().dirtyTripIds).not.toContain(RESTORED_TRIP.id)
+  })
+
+  it('does not call markClean when onSave throws OFFLINE_QUEUED_ERROR — draft stays dirty', async () => {
+    useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE, dirtyTripIds: [RESTORED_TRIP.id] })
+    const onSave = vi.fn().mockRejectedValue(new Error('OFFLINE_QUEUED'))
+    const user = userEvent.setup()
+
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={onSave} trip={RESTORED_TRIP} />)
+
+    await user.click(screen.getByRole('button', { name: /update route/i }))
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled())
+    // Draft must remain dirty — markClean must not be called for offline-queued saves
+    expect(useTripDraftStore.getState().dirtyTripIds).toContain(RESTORED_TRIP.id)
+    // No error alert should appear for the OFFLINE_QUEUED sentinel
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('hydrates an existing trip into the planner sheet', () => {

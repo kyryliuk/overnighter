@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePinsQuery } from '@/hooks/usePinsQuery'
 import { useRigStore } from '@/store/rigStore'
 import { useSpotsStore } from '@/store/spotsStore'
+import { useTripDraftStore } from '@/store/tripDraftStore'
+import { OFFLINE_QUEUED_ERROR } from '@/lib/offline/pendingTripMutations'
 import type { Pin } from '@/types/pin'
 import type { Trip, TripPlaceSnapshot, TripStopSource, TripWritePayload } from '@/types/trip'
 import { buildDirectionsUrl, GOOGLE_MAPS_MAX_WAYPOINTS } from '@/lib/maps/googleMaps'
@@ -156,6 +158,10 @@ export default function RouteBuilderSheet({
   const { data: pins = [], isLoading } = usePinsQuery()
   const rigProfile = useRigStore((state) => state.rigProfile)
   const savedSpots = useSpotsStore((state) => state.savedSpots)
+  const { draftsById, dirtyTripIds, upsertDraft, markDirty, markClean, setActiveTripId } = useTripDraftStore()
+  const existingDraft = trip ? draftsById[trip.id] : null
+  const isDirty = trip ? dirtyTripIds.includes(trip.id) : false
+  const draftSource = isDirty && existingDraft ? existingDraft : null
   const restoredWaypoints = useMemo(
     () => [...(trip?.stops ?? [])]
       .filter((stop) => stop.stopKind === 'waypoint')
@@ -163,16 +169,27 @@ export default function RouteBuilderSheet({
       .map(tripStopToWaypointInput),
     [trip],
   )
-  const [title, setTitle] = useState(() => trip?.title ?? '')
-  const [notes, setNotes] = useState(() => trip?.notes ?? '')
-  const [originQuery, setOriginQuery] = useState(() => trip?.origin?.name ?? '')
-  const [destinationQuery, setDestinationQuery] = useState(() => trip?.destination?.name ?? '')
+  const [title, setTitle] = useState(() => draftSource?.title ?? trip?.title ?? '')
+  const [notes, setNotes] = useState(() => draftSource?.notes ?? trip?.notes ?? '')
+  const [originQuery, setOriginQuery] = useState(
+    () => (draftSource?.origin?.name ?? trip?.origin?.name) ?? '',
+  )
+  const [destinationQuery, setDestinationQuery] = useState(
+    () => (draftSource?.destination?.name ?? trip?.destination?.name) ?? '',
+  )
   const [stopQuery, setStopQuery] = useState('')
-  const [origin, setOrigin] = useState<TripPlaceSnapshot | null>(() => trip?.origin ?? null)
-  const [destination, setDestination] = useState<TripPlaceSnapshot | null>(() => trip?.destination ?? null)
-  const [waypoints, setWaypoints] = useState(() => restoredWaypoints)
+  const [origin, setOrigin] = useState<TripPlaceSnapshot | null>(
+    () => draftSource?.origin ?? trip?.origin ?? null,
+  )
+  const [destination, setDestination] = useState<TripPlaceSnapshot | null>(
+    () => draftSource?.destination ?? trip?.destination ?? null,
+  )
+  const [waypoints, setWaypoints] = useState(
+    () => draftSource?.stops ?? restoredWaypoints,
+  )
   const [validationError, setValidationError] = useState<string | null>(null)
   const pendingIntentKeyRef = useRef<string | null>(null)
+  const persistDraftTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isResumeMode = Boolean(trip)
   const previewPayload = useMemo(() => {
     if (!isResumeMode || !trip || !destination) {
@@ -356,6 +373,44 @@ export default function RouteBuilderSheet({
     }
   }, [onPreviewChange])
 
+  // Set active trip id on mount, clear on unmount
+  useEffect(() => {
+    if (trip) {
+      setActiveTripId(trip.id)
+    }
+    return () => {
+      setActiveTripId(null)
+    }
+  }, [trip?.id, setActiveTripId])
+
+  // Debounced draft persistence — writes edits to tripDraftStore within 600ms
+  useEffect(() => {
+    if (!trip?.id || !isResumeMode) return
+
+    const tripId = trip.id
+
+    if (persistDraftTimer.current) {
+      clearTimeout(persistDraftTimer.current)
+    }
+
+    persistDraftTimer.current = setTimeout(() => {
+      upsertDraft(tripId, {
+        title,
+        notes,
+        origin,
+        destination,
+        stops: compactTripWaypointOrders(waypoints),
+      })
+      markDirty(tripId)
+    }, 600)
+
+    return () => {
+      if (persistDraftTimer.current) {
+        clearTimeout(persistDraftTimer.current)
+      }
+    }
+  }, [title, notes, origin, destination, waypoints, trip?.id, isResumeMode, upsertDraft, markDirty])
+
   if (!isOpen) return null
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -373,13 +428,25 @@ export default function RouteBuilderSheet({
 
     setValidationError(null)
     const normalizedWaypoints = compactTripWaypointOrders(waypoints)
-    await onSave({
-      title,
-      notes,
-      origin,
-      destination,
-      stops: normalizedWaypoints,
-    })
+    try {
+      await onSave({
+        title,
+        notes,
+        origin,
+        destination,
+        stops: normalizedWaypoints,
+      })
+      // Only mark clean after a confirmed server write — not for offline-queued saves
+      if (trip?.id) {
+        markClean(trip.id)
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === OFFLINE_QUEUED_ERROR) {
+        // Edit queued offline — draft stays dirty until sync confirms; no UI error needed
+        return
+      }
+      // Real error — mutation error state in the parent handles display
+    }
   }
 
   return (
