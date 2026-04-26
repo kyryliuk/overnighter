@@ -49,6 +49,11 @@ vi.mock('./useCreateTripMutation', () => ({
   useCreateTripMutation: () => mockImportMutationState,
 }))
 
+vi.mock('@/lib/offline/pendingTripMutations', () => ({
+  OFFLINE_QUEUED_ERROR: 'OFFLINE_QUEUED',
+  appendPendingTripMutation: vi.fn(),
+}))
+
 vi.mock('@/lib/supabase/tripPlans', () => ({
   getPublicTripPlanByToken: (...args: unknown[]) => getPublicTripPlanByToken(...args),
 }))
@@ -272,6 +277,18 @@ describe('SharedTripPlanScreen', () => {
       renderScreen()
 
       expect(await screen.findByRole('alert')).toHaveTextContent('Unable to save your route right now.')
+    })
+
+    it('shows friendly offline message when OFFLINE_QUEUED_ERROR is the import error', async () => {
+      mockImportMutationState = {
+        mutateAsync: mockImportMutateAsync,
+        isPending: false,
+        error: new Error('OFFLINE_QUEUED'),
+      }
+
+      renderScreen()
+
+      expect(await screen.findByRole('alert')).toHaveTextContent("Import saved — will sync when you're back online.")
     })
 
     it('shows loading state and disables button while import is pending', async () => {

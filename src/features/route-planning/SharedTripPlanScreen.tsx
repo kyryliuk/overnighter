@@ -7,6 +7,7 @@ import { createTripPlanComment, deleteTripPlanComment, getTripPlanComments } fro
 import { getTripPlanReactionSummary, setTripPlanHelpfulReaction } from '@/lib/supabase/tripPlanReactions'
 import { getPublicTripPlanByToken } from '@/lib/supabase/tripPlans'
 import { PremiumGate } from '@/components/PremiumGate'
+import { OFFLINE_QUEUED_ERROR } from '@/lib/offline/pendingTripMutations'
 import { useCreateTripMutation } from './useCreateTripMutation'
 
 export default function SharedTripPlanScreen() {
@@ -108,31 +109,34 @@ export default function SharedTripPlanScreen() {
   async function handleImportTrip() {
     if (!tripQuery.data) return
 
-    await importMutation.mutateAsync({
-      title: tripQuery.data.title,
-      notes: tripQuery.data.notes,
-      destination: {
-        id: tripQuery.data.destination.id,
-        name: tripQuery.data.destination.name,
-        latitude: tripQuery.data.destination.latitude,
-        longitude: tripQuery.data.destination.longitude,
-      },
-      stops: tripQuery.data.stops.map((stop, index) => ({
-        stopOrder: index + 1,
-        source: 'imported' as const,
-        pinId: null,
-        place: {
-          id: stop.id,
-          name: stop.name,
-          latitude: stop.latitude,
-          longitude: stop.longitude,
+    try {
+      await importMutation.mutateAsync({
+        title: tripQuery.data.title,
+        notes: tripQuery.data.notes,
+        destination: {
+          id: tripQuery.data.destination.id,
+          name: tripQuery.data.destination.name,
+          latitude: tripQuery.data.destination.latitude,
+          longitude: tripQuery.data.destination.longitude,
         },
-        notes: '',
-      })),
-      sourceTripId: tripQuery.data.id,
-    })
-
-    navigate('/trips')
+        stops: tripQuery.data.stops.map((stop, index) => ({
+          stopOrder: index + 1,
+          source: 'imported' as const,
+          pinId: null,
+          place: {
+            id: stop.id,
+            name: stop.name,
+            latitude: stop.latitude,
+            longitude: stop.longitude,
+          },
+          notes: '',
+        })),
+        sourceTripId: tripQuery.data.id,
+      })
+      navigate('/trips')
+    } catch {
+      // Error is stored in importMutation.error and displayed inline
+    }
   }
 
   async function handleHelpfulReactionToggle() {
@@ -381,9 +385,11 @@ export default function SharedTripPlanScreen() {
               </button>
               {importMutation.error && (
                 <p role="alert" className="mt-2 text-sm text-red-300">
-                  {importMutation.error instanceof Error
-                    ? importMutation.error.message
-                    : 'Failed to import trip'}
+                  {importMutation.error instanceof Error && importMutation.error.message === OFFLINE_QUEUED_ERROR
+                    ? 'Import saved — will sync when you\'re back online.'
+                    : importMutation.error instanceof Error
+                      ? importMutation.error.message
+                      : 'Failed to import trip'}
                 </p>
               )}
             </PremiumGate>
