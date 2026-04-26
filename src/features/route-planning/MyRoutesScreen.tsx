@@ -6,6 +6,7 @@ import { useTripDraftStore } from '@/store/tripDraftStore'
 import { OFFLINE_QUEUED_ERROR } from '@/lib/offline/pendingTripMutations'
 import type { Trip, TripWritePayload } from '@/types/trip'
 import RouteBuilderSheet, { type PendingRouteStopIntent } from './RouteBuilderSheet'
+import { TripSyncBadge } from './TripSyncBadge'
 import { buildDuplicateTripPayload } from './routePlanning'
 import { useTripCorridorPreview } from './TripCorridorPreviewContext'
 import { useCreateTripMutation } from './useCreateTripMutation'
@@ -143,18 +144,6 @@ function StatusBadge({ status }: { status: Trip['status'] }) {
   )
 }
 
-function SyncIndicator() {
-  return (
-    <span
-      data-testid="trip-sync-indicator"
-      className="inline-flex items-center gap-1 text-[11px] text-emerald-400"
-    >
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-      Synced
-    </span>
-  )
-}
-
 function TripListItem({
   trip,
   isSelected,
@@ -196,7 +185,7 @@ function TripListItem({
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span className="text-xs text-muted-foreground">Updated {formatUpdatedAt(trip.updatedAt)}</span>
-          <SyncIndicator />
+          <TripSyncBadge tripId={trip.id} />
         </div>
       </div>
       {trip.notes ? (
