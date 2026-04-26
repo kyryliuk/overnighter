@@ -462,6 +462,31 @@ describe('MyRoutesScreen', () => {
     expect(screen.queryByTestId('legacy-plans-notice')).not.toBeInTheDocument()
   })
 
+  it('does not show legacy plans notice when user has only archived trips (AC3 edge case)', () => {
+    mockTripPlansState.tripPlans = [{ id: 'plan-1', title: 'Old road trip' }] as never[]
+    const archivedTrip = {
+      id: 'archived-1', title: 'Old Trip', stops: [], stopCount: 0, status: 'archived' as const,
+      isPublic: false, shareToken: null, sourceTripId: null, sourceShareToken: null,
+      revision: 1, routeMode: 'corridor' as const, notes: '',
+      origin: { id: 'o1', name: 'Phoenix', latitude: 33.4484, longitude: -112.074 },
+      destination: { id: 'd1', name: 'Tucson', latitude: 32.2226, longitude: -110.9747 },
+      createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+    }
+    // Default view returns no trips (archived filter off), but total including archived returns 1
+    mockUseTripsQuery.mockImplementation(({ includeArchived } = {}) => ({
+      data: includeArchived ? [archivedTrip] : [],
+      isLoading: false,
+      isSuccess: true,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    }))
+
+    renderScreen()
+
+    expect(screen.queryByTestId('legacy-plans-notice')).not.toBeInTheDocument()
+  })
+
   it('shows a loading shell while trips are loading', () => {
     mockUseTripsQuery.mockReturnValue({
       data: undefined,

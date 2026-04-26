@@ -35,7 +35,6 @@ const SavedSpotsScreen = lazy(() => import('@/features/saved-spots/SavedSpotsScr
 const AccountScreen = lazy(() => import('@/features/account/AccountScreen'))
 const SuggestSpotScreen = lazy(() => import('@/features/spot-submissions/SuggestSpotScreen'))
 const MyRoutesScreen = lazy(() => import('@/features/route-planning/MyRoutesScreen'))
-const RoutePlanningScreen = lazy(() => import('@/features/route-planning/RoutePlanningScreen'))
 const SharedTripPlanScreen = lazy(() => import('@/features/route-planning/SharedTripPlanScreen'))
 const PremiumWelcomeScreen = lazy(() => import('@/features/subscription/PremiumWelcomeScreen'))
 const AdminDashboard = lazy(() => import('@/features/admin/AdminDashboard'))

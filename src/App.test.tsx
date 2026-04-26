@@ -25,7 +25,6 @@ vi.mock('@/features/saved-spots/SavedSpotsScreen', () => ({ default: () => null 
 vi.mock('@/features/account/AccountScreen', () => ({ default: () => <div data-testid="account-screen" /> }))
 vi.mock('@/features/spot-submissions/SuggestSpotScreen', () => ({ default: () => <div data-testid="suggest-spot-screen" /> }))
 vi.mock('@/features/route-planning/MyRoutesScreen', () => ({ default: () => <div data-testid="my-routes-screen" /> }))
-vi.mock('@/features/route-planning/RoutePlanningScreen', () => ({ default: () => null }))
 vi.mock('@/features/route-planning/SharedTripPlanScreen', () => ({ default: () => null }))
 vi.mock('@/features/admin/AdminDashboard', () => ({ default: () => null }))
 vi.mock('@/components/PWAInstallPrompt', () => ({ default: () => null }))

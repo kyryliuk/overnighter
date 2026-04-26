@@ -281,6 +281,10 @@ function MyRoutesContent() {
   useOfflineTripQueue()
   const legacyPlans = useTripPlansStore((state) => state.tripPlans)
   const legacyPlansHydrated = useTripPlansStore((state) => state.hasHydrated)
+  // Secondary query to check if any normalized trips exist (including archived),
+  // so we don't show the legacy migration notice when the user only has archived trips.
+  const allTripsQuery = useTripsQuery({ includeArchived: true })
+  const hasAnyNormalizedTrips = (allTripsQuery.data?.length ?? 0) > 0
   const rawTrips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data])
   const trips = useMemo(() => {
     if (sortOrder === 'oldest') return [...rawTrips].reverse()
@@ -579,7 +583,7 @@ function MyRoutesContent() {
                 </button>
               </div>
             </div>
-            {legacyPlansHydrated && legacyPlans.length > 0 && tripsQuery.isSuccess ? (
+            {legacyPlansHydrated && legacyPlans.length > 0 && tripsQuery.isSuccess && !hasAnyNormalizedTrips ? (
               <div
                 className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 space-y-1"
                 data-testid="legacy-plans-notice"
