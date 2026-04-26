@@ -1,8 +1,13 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { useUIStore } from '@/store/uiStore'
+import { useTripDraftStore, INITIAL_TRIP_DRAFT_STATE } from '@/store/tripDraftStore'
+import {
+  appendPendingTripMutation,
+  clearPendingTripMutations,
+} from '@/lib/offline/pendingTripMutations'
 import type { Trip } from '@/types/trip'
 import MyRoutesScreen from './MyRoutesScreen'
 
@@ -164,6 +169,8 @@ describe('MyRoutesScreen', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
     useUIStore.setState({ activeTripId: null })
+    useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE })
+    clearPendingTripMutations()
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
       session: { user: { id: 'user-1' }, access_token: 'token' },
@@ -734,6 +741,68 @@ describe('MyRoutesScreen', () => {
       expect(screen.getByText(/updated/i)).toBeInTheDocument()
       expect(screen.getByTestId('trip-status-badge')).toHaveTextContent('Draft')
       expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Synced')
+    })
+
+    it('shows "Local draft" badge when trip is in dirtyTripIds', () => {
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      useTripDraftStore.setState({ dirtyTripIds: [SAMPLE_TRIP.id] })
+
+      renderScreen()
+
+      expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Local draft')
+    })
+
+    it('shows "Sync pending" badge when trip is dirty and has a pending queue item', () => {
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      useTripDraftStore.setState({ dirtyTripIds: [SAMPLE_TRIP.id] })
+      appendPendingTripMutation({
+        id: 'mut-test-1',
+        kind: 'update',
+        tripId: SAMPLE_TRIP.id,
+        queuedAt: '2026-04-01T10:00:00Z',
+      })
+
+      renderScreen()
+
+      expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync pending')
+    })
+
+    it('badge updates to "Sync pending" when queue event fires after render', () => {
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      useTripDraftStore.setState({ dirtyTripIds: [SAMPLE_TRIP.id] })
+
+      renderScreen()
+
+      expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Local draft')
+
+      act(() => {
+        appendPendingTripMutation({
+          id: 'mut-test-2',
+          kind: 'update',
+          tripId: SAMPLE_TRIP.id,
+          queuedAt: '2026-04-02T10:00:00Z',
+        })
+      })
+
+      expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync pending')
     })
 
     it('excludes archived trips from the default view', () => {

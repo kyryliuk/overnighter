@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useSpotsStore } from '@/store/spotsStore'
 import { useRigStore } from '@/store/rigStore'
 import { useTripDraftStore, INITIAL_TRIP_DRAFT_STATE } from '@/store/tripDraftStore'
+import {
+  appendPendingTripMutation,
+  clearPendingTripMutations,
+} from '@/lib/offline/pendingTripMutations'
 import type { Pin } from '@/types/pin'
 import { DEFAULT_RIG_PROFILE } from '@/types/rigProfile'
 import type { Trip } from '@/types/trip'
@@ -411,6 +415,7 @@ describe('RouteBuilderSheet', () => {
     mockUsePinsQuery.mockReturnValue({ data: PINS, isLoading: false })
     useSpotsStore.setState({ savedSpots: [PINS[3]] })
     useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE })
+    clearPendingTripMutations()
     useRigStore.setState({
       rigProfile: DEFAULT_RIG_PROFILE,
       onboardingDismissed: false,
@@ -515,6 +520,38 @@ describe('RouteBuilderSheet', () => {
     expect(screen.getByLabelText(/notes/i)).toHaveValue('Camp by the river')
     expect(screen.getByText('Quartzsite')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /update route/i })).toBeInTheDocument()
+  })
+
+  it('shows sync badge in header in resume mode', () => {
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP} />)
+
+    expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Synced')
+  })
+
+  it('shows "Local draft" sync badge in resume mode when trip is dirty', () => {
+    useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE, dirtyTripIds: [RESTORED_TRIP.id] })
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP} />)
+
+    expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Local draft')
+  })
+
+  it('shows "Sync pending" sync badge in resume mode when trip is dirty and has a queued mutation', () => {
+    useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE, dirtyTripIds: [RESTORED_TRIP.id] })
+    appendPendingTripMutation({
+      id: 'mut-builder-1',
+      kind: 'update',
+      tripId: RESTORED_TRIP.id,
+      queuedAt: '2026-04-02T12:00:00Z',
+    })
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} trip={RESTORED_TRIP} />)
+
+    expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync pending')
+  })
+
+  it('does not show sync badge in create mode (no trip prop)', () => {
+    render(<RouteBuilderSheet isOpen onClose={vi.fn()} onSave={vi.fn()} />)
+
+    expect(screen.queryByTestId('trip-sync-indicator')).not.toBeInTheDocument()
   })
 
   it('adds and removes stops while preserving sequential order in resume mode', async () => {

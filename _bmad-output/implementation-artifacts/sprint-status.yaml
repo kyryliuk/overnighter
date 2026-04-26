@@ -171,7 +171,7 @@ development_status:
   # ── Phase 3 Epic 4: Offline Drafting & Sync Resilience ────────────────────
   p3-epic-4: in-progress
   p3-4-1-local-draft-store-and-pending-mutation-queue: done
-  p3-4-2-offline-editing-and-sync-status-ux: backlog
+  p3-4-2-offline-editing-and-sync-status-ux: done
   p3-4-3-reconnect-flush-and-conflict-handling: backlog
   p3-epic-4-retrospective: optional
 

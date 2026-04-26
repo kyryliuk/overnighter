@@ -20,6 +20,7 @@ import {
   removeTripWaypoint,
   tripStopToWaypointInput,
 } from './routePlanning'
+import { TripSyncBadge } from './TripSyncBadge'
 
 function toIdSet(ids: Array<string | null | undefined>): Set<string> {
   return new Set(ids.filter((id): id is string => Boolean(id)))
@@ -461,6 +462,7 @@ export default function RouteBuilderSheet({
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Route builder</p>
+            {isResumeMode && trip?.id ? <TripSyncBadge tripId={trip.id} /> : null}
             <h2 className="text-2xl font-semibold">{isResumeMode ? 'Resume saved route' : 'Create a new route'}</h2>
             <p className="text-sm text-muted-foreground">
               {isResumeMode
