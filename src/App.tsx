@@ -30,6 +30,7 @@ const MapView = lazy(() => import('@/features/map/MapView'))
 const OnboardingScreen = lazy(() => import('@/features/rig-profile/OnboardingScreen'))
 const RigEditScreen = lazy(() => import('@/features/rig-profile/RigEditScreen'))
 const PinDetailSheet = lazy(() => import('@/features/pin-detail/PinDetailSheet'))
+const TapPinDetailSheet = lazy(() => import('@/features/water-taps/TapPinDetailSheet'))
 const SavedSpotsScreen = lazy(() => import('@/features/saved-spots/SavedSpotsScreen'))
 const AccountScreen = lazy(() => import('@/features/account/AccountScreen'))
 const SuggestSpotScreen = lazy(() => import('@/features/spot-submissions/SuggestSpotScreen'))
@@ -57,6 +58,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<MapView />}>
                 <Route path="pin/:id" element={<PinDetailSheet />} />
+                <Route path="tap/:id" element={<TapPinDetailSheet />} />
                 <Route
                   path="trips"
                   element={(

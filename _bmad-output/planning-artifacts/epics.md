@@ -2,6 +2,10 @@
 stepsCompleted: [1, 2, 3, 4]
 workflowComplete: true
 completedAt: '2026-03-17'
+lastEdited: '2026-04-26'
+editHistory:
+  - date: '2026-04-26'
+    changes: 'Water tap pivot extension — added FR39–FR47, NFR-ML1–ML5, Epic 6 stories for ML pipeline; FR coverage map updated FR39–FR47; workflowComplete set to true'
 inputDocuments:
   - 'prd.md'
   - 'architecture.md'
@@ -56,6 +60,15 @@ FR35: An admin can edit existing pin data (amenities, restrictions, coordinates,
 FR36: A first-time user is guided through rig profile setup before accessing the full map
 FR37: The system immediately demonstrates rig-aware filtering after onboarding completes (map re-renders with rig filter applied)
 FR38: A user can skip rig profile setup and access the map without a rig profile (with reduced filter capability)
+FR39: The system enumerates all amenity=fuel, amenity=campsite, and tourism=camp_site nodes within a configured geographic bounding box using the OpenStreetMap Overpass API
+FR40: For each enumerated location, the system fetches up to 5 street-level photos per location from Mapillary API and Google Places Photos API (Mapillary queried first; Google Places used as fallback when Mapillary coverage is insufficient)
+FR41: The system runs each fetched photo through the faucet classifier ML model and records a confidence score (0.0–1.0) per photo per location
+FR42: The system creates a water tap map pin for any location where at least one photo returns a classifier confidence score ≥0.75, recording the highest-confidence photo, score, source API, and scan timestamp
+FR43: The system stores each water tap pin with location coordinates, place name, place type, access classification (unverified at ML-creation time), confidence score, data source, photos, seasonal availability notes, geographic reference (Mile Marker for Florida Keys), active status, and last verified date
+FR44: The system links each water tap pin to a business location record to inherit business name, address, and operating hours
+FR45: A user can submit a photo of an outdoor water tap at any location via the app; the system runs the photo through the faucet classifier and, if confidence ≥0.75, creates or confirms a tap pin at that location
+FR46: A user can confirm or deny an existing water tap pin ("Still here" / "No longer here") from the pin detail view; each response is recorded as a verification event in an append-only log
+FR47: The system displays a water tap pin's confidence source visually: ML-discovered pins show a model confidence indicator; user-confirmed pins show a community verification count; pins confirmed by ≥2 independent users are promoted to "verified" status
 
 ### NonFunctional Requirements
 
@@ -91,6 +104,11 @@ NFR-R1: System uptime must be ≥99% during peak usage hours (6am–10pm local t
 NFR-R2: Check-in write failures must be retried automatically up to 3 times before surfacing an error to the user
 NFR-R3: Map must remain functional (browsable with cached data) even if data API calls fail
 NFR-R4: No user-submitted check-in data may be silently lost; failed writes must be queued for retry or logged for admin recovery
+NFR-ML1: The water tap ML batch scan pipeline must complete a full bounding box scan of ≤500 locations within 2 hours of scheduled trigger
+NFR-ML2: The faucet classifier must achieve ≥80% precision on the Florida Keys ground truth validation set before any auto-created pins are published to the map
+NFR-ML3: The batch scan pipeline must re-scan the Florida Keys corridor (Homestead → Marathon bounding box) at minimum every 30 days to detect newly installed or removed taps
+NFR-ML4: The ML batch pipeline image sourcing must remain within each API provider's published rate limits at all times; rate limit violations must not cause pipeline scan failures or data loss
+NFR-ML5: ML model weights and training data must not be accessible to end users or exposed via any client-facing interface
 
 ### Additional Requirements
 
@@ -118,6 +136,16 @@ NFR-R4: No user-submitted check-in data may be silently lost; failed writes must
 - Brand accent: primary #0ea5e9
 - 100dvh viewport height for iOS Safari address bar behavior
 - Desktop split view at lg breakpoint (1024px+): map panel left, detail/search panel right
+
+**Architecture — ML Pipeline Extension (Epic 6 triggers):**
+- Supabase migrations 005–008: water_tap_pins table, tap_verification_events table, map_pins unified view, tap-photos storage bucket
+- SageMaker endpoint activation + validation test using sample faucet photos (extends existing bb80f53 implementation)
+- New serverless endpoints: POST /api/ml-scan (chunked, 50 locations/invocation), POST /api/tap-submit (multipart photo upload), POST /api/tap-verify (confirm/deny)
+- src/features/water-taps/ module: TapPinDetailSheet, TapConfidenceBadge, TapPhotoSubmission, TapConfirmDeny components
+- GitHub Actions sync.yml: monthly cron (0 3 1 * *) for ML batch scan; chunked curl loop until processed < limit
+- New env vars: SAGEMAKER_ENDPOINT_URL, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, ML_SCAN_URL (all server-only, never VITE_ prefixed)
+- map_pins Supabase view unions pins + water_tap_pins; pin_category discriminator routes PinLayer.tsx to correct detail sheet
+- tap-photos bucket: public read, service-role-key write only; path pattern tap-photos/{tap_pin_id}/{timestamp}.jpg; 5MB max
 
 **UX — Component Patterns:**
 - Map pin: custom SVG with recency color ring + amenity icon (not shadcn badge)
@@ -170,6 +198,15 @@ FR35: Epic 5 — Admin edit existing pin data
 FR36: Epic 1 — First-time onboarding flow before map access
 FR37: Epic 1 — Immediate rig filter demo after onboarding (map re-render)
 FR38: Epic 1 — Skip onboarding option with reduced filter capability
+FR39: Epic 6 — Overpass enumeration of fuel/campsite nodes within FL Keys bounding box (ml-scan pipeline)
+FR40: Epic 6 — Fetch up to 5 street-level photos per location from Mapillary (primary) and Google Places Photos (fallback)
+FR41: Epic 6 — Faucet classifier ML inference per photo; confidence score 0.0–1.0 recorded per photo per location
+FR42: Epic 6 — Auto-create water tap pin when ≥1 photo confidence ≥0.75; highest-confidence photo, score, source, and scan timestamp recorded
+FR43: Epic 6 — Water tap pin schema: coordinates, place name, place type, access, confidence, source, photos, seasonal notes, mile marker, active status, last verified date
+FR44: Epic 6 — Water tap pin linked to business location record via place_ref (Google Places ID or OSM node ID)
+FR45: Epic 6 — User photo submission flow: upload → classifier → create/confirm tap pin when confidence ≥0.75
+FR46: Epic 6 — User confirm/deny (Still here / No longer here) appended as verification event to tap_verification_events
+FR47: Epic 6 — ML-discovered pins show confidence indicator; user-confirmed pins show community count; ≥2 independent confirmations → "verified" status
 
 ## Epic List
 
@@ -193,6 +230,12 @@ Users can submit 3-tap departure check-ins and real-time issue reports, immediat
 ### Epic 5: Admin Data Quality Operations
 The founder/admin can manage pin accuracy at scale — reviewing auto-flagged pins, seeding new spots with admin-verified status, and editing existing data — maintaining the map quality that users trust.
 **FRs covered:** FR32, FR33, FR34, FR35
+
+### Epic 6: Water Tap Discovery & ML Pipeline
+Keys corridor travelers can see ML-discovered water tap pins on the map, submit photos of taps they find, and confirm or deny existing pins — giving the Florida Keys corridor reliable water tap data that no other app provides.
+**FRs covered:** FR39, FR40, FR41, FR42, FR43, FR44, FR45, FR46, FR47
+**NFRs addressed:** NFR-ML1, NFR-ML2, NFR-ML3, NFR-ML4, NFR-ML5
+**Architecture stories:** Supabase migrations 005–008, SageMaker endpoint activation, /api/ml-scan + /api/tap-submit + /api/tap-verify endpoints, features/water-taps/ module, GitHub Actions monthly cron
 
 ---
 
@@ -1002,3 +1045,304 @@ So that I can correct inaccurate information immediately without waiting for a d
 **When** the update completes successfully
 **Then** a confirmation toast is shown: "Pin updated successfully"
 **And** the admin dashboard returns to the pin list view
+
+---
+
+## Epic 6: Water Tap Discovery & ML Pipeline
+
+Keys corridor travelers can see ML-discovered water tap pins on the map, submit photos of taps they find, and confirm or deny existing pins — giving the Florida Keys corridor reliable water tap data that no other app provides.
+
+### Story 6.1: Water Tap Database Schema & Storage Setup
+
+As a developer,
+I want the Supabase database extended with water tap pin tables, a unified map pins view, and a photo storage bucket,
+So that all subsequent ML pipeline and user-facing tap features have a stable, production-ready data layer to build on.
+
+**Acceptance Criteria:**
+
+**Given** the developer runs Supabase migration 005
+**When** the migration completes
+**Then** a `water_tap_pins` table exists with columns: `id` (UUID PK), `location` (GEOGRAPHY POINT), `place_name` (TEXT), `place_type` (TEXT: gas_station | campground | restaurant), `access` (TEXT nullable), `confidence` (NUMERIC 3,2), `source` (TEXT: ml_batch | user_submission | manual), `photos` (TEXT[] default '{}'), `seasonal_notes` (TEXT nullable), `mile_marker` (NUMERIC 5,1 nullable), `is_active` (BOOLEAN default TRUE), `verified_date` (TIMESTAMPTZ nullable), `place_ref` (TEXT nullable), `created_at` (TIMESTAMPTZ default NOW()), `updated_at` (TIMESTAMPTZ default NOW())
+**And** three indexes exist: `idx_water_tap_pins_location` (GIST on location), `idx_water_tap_pins_is_active` (on is_active), `idx_water_tap_pins_mile_marker` (partial, on mile_marker where NOT NULL)
+
+**Given** the developer runs Supabase migration 006
+**When** the migration completes
+**Then** a `tap_verification_events` table exists with columns: `id` (UUID PK), `tap_pin_id` (UUID FK → water_tap_pins.id), `device_id` (TEXT), `event_type` (TEXT: confirmed | denied | ml_scan | user_submission), `confidence` (NUMERIC 3,2 nullable), `photo_url` (TEXT nullable), `created_at` (TIMESTAMPTZ default NOW())
+**And** index `idx_tap_verification_tap_pin_id` exists on tap_pin_id
+**And** the table has no UPDATE or DELETE grants — it is append-only
+
+**Given** the developer runs Supabase migration 007
+**When** the migration completes
+**Then** a `map_pins` view exists that UNION ALLs `pins` (with `pin_category = 'regular'`) and `water_tap_pins` (with `pin_category = 'water_tap'`), filtering both on `is_active = TRUE`
+**And** the view exposes at minimum: `id`, `location`, `pin_category`, `place_name`
+
+**Given** the developer runs Supabase migration 008
+**When** the migration completes
+**Then** a `tap-photos` Supabase Storage bucket exists with public read access and service-role-key-only write access
+**And** the bucket enforces a 5MB maximum file size
+
+**Given** the `.env.example` file is reviewed
+**When** the developer inspects it
+**Then** the following server-only (non-VITE_) environment variables are documented: `SAGEMAKER_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `ML_SCAN_URL`
+**And** none of these variables are prefixed with `VITE_` — they must never appear in the client bundle (NFR-ML5)
+
+**Given** the Vercel project settings
+**When** the admin reviews the environment variables
+**Then** all five new server-only variables are configured in Vercel's environment — absent from the client bundle in the production build (NFR-S6, NFR-ML5)
+
+---
+
+### Story 6.2: SageMaker Endpoint Activation & Precision Validation
+
+As a developer,
+I want the existing faucet classifier SageMaker endpoint activated and validated against the Florida Keys ground truth test set,
+So that the ML pipeline can only auto-publish water tap pins when the model meets the required ≥80% precision threshold.
+
+**Acceptance Criteria:**
+
+**Given** the SageMaker endpoint (extending the existing `bb80f53` implementation) is activated
+**When** the developer sends a test inference request `{ "image_url": "<sample-faucet-photo-url>" }`
+**Then** the endpoint returns `{ "confidence": <0.0–1.0> }` with no error
+**And** response latency is under 5 seconds per image (sufficient for ≤50-location chunked batch)
+
+**Given** the Florida Keys ground truth validation set exists
+**When** the developer runs the offline precision evaluation script against the SageMaker endpoint
+**Then** the faucet classifier achieves ≥80% precision on that set
+**And** the evaluation results are recorded (pass/fail + precision score) before any production scan is authorized (NFR-ML2)
+
+**Given** the precision gate has not been passed (precision < 80%)
+**When** a developer attempts to run `/api/ml-scan` in any environment
+**Then** the endpoint returns `{ "error": "PRECISION_GATE_BLOCKED", "message": "Model precision below 80% threshold — production scan disabled" }` and writes zero records
+
+**Given** the SageMaker credentials in the environment
+**When** any serverless function accesses `SAGEMAKER_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, or `AWS_REGION`
+**Then** they are read from server-side environment variables only — never from `process.env.VITE_*` and never bundled to the client (NFR-ML5)
+
+**Given** a sample photo of a non-faucet object (e.g., a door, a fire hydrant)
+**When** it is sent to the SageMaker endpoint
+**Then** the returned confidence is below 0.75 — the model does not produce false positives on the smoke-test inputs
+
+---
+
+### Story 6.3: Tap Photo Submission & Verification API
+
+As a user,
+I want to submit a photo of a water tap I've found, and confirm or deny whether an existing tap pin is still present,
+So that my ground-truth observations improve the accuracy of the water tap map for all Keys corridor travelers.
+
+**Acceptance Criteria:**
+
+**Given** the user is on a tap pin detail sheet or a map empty-state area
+**When** they initiate a tap photo submission
+**Then** `POST /api/tap-submit` accepts `multipart/form-data` with `{ photo: File, location: [lat, lng], deviceId: string }`
+**And** the endpoint validates: file size ≤5MB and MIME type is `image/*`; invalid requests are rejected with a `400` error
+
+**Given** a valid photo is received by `/api/tap-submit`
+**When** the server processes the request
+**Then** the photo is uploaded to Supabase Storage at path `tap-photos/{uuid}/{timestamp}.jpg`
+**And** the SageMaker endpoint is called with `{ image_url: <storage-public-url> }` to obtain a confidence score
+
+**Given** the SageMaker inference returns confidence ≥0.75
+**When** the server completes the submission flow
+**Then** a `water_tap_pins` row is upserted: created if no existing pin is within 50 meters, or the photo is appended to an existing nearby pin
+**And** a `tap_verification_events` row is appended with `event_type = 'user_submission'`, `confidence`, `photo_url`, and `device_id`
+**And** the response returns `{ pinId, confidence, status: 'created' | 'confirmed' }` (FR45)
+
+**Given** the SageMaker inference returns confidence < 0.75
+**When** the server completes the submission flow
+**Then** no `water_tap_pins` row is created or modified
+**And** the response returns `{ pinId: null, confidence, status: 'below_threshold' }`
+**And** no photo URL is stored in the database for a below-threshold submission
+
+**Given** a user views an existing water tap pin detail sheet
+**When** they tap "Still here" or "No longer here"
+**Then** `POST /api/tap-verify` is called with `{ tapPinId: string, eventType: 'confirmed' | 'denied', deviceId: string }`
+**And** a `tap_verification_events` row is appended with the correct event_type, tap_pin_id, and device_id (FR46)
+**And** the response returns the updated verification count (confirmed, denied)
+
+**Given** a tap pin accumulates ≥2 unique device `confirmed` events
+**When** the `/api/tap-verify` endpoint processes a confirmation
+**Then** the `water_tap_pins.source` is updated to `'verified'` in Supabase (FR47 — promotion to verified status)
+
+**Given** `/api/tap-submit` or `/api/tap-verify` is called
+**When** the request arrives
+**Then** no `Authorization: Bearer` header is required — these are public endpoints authenticated by `deviceId` in the request body only (consistent with check-in and issue report pattern)
+
+**Given** any text content submitted via `/api/tap-submit` (seasonal notes field)
+**When** it is written to Supabase
+**Then** it is sanitized server-side before storage (NFR-S4)
+
+---
+
+### Story 6.4: Water Taps Feature Module & Tap Pin Detail UI
+
+As a Keys corridor traveler,
+I want to view a dedicated tap pin detail sheet showing the tap's confidence source, photos, mile marker, and seasonal notes, and be able to submit a photo or confirm/deny the tap from that sheet,
+So that I have complete, contextual information for every water tap pin without leaving the app.
+
+**Acceptance Criteria:**
+
+**Given** the user taps a `water_tap` pin on the map
+**When** `PinLayer.tsx` handles the tap event
+**Then** `navigate('/tap/:id')` is called — not `/pin/:id` (pin_category discriminator routing)
+**And** `TapPinDetailSheet` loads as a lazy-loaded chunk separate from the main bundle
+
+**Given** the `/tap/:id` route loads
+**When** `TapPinDetailSheet` renders
+**Then** a bottom sheet slides up from the bottom of the screen within 300ms (NFR-P3)
+**And** the sheet displays: place name, place type, access classification, confidence score/source, photos (scrollable if multiple), mile marker (if present), seasonal notes (if present), last verified date, and `TapConfidenceBadge`
+
+**Given** a water tap pin was created by the ML batch scan (`source = 'ml_batch'`)
+**When** `TapConfidenceBadge` renders
+**Then** it shows the ML model confidence as a percentage (e.g., "ML Confidence: 87%") alongside the data source label "ML Discovered" (FR47)
+
+**Given** a water tap pin has accumulated ≥1 user confirmations but fewer than 2
+**When** `TapConfidenceBadge` renders
+**Then** it shows the community verification count (e.g., "1 traveler confirmed") alongside the ML confidence if available (FR47)
+
+**Given** a water tap pin has `source = 'verified'` (≥2 independent confirmed events)
+**When** `TapConfidenceBadge` renders
+**Then** it displays "Community Verified" status — the highest-trust signal — replacing the ML confidence indicator (FR47)
+
+**Given** `TapPinDetailSheet` is open
+**When** the user taps "Still here"
+**Then** `useTapVerifyMutation` fires `POST /api/tap-verify` with `event_type = 'confirmed'`
+**And** the verification count in the sheet increments optimistically before the server responds (FR46)
+
+**Given** `TapPinDetailSheet` is open
+**When** the user taps "No longer here"
+**Then** `useTapVerifyMutation` fires `POST /api/tap-verify` with `event_type = 'denied'`
+**And** the verification count updates optimistically
+
+**Given** `TapPinDetailSheet` is open
+**When** the user taps "Submit a Photo"
+**Then** `TapPhotoSubmission` renders: a camera/file input, a preview of the selected photo, and a "Submit" button (FR45)
+
+**Given** the user selects a photo and taps "Submit"
+**When** `useTapSubmitMutation` fires
+**Then** a "Checking photo..." pending state is shown immediately with a confidence badge in a loading state (optimistic)
+**And** the multipart request is sent to `POST /api/tap-submit` with the photo, device GPS location, and deviceId
+
+**Given** the submission returns `status: 'created'` or `'confirmed'`
+**When** the result renders
+**Then** a success message is shown: "Photo added! This tap is now on the map."
+**And** `['water-tap', tapPinId]` TanStack Query key is invalidated and refetched
+
+**Given** the submission returns `status: 'below_threshold'`
+**When** the result renders
+**Then** a neutral message is shown: "Our model couldn't confirm a tap in that photo. Try a closer shot of the faucet."
+**And** no pin is created
+
+**Given** the `TapPinDetailSheet`
+**When** it renders on a mobile device
+**Then** all interactive elements (Still here, No longer here, Submit a Photo) meet the minimum 44×44px touch target size (NFR-A4)
+**And** swiping down on the sheet dismisses it and returns to the map
+
+**Given** the `src/features/water-taps/` module
+**When** a developer reviews its structure
+**Then** it contains: `TapPinDetailSheet.tsx`, `TapConfidenceBadge.tsx`, `TapPhotoSubmission.tsx`, `TapConfirmDeny.tsx`, `TapPinDetailSheet.test.tsx`, `TapPhotoSubmission.test.tsx`, `waterTapsApi.ts`
+**And** no water-taps components import from `src/features/pin-detail/` — the modules are isolated
+
+---
+
+### Story 6.5: ML Batch Scan Pipeline & Monthly Cron
+
+As the system,
+I want an admin-protected chunked ML scan endpoint triggered by a monthly GitHub Actions cron to scan the Florida Keys bounding box for water tap locations,
+So that new publicly accessible water taps are automatically discovered and added to the map without manual data entry.
+
+**Acceptance Criteria:**
+
+**Given** `POST /api/ml-scan` is called without a valid `Authorization: Bearer <ADMIN_SECRET>` header
+**When** the middleware processes the request
+**Then** the function returns `{ "error": "UNAUTHORIZED", "status": 401 }` and performs no scan (NFR-S5)
+
+**Given** a valid Bearer token and a request body `{ bbox: { north, south, east, west } }` with `?offset=0&limit=50`
+**When** `/api/ml-scan` runs
+**Then** it queries the OpenStreetMap Overpass API (server-side proxy) for `amenity=fuel`, `amenity=campsite`, and `tourism=camp_site` nodes within the bounding box (FR39)
+**And** the Overpass response is fetched server-side — no client-to-Overpass calls occur (NFR-I2)
+
+**Given** the Overpass enumeration returns locations
+**When** the pipeline processes each location in the offset/limit window
+**Then** for each location, up to 5 street-level photos are fetched: Mapillary queried first; Google Places Photos API used as fallback when Mapillary coverage is insufficient (FR40)
+**And** a server-side delay is applied between external API calls to stay within Mapillary and Google Places published rate limits (NFR-ML4)
+
+**Given** photos are fetched for a location
+**When** each photo is processed
+**Then** it is sent to the SageMaker endpoint with `{ image_url }` and the returned confidence (0.0–1.0) is recorded per photo per location (FR41)
+
+**Given** at least one photo for a location returns confidence ≥0.75
+**When** the scan writes results
+**Then** a `water_tap_pins` row is upserted with: location coordinates, place name, place type, `access = NULL` (unverified at creation), highest-confidence photo URL, confidence score, `source = 'ml_batch'`, scan timestamp, and `place_ref` (OSM node ID or Places ID) for business location linking (FR42, FR43, FR44)
+**And** a `tap_verification_events` row is appended with `event_type = 'ml_scan'` and the confidence score
+
+**Given** a location where all photos score below 0.75
+**When** the scan processes that location
+**Then** no `water_tap_pins` row is created or modified for that location
+
+**Given** the scan for an offset/limit window completes
+**When** the response is returned
+**Then** it includes `{ processed: <n>, created: <n>, updated: <n>, skipped: <n>, nextOffset: <offset + limit> }`
+**And** when `processed < limit`, the GitHub Actions loop terminates (all locations exhausted)
+
+**Given** the GitHub Actions `sync.yml` workflow
+**When** a developer reviews it
+**Then** a new `ml-scan` job is defined triggered by cron `0 3 1 * *` (1st of month, 3am UTC) (NFR-ML3)
+**And** the job calls `POST /api/ml-scan` sequentially at offset 0, 50, 100… (using `ML_SCAN_URL` + `ADMIN_SECRET` from repository secrets) until `processed < limit`
+**And** the existing daily BLM/USFS/NPS sync job is unchanged
+**And** neither `ML_SCAN_URL` nor `ADMIN_SECRET` appear as `VITE_` variables (NFR-ML5)
+
+**Given** the full Florida Keys bounding box (Homestead → Key West, ≤500 locations)
+**When** the monthly cron runs all chunked invocations sequentially
+**Then** the entire scan completes within 2 hours (NFR-ML1)
+**And** each individual `/api/ml-scan` invocation processes 50 locations and returns within 60 seconds
+
+**Given** an API provider (Mapillary or Google Places) returns a rate limit error during a scan
+**When** the pipeline handles the error
+**Then** the current location is skipped and logged — the pipeline does not fail entirely, and no data loss occurs for other locations (NFR-ML4)
+
+---
+
+### Story 6.6: Unified Map Pin Integration
+
+As a user,
+I want water tap pins to appear on the main map alongside regular stop pins, using the same freshness badge and rig-aware display logic,
+So that I never need to switch to a separate view to find water taps on the Florida Keys corridor.
+
+**Acceptance Criteria:**
+
+**Given** the `usePinsQuery` hook in `src/lib/supabase/`
+**When** it fetches pins for the current viewport
+**Then** it queries the `map_pins` Supabase view (not the `pins` table directly)
+**And** the response includes both `pin_category = 'regular'` and `pin_category = 'water_tap'` pins for the viewport
+
+**Given** the TanStack Query key `['water-taps', { viewport }]`
+**When** the viewport changes (pan or zoom)
+**Then** water tap pins for the new viewport are fetched and displayed — consistent with regular pin fetching behavior
+
+**Given** water tap pins load on the map
+**When** `PinLayer.tsx` renders a pin with `pin_category = 'water_tap'`
+**Then** it renders a custom SVG pin marker with a water/faucet icon and the same recency color ring logic (green/yellow/red based on `verified_date`)
+**And** when the pin is tapped, `navigate('/tap/:id')` is called — not `/pin/:id`
+
+**Given** water tap pins appear on the map alongside regular pins
+**When** the user activates the "Water" amenity filter chip
+**Then** both regular water fill pins and water tap pins are shown in full color
+**And** non-water categories are greyed or hidden per existing AND filter logic
+
+**Given** a water tap pin has `is_active = FALSE`
+**When** `usePinsQuery` fetches from `map_pins`
+**Then** that pin is excluded from the map display — `map_pins` view already filters `is_active = TRUE` only
+
+**Given** the `pin_category` discriminator in `PinLayer.tsx`
+**When** a developer reviews the routing logic
+**Then** the routing is handled by a single conditional: `if (pin.pinCategory === 'water_tap') navigate('/tap/' + pin.id)` — no inline `TapPinDetailSheet` rendering in the map layer
+**And** `TapPinDetailSheet` is imported only in the `/tap/:id` route chunk (lazy-loaded, not in the main bundle)
+
+**Given** a screen reader is active
+**When** a water tap pin is read aloud
+**Then** the `aria-label` follows the format: "[PlaceName]: water tap, verified [recency]" (NFR-A2)
+
+**Given** the `map_pins` view is the sole data source for the map pin layer
+**When** the developer verifies the integration
+**Then** no direct `pins` or `water_tap_pins` table queries exist in `PinLayer.tsx` or `usePinsQuery` — all pin data flows through the unified view

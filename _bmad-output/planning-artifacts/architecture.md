@@ -3,11 +3,16 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 lastStep: 8
 status: 'complete'
 completedAt: '2026-03-17'
+lastEdited: '2026-04-26'
+editHistory:
+  - date: '2026-04-26'
+    changes: 'ML Pipeline Extension — added water tap discovery architecture (FR39–FR47, NFR-ML1–ML5): SageMaker hosting, chunked /api/ml-scan, water_tap_pins + tap_verification_events tables, map_pins view, Supabase Storage, features/water-taps/ module'
 inputDocuments:
   - 'prd.md'
   - 'ux-design-specification.md'
   - 'product-brief-bmad-analisys-2026-03-17.md'
   - 'research/market-rv-travel-companion-app-research-2026-03-17.md'
+  - 'brainstorming-session-2026-04-25-1000.md'
 workflowType: 'architecture'
 project_name: 'bmad-analisys'
 user_name: 'Kyryl'
@@ -839,3 +844,228 @@ npx shadcn@latest init
 npm i zustand @tanstack/react-query react-router-dom leaflet @supabase/supabase-js zod @tanstack/react-query-devtools
 npm i -D @types/leaflet vitest @testing-library/react @testing-library/jest-dom
 ```
+
+---
+
+## ML Pipeline Extension — Architectural Decisions
+
+_Extension to the original architecture (2026-03-17) to support water tap discovery pipeline (FR39–FR47, NFR-ML1–ML5). All original decisions remain unchanged._
+
+### Extension Decision Summary
+
+**Critical Decisions (Block ML Pipeline Implementation):**
+- ML model hosting: SageMaker endpoint (extends existing `bb80f53` implementation)
+- Batch pipeline trigger: GitHub Actions monthly cron → `POST /api/ml-scan` (chunked, 50 locations/invocation)
+- Data model: Separate `water_tap_pins` + `tap_verification_events` tables; unified `map_pins` Supabase view
+
+**Important Decisions (Shape Extension Architecture):**
+- User photo storage: Supabase Storage (`tap-photos` bucket) — stays in existing infrastructure
+- UI module: Dedicated `src/features/water-taps/` — no cross-contamination with `pin-detail/`
+
+**Deferred to Phase 2:**
+- Real-time ML inference API endpoint (PRD-deferred; batch-only at MVP)
+- ONNX on-device model for offline Keys use (evaluate after batch pipeline stable)
+- Multi-state ML scan expansion (after Florida Keys pilot validated)
+
+### Data Architecture Extension
+
+**New Tables:**
+
+`water_tap_pins`:
+```sql
+CREATE TABLE water_tap_pins (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  location        GEOGRAPHY(POINT, 4326) NOT NULL,
+  place_name      TEXT NOT NULL,
+  place_type      TEXT NOT NULL,          -- 'gas_station' | 'campground' | 'restaurant'
+  access          TEXT,                   -- 'public' | 'ask_inside' | '24h' | 'daylight_only' (unverified at creation)
+  confidence      NUMERIC(3,2) NOT NULL,  -- 0.00–1.00
+  source          TEXT NOT NULL,          -- 'ml_batch' | 'user_submission' | 'manual'
+  photos          TEXT[] DEFAULT '{}',    -- Supabase Storage URLs
+  seasonal_notes  TEXT,
+  mile_marker     NUMERIC(5,1),           -- NULL for non-Keys pins
+  is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+  verified_date   TIMESTAMPTZ,
+  place_ref       TEXT,                   -- Google Places ID or OSM node ID
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_water_tap_pins_location    ON water_tap_pins USING GIST(location);
+CREATE INDEX idx_water_tap_pins_is_active   ON water_tap_pins (is_active);
+CREATE INDEX idx_water_tap_pins_mile_marker ON water_tap_pins (mile_marker) WHERE mile_marker IS NOT NULL;
+```
+
+`tap_verification_events` (append-only — never UPDATE or DELETE rows):
+```sql
+CREATE TABLE tap_verification_events (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tap_pin_id   UUID NOT NULL REFERENCES water_tap_pins(id),
+  device_id    TEXT NOT NULL,            -- anonymous UUID, same pattern as check_ins
+  event_type   TEXT NOT NULL,            -- 'confirmed' | 'denied' | 'ml_scan' | 'user_submission'
+  confidence   NUMERIC(3,2),            -- present for ml_scan events
+  photo_url    TEXT,                     -- present for user_submission events
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_tap_verification_tap_pin_id ON tap_verification_events (tap_pin_id);
+```
+
+**Supabase View — unified map pin source:**
+```sql
+CREATE VIEW map_pins AS
+  SELECT id, location, 'regular'   AS pin_category, place_name FROM pins          WHERE is_active = TRUE
+  UNION ALL
+  SELECT id, location, 'water_tap' AS pin_category, place_name FROM water_tap_pins WHERE is_active = TRUE;
+```
+Client queries `map_pins` via PostgREST — `pin_category` discriminator routes to `PinDetailSheet` vs `TapPinDetailSheet` in `PinLayer.tsx`.
+
+**Supabase Storage:**
+- Bucket: `tap-photos` — public read (photos displayed in pin detail); write via service role key from serverless functions only
+- Path pattern: `tap-photos/{tap_pin_id}/{timestamp}.jpg`
+- Max file size: 5MB (enforced server-side in `/api/tap-submit`)
+
+### API Extension
+
+**New Endpoints:**
+
+| Endpoint | Auth | Purpose |
+|---|---|---|
+| `POST /api/ml-scan` | Bearer token | Chunked batch scan: Overpass → Mapillary/Places → SageMaker → `water_tap_pins` write |
+| `POST /api/tap-submit` | None (deviceId in body) | User photo → Supabase Storage → SageMaker → create/confirm tap pin |
+| `POST /api/tap-verify` | None (deviceId in body) | User confirm/deny → append `tap_verification_events` row |
+
+**`/api/ml-scan` chunking contract:**
+```
+POST /api/ml-scan?offset=0&limit=50
+Body: { bbox: { north, south, east, west } }
+Response: { processed: 50, created: 8, updated: 3, skipped: 39, nextOffset: 50 }
+```
+GitHub Actions calls sequentially (offset 0, 50, 100…) until `processed < limit`. Each invocation completes in <60s (50 locations × ~1s SageMaker call + image fetch), satisfying NFR-ML1 (≤500 locations within 2 hours) across ~10 sequential invocations.
+
+**`/api/tap-submit` flow:**
+```
+1. Receive multipart/form-data: { photo: File, location: [lat, lng], deviceId: string }
+2. Validate: file size ≤5MB, MIME type image/*
+3. Upload to Supabase Storage → tap-photos/{uuid}/{timestamp}.jpg
+4. Call SageMaker endpoint: { image_url } → { confidence: 0.0–1.0 }
+5. If confidence ≥0.75: upsert water_tap_pins (create or add photo to existing pin at location)
+6. Append tap_verification_events row (event_type: 'user_submission')
+7. Return: { pinId, confidence, status: 'created' | 'confirmed' | 'below_threshold' }
+```
+
+### Frontend Architecture Extension
+
+**New feature module `src/features/water-taps/`:**
+```
+src/features/water-taps/
+  TapPinDetailSheet.tsx       # Bottom sheet: confidence, photos, mile marker, seasonal notes, access type
+  TapConfidenceBadge.tsx      # ML confidence indicator + community verification count (FR47)
+  TapPhotoSubmission.tsx      # Photo upload flow: camera/file input + submission state (FR45)
+  TapConfirmDeny.tsx          # "Still here / No longer here" UI (FR46)
+  TapPinDetailSheet.test.tsx
+  TapPhotoSubmission.test.tsx
+  waterTapsApi.ts             # Fetch wrappers: POST /api/tap-submit, POST /api/tap-verify
+```
+
+**Map routing update (`src/features/map/PinLayer.tsx`):**
+```typescript
+function onPinTap(pin: MapPin) {
+  if (pin.pinCategory === 'water_tap') navigate(`/tap/${pin.id}`)
+  else navigate(`/pin/${pin.id}`)
+}
+```
+
+**New route:** `/tap/:id` → `TapPinDetailSheet` (lazy-loaded chunk, separate from main bundle)
+
+**New TanStack Query keys:**
+```typescript
+['water-taps', { viewport }]   // viewport tap pin list
+['water-tap', tapPinId]        // single tap pin detail + verification count
+```
+
+**New mutations:**
+- `useTapSubmitMutation` — multipart POST; optimistic: show "pending" confidence badge immediately
+- `useTapVerifyMutation` — POST to `/api/tap-verify`; optimistic: increment/decrement verification count
+
+### Infrastructure Extension
+
+**GitHub Actions `sync.yml` update:**
+```yaml
+on:
+  schedule:
+    - cron: '0 2 * * *'    # BLM/USFS/NPS daily sync (unchanged)
+    - cron: '0 3 1 * *'    # ML tap scan monthly (new — 1st of month, 3am UTC)
+
+jobs:
+  # existing sync job unchanged
+  ml-scan:
+    if: github.event.schedule == '0 3 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run ML scan (chunked)
+        run: |
+          OFFSET=0; LIMIT=50
+          while true; do
+            RESP=$(curl -s -X POST "${{ secrets.ML_SCAN_URL }}?offset=$OFFSET&limit=$LIMIT" \
+              -H "Authorization: Bearer ${{ secrets.ADMIN_SECRET }}" \
+              -d '{"bbox":{"north":25.7,"south":24.5,"east":-80.1,"west":-81.8}}')
+            PROCESSED=$(echo $RESP | jq '.processed')
+            OFFSET=$((OFFSET + LIMIT))
+            [ "$PROCESSED" -lt "$LIMIT" ] && break
+          done
+```
+
+**New environment variables (additions to `.env.example`):**
+```
+SAGEMAKER_ENDPOINT_URL=    # Server-only — SageMaker inference endpoint URL
+AWS_ACCESS_KEY_ID=         # Server-only — AWS credentials for SageMaker
+AWS_SECRET_ACCESS_KEY=     # Server-only
+AWS_REGION=                # Server-only — e.g. us-east-1
+ML_SCAN_URL=               # Server-only — full /api/ml-scan URL (for GitHub Actions)
+```
+
+**New Supabase migrations:**
+```
+supabase/migrations/
+  005_create_water_tap_pins.sql
+  006_create_tap_verification_events.sql
+  007_create_map_pins_view.sql
+  008_create_tap_photos_storage_bucket.sql
+```
+
+### Extension Decision Impact Analysis
+
+**Implementation Sequence (extension only):**
+1. Supabase migrations 005–008 (blocks all tap data work)
+2. SageMaker endpoint activated + tested with sample photo (blocks `/api/ml-scan` and `/api/tap-submit`)
+3. `/api/tap-submit` + `/api/tap-verify` serverless functions (blocks user-facing tap features)
+4. `src/features/water-taps/` module + `/tap/:id` route (blocks tap pin UI)
+5. `/api/ml-scan` + GitHub Actions cron update (blocks batch discovery pipeline)
+6. `map_pins` view wired into `usePinsQuery` + `PinLayer` routing update (completes unified map display)
+
+**Cross-Component Dependencies:**
+- `useWaterTapsQuery` depends on `map_pins` view (migration 007)
+- `/api/tap-submit` depends on Supabase Storage bucket (migration 008) + SageMaker endpoint active
+- `TapPinDetailSheet` depends on `tap_verification_events` query helper in `src/lib/supabase/`
+- GitHub Actions cron depends on `ML_SCAN_URL` + `ADMIN_SECRET` in repository secrets
+- `PinLayer.tsx` routing update depends on `pin_category` discriminator in `map_pins` view
+
+**Requirements Coverage (FR39–FR47, NFR-ML1–ML5):**
+
+| FR/NFR | Coverage | Location |
+|---|---|---|
+| FR39 (Overpass enumeration) | Overpass query at scan start | `api/ml-scan.ts` |
+| FR40 (image fetch, ≤5/location) | Mapillary first, Places fallback | `api/ml-scan.ts` |
+| FR41 (ML inference per photo) | SageMaker endpoint call per photo | `api/ml-scan.ts` + SageMaker |
+| FR42 (create pin at ≥0.75) | `water_tap_pins` upsert on threshold | `api/ml-scan.ts` |
+| FR43 (tap pin schema) | Full schema with all required fields | migrations 005, 006 |
+| FR44 (business location link) | `place_ref` column | migration 005 |
+| FR45 (user photo submission) | Storage upload → SageMaker → pin write | `api/tap-submit.ts` + `TapPhotoSubmission.tsx` |
+| FR46 (confirm/deny log) | Append-only event log | `api/tap-verify.ts` + `tap_verification_events` |
+| FR47 (confidence display + verified status) | ML confidence + community count + ≥2 users = verified | `TapConfidenceBadge.tsx` |
+| NFR-ML1 (≤500 locations / 2h) | Chunked 50-location invocations, ~10 sequential calls | `api/ml-scan.ts` design |
+| NFR-ML2 (≥80% precision gate) | SageMaker offline evaluation before first production scan | SageMaker eval step |
+| NFR-ML3 (30-day re-scan) | Monthly cron trigger | `.github/workflows/sync.yml` |
+| NFR-ML4 (rate limit compliance) | Server-side delay between Mapillary/Places calls | `api/ml-scan.ts` |
+| NFR-ML5 (model not client-accessible) | `SAGEMAKER_ENDPOINT_URL` + AWS creds server-only; never `VITE_` prefixed | `.env.example`, all `api/*.ts` |

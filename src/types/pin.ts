@@ -1,4 +1,4 @@
-export type PinSource = 'blm' | 'usfs' | 'nps' | 'overpass' | 'community'
+export type PinSource = 'blm' | 'usfs' | 'nps' | 'overpass' | 'community' | 'water_tap'
 
 export type BadgeColor = 'green' | 'yellow' | 'red' | 'grey'
 
@@ -41,6 +41,8 @@ export interface PinAmenities {
 export interface Pin {
   id: string
   name: string
+  /** Optional discriminator — 'water_tap' routes to /tap/:id instead of /pin/:id */
+  pinCategory?: string
   description: string | null
   latitude: number
   longitude: number

@@ -27,9 +27,14 @@ const markerMocks = vi.hoisted(() => {
 
 const storeMocks = vi.hoisted(() => {
   const mockSetSelectedPin = vi.fn()
+  const mockSetSelectedTapPin = vi.fn()
   return {
     mockSetSelectedPin,
-    mockGetState: vi.fn(() => ({ setSelectedPin: mockSetSelectedPin })),
+    mockSetSelectedTapPin,
+    mockGetState: vi.fn(() => ({
+      setSelectedPin: mockSetSelectedPin,
+      setSelectedTapPin: mockSetSelectedTapPin,
+    })),
   }
 })
 
@@ -424,6 +429,50 @@ describe('createPinIconConfig — XSS safety', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Story 6.6: Water tap pin icon config
+// ---------------------------------------------------------------------------
+describe('createPinIconConfig — water tap pins (Story 6.6)', () => {
+  it('html contains FAUCET_SVG marker (sky-700 colour #0369a1)', () => {
+    const tapPin = makePin({ pinCategory: 'water_tap' })
+    const config = createPinIconConfig(tapPin, noProfile)
+    expect(config.html).toContain('#0369a1')
+  })
+
+  it('aria-label contains "water tap" as category', () => {
+    const tapPin = makePin({ name: 'Mile Marker Tap', pinCategory: 'water_tap' })
+    const config = createPinIconConfig(tapPin, noProfile)
+    expect(config.html).toContain('water tap')
+  })
+
+  it('aria-label format: "[Name]: water tap, verified [recency]"', () => {
+    const tapPin = makePin({ name: 'Mile Marker Tap', badgeState: 'green', pinCategory: 'water_tap' })
+    const config = createPinIconConfig(tapPin, noProfile)
+    expect(config.html).toContain('aria-label="Mile Marker Tap: water tap, verified fresh"')
+  })
+
+  it('water tap overrides amenity-based emoji even when amenities.water is true', () => {
+    const tapPin = makePin({
+      pinCategory: 'water_tap',
+      amenities: { water: true, dump: false, electric: false, shower: false, fuel: false, propane: false, overnight: false },
+    })
+    const config = createPinIconConfig(tapPin, noProfile)
+    // Should render FAUCET_SVG (contains #0369a1), not the 💧 emoji
+    expect(config.html).toContain('#0369a1')
+    expect(config.html).not.toContain('💧')
+  })
+
+  it('regular pin with water amenity still shows 💧 (not faucet SVG)', () => {
+    const regularWaterPin = makePin({
+      // No pinCategory = 'water_tap'
+      amenities: { water: true, dump: false, electric: false, shower: false, fuel: false, propane: false, overnight: false },
+    })
+    const config = createPinIconConfig(regularWaterPin, noProfile)
+    expect(config.html).toContain('💧')
+    expect(config.html).not.toContain('#0369a1')
+  })
+})
+
+// ---------------------------------------------------------------------------
 // createPinMarker — click handler (AC3)
 // ---------------------------------------------------------------------------
 describe('createPinMarker — click handler', () => {
@@ -468,5 +517,23 @@ describe('createPinMarker — click handler', () => {
     createPinMarker(unfitPin, bigRig) // bigRig exceeds maxLengthFt: 10
     markerMocks.getClickHandler()!()
     expect(storeMocks.mockSetSelectedPin).toHaveBeenCalledWith('unfit-1')
+  })
+
+  it('click on water_tap pin calls setSelectedTapPin, not setSelectedPin (Story 6.6)', () => {
+    const tapPin = makePin({ id: 'tap-42', pinCategory: 'water_tap' })
+    createPinMarker(tapPin, noProfile)
+    const handler = markerMocks.getClickHandler()
+    expect(handler).not.toBeNull()
+    handler!()
+    expect(storeMocks.mockSetSelectedTapPin).toHaveBeenCalledWith('tap-42')
+    expect(storeMocks.mockSetSelectedPin).not.toHaveBeenCalled()
+  })
+
+  it('click on regular pin still calls setSelectedPin (water_tap routing does not regress regular pins)', () => {
+    const regularPin = makePin({ id: 'reg-99' })
+    createPinMarker(regularPin, noProfile)
+    markerMocks.getClickHandler()!()
+    expect(storeMocks.mockSetSelectedPin).toHaveBeenCalledWith('reg-99')
+    expect(storeMocks.mockSetSelectedTapPin).not.toHaveBeenCalled()
   })
 })

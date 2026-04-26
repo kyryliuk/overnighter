@@ -3,12 +3,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // ── Mock setup ──────────────────────────────────────────────────────────────
 
-const { mockRpc, mockFrom, mockEq } = vi.hoisted(() => {
+const { mockRpc, mockFrom, mockEq, mockSelect } = vi.hoisted(() => {
   const mockEq = vi.fn()
   const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
   const mockFrom = vi.fn().mockReturnValue({ select: mockSelect })
   const mockRpc = vi.fn()
-  return { mockRpc, mockFrom, mockEq }
+  return { mockRpc, mockFrom, mockEq, mockSelect }
 })
 
 vi.mock('./_supabase', () => ({
@@ -50,6 +50,7 @@ const STUB_DB_ROW = {
   latitude: 39.7,
   longitude: -105.0,
   pin_type: 'blm',
+  // pin_category absent — pre-6.6 search_pins_by_radius RPC; defaults to 'regular' in mapRadiusPin
   source_id: null,
   max_length_ft: null,
   max_height_ft: null,
@@ -68,12 +69,58 @@ const STUB_DB_ROW = {
   distance_m: 1234.567,
 }
 
+// map_pins view row format (Story 6.6): uses place_name and pin_category
 const STUB_ALL_PINS_ROW = {
-  ...STUB_DB_ROW,
-  is_archived: false,
+  id: 'pin-1',
+  location: null,
+  pin_category: 'regular',
+  place_name: 'Test Spot',
+  description: 'A lovely test campsite',
+  latitude: 39.7,
+  longitude: -105.0,
+  pin_type: 'blm',
+  source_id: null,
+  max_length_ft: null,
+  max_height_ft: null,
+  website: null,
+  phone: null,
+  elevation_m: null,
+  amenities: { water: true, dump: false },
+  badge_state: 'green',
+  last_check_in_at: null,
+  recent_check_in_count: 0,
+  is_verified: true,
+  is_flagged: false,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
 }
-// Remove distance_m from all-pins row since it won't be returned by a regular select
-delete (STUB_ALL_PINS_ROW as Record<string, unknown>).distance_m
+
+// Stub water tap row from search_water_taps_by_radius RPC (Story 6.6)
+const STUB_WATER_TAP_ROW = {
+  id: 'tap-1',
+  name: 'Mile Marker 88 Tap',
+  description: null,
+  latitude: 24.7,
+  longitude: -81.0,
+  pin_type: 'water_tap',
+  pin_category: 'water_tap',
+  source_id: null,
+  max_length_ft: null,
+  max_height_ft: null,
+  website: null,
+  phone: null,
+  elevation_m: null,
+  amenities: { water: true, dump: false },
+  badge_state: 'green',
+  last_check_in_at: null,
+  recent_check_in_count: 0,
+  is_verified: false,
+  is_flagged: false,
+  location: '0101000020E6100000...',
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  distance_m: 2500.0,
+}
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -104,19 +151,19 @@ describe('GET /api/pins — radius search', () => {
   // ── Fallback: no spatial params → getAllPins ──────────────────────────────
 
   describe('fallback (no spatial params)', () => {
-    it('returns all non-archived pins when no lat/lng/radiusM provided', async () => {
-      mockEq.mockResolvedValue({ data: [STUB_ALL_PINS_ROW], error: null })
+    it('returns all pins when no lat/lng/radiusM provided', async () => {
+      mockSelect.mockResolvedValueOnce({ data: [STUB_ALL_PINS_ROW], error: null })
       const { res, ctx } = mockRes()
       await handler(mockReq('GET'), res)
       expect(ctx.statusCode).toBe(200)
       const body = ctx.body as { pins: unknown[]; total: number }
       expect(body.pins).toHaveLength(1)
       expect(body.total).toBe(1)
-      expect(mockFrom).toHaveBeenCalledWith('pins')
+      expect(mockFrom).toHaveBeenCalledWith('map_pins')
     })
 
     it('returns 500 when supabase fallback query fails', async () => {
-      mockEq.mockResolvedValue({ data: null, error: new Error('DB error') })
+      mockSelect.mockResolvedValueOnce({ data: null, error: new Error('DB error') })
       const { res, ctx } = mockRes()
       await handler(mockReq('GET'), res)
       expect(ctx.statusCode).toBe(500)
@@ -124,7 +171,7 @@ describe('GET /api/pins — radius search', () => {
     })
 
     it('maps snake_case to camelCase in fallback response', async () => {
-      mockEq.mockResolvedValue({ data: [STUB_ALL_PINS_ROW], error: null })
+      mockSelect.mockResolvedValueOnce({ data: [STUB_ALL_PINS_ROW], error: null })
       const { res, ctx } = mockRes()
       await handler(mockReq('GET'), res)
       const body = ctx.body as { pins: Record<string, unknown>[] }
@@ -137,6 +184,22 @@ describe('GET /api/pins — radius search', () => {
       expect(pin).not.toHaveProperty('pin_type')
       expect(pin).not.toHaveProperty('badge_state')
     })
+
+    it('sets pinCategory from map_pins view in fallback response', async () => {
+      mockSelect.mockResolvedValueOnce({ data: [STUB_ALL_PINS_ROW], error: null })
+      const { res, ctx } = mockRes()
+      await handler(mockReq('GET'), res)
+      const body = ctx.body as { pins: Record<string, unknown>[] }
+      expect(body.pins[0].pinCategory).toBe('regular')
+    })
+
+    it('preserves description from map_pins view for regular pins (H1/L3 regression guard)', async () => {
+      mockSelect.mockResolvedValueOnce({ data: [STUB_ALL_PINS_ROW], error: null })
+      const { res, ctx } = mockRes()
+      await handler(mockReq('GET'), res)
+      const body = ctx.body as { pins: Record<string, unknown>[] }
+      expect(body.pins[0].description).toBe('A lovely test campsite')
+    })
   })
 
   // ── Radius search happy path ─────────────────────────────────────────────
@@ -144,8 +207,9 @@ describe('GET /api/pins — radius search', () => {
   describe('radius search happy path', () => {
     it('returns pins with distance when lat/lng/radiusM provided', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })
-        .mockResolvedValueOnce({ data: 1, error: null })
+        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })   // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })               // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 1, error: null })               // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -169,8 +233,9 @@ describe('GET /api/pins — radius search', () => {
 
     it('calls RPC with correct parameters', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })  // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })  // count_pins_by_radius
 
       const { res } = mockRes()
       await handler(
@@ -190,12 +255,21 @@ describe('GET /api/pins — radius search', () => {
         p_lng: -105.0,
         p_radius_m: 50000,
       })
+      // Story 6.6: also calls search_water_taps_by_radius
+      expect(mockRpc).toHaveBeenCalledWith('search_water_taps_by_radius', {
+        p_lat: 39.7,
+        p_lng: -105.0,
+        p_radius_m: 50000,
+        p_limit: 200,
+        p_offset: 0,
+      })
     })
 
     it('maps snake_case to camelCase in radius response', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })
-        .mockResolvedValueOnce({ data: 1, error: null })
+        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })   // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })               // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 1, error: null })               // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -210,6 +284,21 @@ describe('GET /api/pins — radius search', () => {
       expect(pin).not.toHaveProperty('pin_type')
       expect(pin).not.toHaveProperty('distance_m')
     })
+
+    it('sets pinCategory=regular for regular pins in radius response', async () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })   // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })               // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 1, error: null })               // count_pins_by_radius
+
+      const { res, ctx } = mockRes()
+      await handler(
+        mockReq('GET', { lat: '39.7', lng: '-105.0', radiusM: '50000' }),
+        res,
+      )
+      const body = ctx.body as { pins: Record<string, unknown>[] }
+      expect(body.pins[0].pinCategory).toBe('regular')
+    })
   })
 
   // ── Pagination ────────────────────────────────────────────────────────────
@@ -217,8 +306,9 @@ describe('GET /api/pins — radius search', () => {
   describe('pagination', () => {
     it('forwards limit and offset to RPC', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })  // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })  // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -241,8 +331,9 @@ describe('GET /api/pins — radius search', () => {
 
     it('uses default limit=200 and offset=0 when not provided', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })  // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })  // count_pins_by_radius
 
       const { res } = mockRes()
       await handler(
@@ -375,8 +466,9 @@ describe('GET /api/pins — radius search', () => {
   describe('error handling', () => {
     it('returns 500 when search RPC fails', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: null, error: new Error('RPC failed') })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: null, error: new Error('RPC failed') })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })                        // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })                        // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -389,8 +481,9 @@ describe('GET /api/pins — radius search', () => {
 
     it('returns 500 when count RPC fails', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: null, error: new Error('Count failed') })
+        .mockResolvedValueOnce({ data: [], error: null })                              // search_pins_by_radius OK
+        .mockResolvedValueOnce({ data: [], error: null })                              // search_water_taps_by_radius OK
+        .mockResolvedValueOnce({ data: null, error: new Error('Count failed') })      // count_pins_by_radius FAILS
 
       const { res, ctx } = mockRes()
       await handler(
@@ -403,8 +496,9 @@ describe('GET /api/pins — radius search', () => {
 
     it('returns total=0 when count returns null', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })   // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })   // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: null, error: null }) // count_pins_by_radius → null
 
       const { res, ctx } = mockRes()
       await handler(
@@ -414,6 +508,24 @@ describe('GET /api/pins — radius search', () => {
       expect(ctx.statusCode).toBe(200)
       expect((ctx.body as { total: number }).total).toBe(0)
     })
+
+    it('water tap RPC error is non-fatal: returns 200 with regular pins only', async () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })            // search_pins_by_radius OK
+        .mockResolvedValueOnce({ data: null, error: new Error('Tap error') })  // search_water_taps_by_radius FAILS
+        .mockResolvedValueOnce({ data: 1, error: null })                        // count_pins_by_radius OK
+
+      const { res, ctx } = mockRes()
+      await handler(
+        mockReq('GET', { lat: '39.7', lng: '-105.0', radiusM: '50000' }),
+        res,
+      )
+      expect(ctx.statusCode).toBe(200)
+      const body = ctx.body as { pins: Record<string, unknown>[]; total: number }
+      // Only regular pins returned; total reflects count RPC (regular only)
+      expect(body.pins.every((p) => p.pinCategory === 'regular')).toBe(true)
+      expect(body.total).toBe(1)
+    })
   })
 
   // ── Edge cases ────────────────────────────────────────────────────────────
@@ -421,8 +533,9 @@ describe('GET /api/pins — radius search', () => {
   describe('edge cases', () => {
     it('handles boundary lat values (90, -90)', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })  // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })  // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -434,8 +547,9 @@ describe('GET /api/pins — radius search', () => {
 
     it('handles boundary lng values (180, -180)', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })  // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })  // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -447,8 +561,9 @@ describe('GET /api/pins — radius search', () => {
 
     it('handles boundary radiusM values (100, 500000)', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })  // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })  // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -460,8 +575,9 @@ describe('GET /api/pins — radius search', () => {
 
     it('handles empty result set', async () => {
       mockRpc
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: 0, error: null })
+        .mockResolvedValueOnce({ data: [], error: null })  // search_pins_by_radius
+        .mockResolvedValueOnce({ data: [], error: null })  // search_water_taps_by_radius
+        .mockResolvedValueOnce({ data: 0, error: null })  // count_pins_by_radius
 
       const { res, ctx } = mockRes()
       await handler(
@@ -472,6 +588,69 @@ describe('GET /api/pins — radius search', () => {
       const body = ctx.body as { pins: unknown[]; total: number }
       expect(body.pins).toEqual([])
       expect(body.total).toBe(0)
+    })
+  })
+
+  // ── Story 6.6: Water tap + regular pin merging ────────────────────────────
+
+  describe('Story 6.6: water tap pin integration', () => {
+    it('merges water tap pins with regular pins sorted by distance_m', async () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })           // search_pins_by_radius: 1 regular pin (1234m)
+        .mockResolvedValueOnce({ data: [STUB_WATER_TAP_ROW], error: null })   // search_water_taps_by_radius: 1 tap (2500m)
+        .mockResolvedValueOnce({ data: 1, error: null })                       // count_pins_by_radius
+
+      const { res, ctx } = mockRes()
+      await handler(
+        mockReq('GET', { lat: '39.7', lng: '-105.0', radiusM: '50000' }),
+        res,
+      )
+      expect(ctx.statusCode).toBe(200)
+      const body = ctx.body as { pins: Record<string, unknown>[]; total: number }
+      // Both pins returned, sorted by distance_m ascending
+      expect(body.pins).toHaveLength(2)
+      expect(body.pins[0].id).toBe('pin-1')           // 1234m closer
+      expect(body.pins[1].id).toBe('tap-1')           // 2500m farther
+      // Water tap pin has correct pinCategory
+      expect(body.pins[1].pinCategory).toBe('water_tap')
+      // Regular pin has correct pinCategory
+      expect(body.pins[0].pinCategory).toBe('regular')
+      // total = count RPC result (regular only) + water tap count
+      expect(body.total).toBe(2)
+    })
+
+    it('water tap pin is closer: appears before regular pin', async () => {
+      const closerTap = { ...STUB_WATER_TAP_ROW, distance_m: 500 }  // 500m
+      mockRpc
+        .mockResolvedValueOnce({ data: [STUB_DB_ROW], error: null })         // regular: 1234m
+        .mockResolvedValueOnce({ data: [closerTap], error: null })           // water tap: 500m
+        .mockResolvedValueOnce({ data: 1, error: null })
+
+      const { res, ctx } = mockRes()
+      await handler(
+        mockReq('GET', { lat: '39.7', lng: '-105.0', radiusM: '50000' }),
+        res,
+      )
+      const body = ctx.body as { pins: Record<string, unknown>[] }
+      // Water tap should be first (closer)
+      expect(body.pins[0].id).toBe('tap-1')
+      expect(body.pins[0].pinCategory).toBe('water_tap')
+    })
+
+    it('total includes both regular count and water tap count', async () => {
+      mockRpc
+        .mockResolvedValueOnce({ data: [], error: null })                       // 0 regular pins in page
+        .mockResolvedValueOnce({ data: [STUB_WATER_TAP_ROW], error: null })   // 1 water tap
+        .mockResolvedValueOnce({ data: 5, error: null })                       // count: 5 regular pins total
+
+      const { res, ctx } = mockRes()
+      await handler(
+        mockReq('GET', { lat: '39.7', lng: '-105.0', radiusM: '50000' }),
+        res,
+      )
+      const body = ctx.body as { total: number }
+      // total = 5 regular + 1 water tap = 6
+      expect(body.total).toBe(6)
     })
   })
 })

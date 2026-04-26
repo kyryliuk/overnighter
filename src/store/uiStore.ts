@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 interface UIStore {
   selectedPinId: string | null
+  selectedTapPinId: string | null
   activeTripId: string | null
   isAdminPanelOpen: boolean
   pendingMapCenter: { lat: number; lng: number } | null
@@ -9,6 +10,7 @@ interface UIStore {
   pendingReport: { pinId: string } | null
   updateAvailable: boolean
   setSelectedPin: (pinId: string | null) => void
+  setSelectedTapPin: (pinId: string | null) => void
   setActiveTripId: (tripId: string | null) => void
   openAdminPanel: () => void
   closeAdminPanel: () => void
@@ -20,6 +22,7 @@ interface UIStore {
 
 export const useUIStore = create<UIStore>()((set) => ({
   selectedPinId: null,
+  selectedTapPinId: null,
   activeTripId: null,
   isAdminPanelOpen: false,
   pendingMapCenter: null,
@@ -27,6 +30,7 @@ export const useUIStore = create<UIStore>()((set) => ({
   pendingReport: null,
   updateAvailable: false,
   setSelectedPin: (pinId) => set({ selectedPinId: pinId }),
+  setSelectedTapPin: (pinId) => set({ selectedTapPinId: pinId }),
   setActiveTripId: (tripId) => set({ activeTripId: tripId }),
   openAdminPanel: () => set({ isAdminPanelOpen: true }),
   closeAdminPanel: () => set({ isAdminPanelOpen: false }),

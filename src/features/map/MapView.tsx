@@ -67,6 +67,7 @@ function MapViewContent() {
   )
 
   const selectedPinId = useUIStore((state) => state.selectedPinId)
+  const selectedTapPinId = useUIStore((state) => state.selectedTapPinId)
   const pendingMapCenter = useUIStore((state) => state.pendingMapCenter)
   const setPendingMapCenter = useUIStore((state) => state.setPendingMapCenter)
   const location = useLocation()
@@ -148,6 +149,10 @@ function MapViewContent() {
   useEffect(() => {
     if (selectedPinId) navigate('/pin/' + selectedPinId)
   }, [selectedPinId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (selectedTapPinId) navigate('/tap/' + selectedTapPinId)
+  }, [selectedTapPinId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (pendingMapCenter && mapRef.current) {

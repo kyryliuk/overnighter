@@ -2,6 +2,39 @@
 // These types are ONLY used inside src/lib/supabase/ helpers.
 // Never let these snake_case types leak into components or stores.
 
+import type { PinSource } from '@/types/pin'
+
+/**
+ * DbMapPin — row shape returned by the `map_pins` unified view (migration 034).
+ * Covers both 'regular' pins (from the `pins` table) and 'water_tap' pins
+ * (from `water_tap_pins`).  The `pin_category` discriminator drives routing
+ * in PinLayer.tsx / PinMarker.ts.
+ */
+export interface DbMapPin {
+  id: string
+  location: string | null          // WKB geography hex string (may be null for legacy regular pins)
+  pin_category: 'regular' | 'water_tap'
+  place_name: string               // unified name column (alias for `name` on regular pins)
+  description: string | null       // null for water_tap rows (water_tap_pins has no description column)
+  latitude: number
+  longitude: number
+  pin_type: PinSource              // typed as PinSource — 'water_tap' is now part of the union
+  source_id: string | null
+  max_length_ft: number | null
+  max_height_ft: number | null
+  website: string | null
+  phone: string | null
+  elevation_m: number | null
+  amenities: Record<string, boolean>
+  badge_state: string
+  last_check_in_at: string | null
+  recent_check_in_count: number
+  is_verified: boolean
+  is_flagged: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface DbPin {
   id: string
   name: string

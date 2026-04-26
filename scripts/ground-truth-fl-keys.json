@@ -1,0 +1,63 @@
+[
+  {
+    "_note": "PLACEHOLDER DATASET — Replace these URLs with actual Florida Keys ground-truth test images before running validate-model-precision.ts against the real SageMaker endpoint. These Wikipedia URLs are illustrative only.",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Faucet_water_tap.jpg/640px-Faucet_water_tap.jpg",
+    "is_faucet": true,
+    "description": "Outdoor water faucet / tap — positive sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Camponotus_flavomarginatus_ant.jpg/640px-Camponotus_flavomarginatus_ant.jpg",
+    "is_faucet": false,
+    "description": "Non-faucet: macro insect photo — negative sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Typical_Outdoor_Hose_Faucet.jpg/640px-Typical_Outdoor_Hose_Faucet.jpg",
+    "is_faucet": true,
+    "description": "Outdoor garden hose faucet — positive sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Fire_hydrant_with_a_cap.jpg/640px-Fire_hydrant_with_a_cap.jpg",
+    "is_faucet": false,
+    "description": "Non-faucet: fire hydrant — negative smoke-test sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Drinking_water_fountain.jpg/640px-Drinking_water_fountain.jpg",
+    "is_faucet": true,
+    "description": "Drinking water fountain at FL Keys rest stop — positive sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Closed_door.jpg/640px-Closed_door.jpg",
+    "is_faucet": false,
+    "description": "Non-faucet: wooden door — negative smoke-test sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Outdoor_water_spigot.jpg/640px-Outdoor_water_spigot.jpg",
+    "is_faucet": true,
+    "description": "Outdoor water spigot at campground — positive sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Gas_station_fuel_pump.jpg/640px-Gas_station_fuel_pump.jpg",
+    "is_faucet": false,
+    "description": "Non-faucet: gas station fuel pump — negative sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Silver_outdoor_tap.jpg/640px-Silver_outdoor_tap.jpg",
+    "is_faucet": true,
+    "description": "Silver outdoor garden tap — positive sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/RV_park_water_hookup_pedestal.jpg/640px-RV_park_water_hookup_pedestal.jpg",
+    "is_faucet": true,
+    "description": "RV park water hookup pedestal with tap — positive sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Dumpster_blue.jpg/640px-Dumpster_blue.jpg",
+    "is_faucet": false,
+    "description": "Non-faucet: dumpster — negative sample"
+  },
+  {
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Outdoor_water_tap_concrete.jpg/640px-Outdoor_water_tap_concrete.jpg",
+    "is_faucet": true,
+    "description": "Outdoor water tap mounted on concrete wall — positive sample"
+  }
+]
