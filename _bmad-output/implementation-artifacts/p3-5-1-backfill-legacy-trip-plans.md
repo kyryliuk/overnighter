@@ -194,10 +194,11 @@ claude-sonnet-4.6
 
 ### Completion Notes List
 
-- All 10 unit tests pass covering all ACs
+- All 12 unit tests pass covering all ACs (10 original + 2 added in code review)
 - `transformLegacyPlan()` is a pure exported function — no I/O dependency in tests
-- Individual malformed waypoints are silently dropped (trip preserved); missing destination returns null (trip skipped)
-- Script uses BATCH_SIZE=100 pagination; per-trip try/catch prevents one bad row aborting the batch
+- Individual malformed waypoints are silently dropped (trip preserved); missing destination or non-array stops return null (trip skipped)
+- Script uses BATCH_SIZE=100 pagination with deterministic compound sort `(updated_at, plan_id)` to prevent skipped rows at page boundaries
+- Idempotency check verifies stop count matches `trips.stop_count` — detects and repairs partial backfills (trips with missing stops are deleted and re-inserted)
 - DB-level UNIQUE(user_id, legacy_plan_id) constraint provides race-safe idempotency
 - `trip_plans` rows are never touched (read-only)
 

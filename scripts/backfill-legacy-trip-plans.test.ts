@@ -195,6 +195,33 @@ describe('transformLegacyPlan', () => {
     expect(result!.stops[1].stop_kind).toBe('destination')
   })
 
+  it('returns null when stops field is present but not an array (malformed)', () => {
+    const row = makeRow({
+      plan_snapshot: {
+        title: 'Bad Stops',
+        destination: { id: 'd-1', name: 'Acadia NP', latitude: 44.3386, longitude: -68.2733 },
+        stops: 'corrupted' as unknown as [],
+      },
+    })
+
+    expect(transformLegacyPlan(row)).toBeNull()
+  })
+
+  it('returns a valid result when stops is null (treated as no waypoints)', () => {
+    const row = makeRow({
+      plan_snapshot: {
+        title: 'No Stops',
+        destination: { id: 'd-1', name: 'Olympic NP', latitude: 47.8021, longitude: -123.6044 },
+        stops: null as unknown as [],
+      },
+    })
+
+    const result = transformLegacyPlan(row)
+
+    expect(result).not.toBeNull()
+    expect(result!.trip.stop_count).toBe(1)
+  })
+
   it('preserves created_at and updated_at from the legacy row updated_at', () => {
     const row = makeRow({ updated_at: '2023-06-01T08:00:00Z' })
 

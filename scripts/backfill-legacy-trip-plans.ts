@@ -113,6 +113,11 @@ export function transformLegacyPlan(row: LegacyRow): TransformResult | null {
   if (!isValidPlace(snapshot.destination)) return null
 
   const destination = snapshot.destination as LegacyPlace
+
+  // null/undefined means "no waypoints" (valid); any other non-array is malformed
+  if (snapshot.stops !== undefined && snapshot.stops !== null && !Array.isArray(snapshot.stops)) {
+    return null
+  }
   const rawStops = Array.isArray(snapshot.stops) ? snapshot.stops : []
 
   const validStops: LegacyPlace[] = []
@@ -199,6 +204,7 @@ async function main(): Promise<void> {
       .select('user_id, plan_id, plan_snapshot, is_public, share_token, updated_at')
       .range(offset, offset + BATCH_SIZE - 1)
       .order('updated_at', { ascending: true })
+      .order('plan_id', { ascending: true })
 
     if (error) {
       console.error('❌ Fatal: failed to read trip_plans:', error.message)
@@ -218,18 +224,31 @@ async function main(): Promise<void> {
           continue
         }
 
-        // Idempotency check: skip if already backfilled
+  // Idempotency + partial repair check
         const { data: existing } = await supabase
           .from('trips')
-          .select('id')
+          .select('id, stop_count')
           .eq('user_id', row.user_id)
           .eq('legacy_plan_id', row.plan_id)
           .maybeSingle()
 
         if (existing) {
-          console.log(`[SKIP] plan_id=${row.plan_id} reason=already backfilled`)
-          skipped++
-          continue
+          // Verify the trip has the expected number of stop rows (guards partial backfill)
+          const { count: stopCount } = await supabase
+            .from('trip_stops')
+            .select('id', { count: 'exact', head: true })
+            .eq('trip_id', existing.id)
+
+          if (stopCount === existing.stop_count) {
+            console.log(`[SKIP] plan_id=${row.plan_id} reason=already backfilled`)
+            skipped++
+            continue
+          }
+
+          // Partial backfill detected — delete incomplete trip and re-insert
+          console.warn(`[REPAIR] plan_id=${row.plan_id} trip_id=${existing.id} has ${stopCount ?? 0}/${existing.stop_count} stops — deleting and re-inserting`)
+          await supabase.from('trips').delete().eq('id', existing.id)
+          // trip_stops rows cascade via ON DELETE CASCADE
         }
 
         // Insert trip row
