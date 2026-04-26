@@ -1,4 +1,4 @@
-import formidable from 'formidable'
+import formidable = require('formidable')
 import * as fs from 'fs'
 import type { VercelRequest } from '@vercel/node'
 

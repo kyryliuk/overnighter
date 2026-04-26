@@ -21,6 +21,7 @@ const PIN_TYPE_LABELS: Record<PinSource, string> = {
   nps: 'National Park',
   overpass: 'OpenStreetMap',
   community: 'Community Stop',
+  water_tap: 'Water Tap',
 }
 
 const AMENITY_CHIPS: Array<{ key: keyof PinAmenities; label: string; emoji: string }> = [
