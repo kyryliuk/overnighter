@@ -17,6 +17,7 @@ interface TripDraftStore {
   activeTripId: string | null
   draftsById: Record<string, TripDraft>
   dirtyTripIds: string[]
+  conflictedTripIds: string[]
   pendingSyncCount: number
   lastSyncedAt: string | null
   hydrated: boolean
@@ -26,6 +27,8 @@ interface TripDraftStore {
   hydrateDraftFromServer: (trip: Trip) => void
   markDirty: (tripId: string) => void
   markClean: (tripId: string) => void
+  markConflicted: (tripId: string) => void
+  resolveConflict: (tripId: string) => void
   removeDraft: (tripId: string) => void
   setPendingSyncCount: (count: number) => void
   setLastSyncedAt: (at: string) => void
@@ -39,6 +42,8 @@ export const INITIAL_TRIP_DRAFT_STATE: Omit<
   | 'hydrateDraftFromServer'
   | 'markDirty'
   | 'markClean'
+  | 'markConflicted'
+  | 'resolveConflict'
   | 'removeDraft'
   | 'setPendingSyncCount'
   | 'setLastSyncedAt'
@@ -47,6 +52,7 @@ export const INITIAL_TRIP_DRAFT_STATE: Omit<
   activeTripId: null,
   draftsById: {},
   dirtyTripIds: [],
+  conflictedTripIds: [],
   pendingSyncCount: 0,
   lastSyncedAt: null,
   hydrated: false,
@@ -118,6 +124,19 @@ export const useTripDraftStore = create<TripDraftStore>()(
       markClean: (tripId) =>
         set((state) => ({
           dirtyTripIds: state.dirtyTripIds.filter((id) => id !== tripId),
+          conflictedTripIds: state.conflictedTripIds.filter((id) => id !== tripId),
+        })),
+
+      markConflicted: (tripId) =>
+        set((state) => ({
+          conflictedTripIds: state.conflictedTripIds.includes(tripId)
+            ? state.conflictedTripIds
+            : [...state.conflictedTripIds, tripId],
+        })),
+
+      resolveConflict: (tripId) =>
+        set((state) => ({
+          conflictedTripIds: state.conflictedTripIds.filter((id) => id !== tripId),
         })),
 
       removeDraft: (tripId) =>
@@ -126,6 +145,7 @@ export const useTripDraftStore = create<TripDraftStore>()(
           return {
             draftsById: rest,
             dirtyTripIds: state.dirtyTripIds.filter((id) => id !== tripId),
+            conflictedTripIds: state.conflictedTripIds.filter((id) => id !== tripId),
             activeTripId: state.activeTripId === tripId ? null : state.activeTripId,
           }
         }),
@@ -139,6 +159,7 @@ export const useTripDraftStore = create<TripDraftStore>()(
       partialize: (state) => ({
         draftsById: state.draftsById,
         dirtyTripIds: state.dirtyTripIds,
+        conflictedTripIds: state.conflictedTripIds,
         pendingSyncCount: state.pendingSyncCount,
         lastSyncedAt: state.lastSyncedAt,
       }),

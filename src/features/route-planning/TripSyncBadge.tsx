@@ -26,6 +26,12 @@ export function TripSyncBadge({ tripId }: { tripId: string }) {
           Sync pending
         </span>
       )}
+      {status === 'conflicted' && (
+        <span className="inline-flex items-center gap-1 text-[11px] text-orange-500 dark:text-orange-400">
+          <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-orange-500" />
+          Sync error
+        </span>
+      )}
     </span>
   )
 }

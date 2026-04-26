@@ -4,7 +4,6 @@ import { useTripDraftStore, INITIAL_TRIP_DRAFT_STATE } from '@/store/tripDraftSt
 import {
   appendPendingTripMutation,
   clearPendingTripMutations,
-  PENDING_TRIP_MUTATIONS_UPDATED_EVENT,
 } from '@/lib/offline/pendingTripMutations'
 import { TripSyncBadge } from './TripSyncBadge'
 
@@ -39,6 +38,31 @@ describe('TripSyncBadge', () => {
     appendPendingTripMutation(PENDING_MUTATION)
     render(<TripSyncBadge tripId={TRIP_ID} />)
     expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync pending')
+  })
+
+  it('renders "Sync error" when trip is dirty and conflicted', () => {
+    useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID], conflictedTripIds: [TRIP_ID] })
+    render(<TripSyncBadge tripId={TRIP_ID} />)
+    expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync error')
+  })
+
+  it('renders "Sync error" when trip is conflicted even if also has a queue item', () => {
+    useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID], conflictedTripIds: [TRIP_ID] })
+    appendPendingTripMutation(PENDING_MUTATION)
+    render(<TripSyncBadge tripId={TRIP_ID} />)
+    expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync error')
+  })
+
+  it('transitions from "Sync error" to "Local draft" when resolveConflict is called', () => {
+    useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID], conflictedTripIds: [TRIP_ID] })
+    render(<TripSyncBadge tripId={TRIP_ID} />)
+    expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync error')
+
+    act(() => {
+      useTripDraftStore.getState().resolveConflict(TRIP_ID)
+    })
+
+    expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Local draft')
   })
 
   it('has aria-live="polite" on the wrapper for screen reader announcements', () => {

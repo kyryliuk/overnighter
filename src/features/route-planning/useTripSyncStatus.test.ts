@@ -4,7 +4,6 @@ import { useTripDraftStore, INITIAL_TRIP_DRAFT_STATE } from '@/store/tripDraftSt
 import {
   appendPendingTripMutation,
   clearPendingTripMutations,
-  PENDING_TRIP_MUTATIONS_UPDATED_EVENT,
 } from '@/lib/offline/pendingTripMutations'
 import { useTripSyncStatus } from './useTripSyncStatus'
 
@@ -55,6 +54,31 @@ describe('useTripSyncStatus', () => {
     appendPendingTripMutation(PENDING_MUTATION)
     const { result } = renderHook(() => useTripSyncStatus(TRIP_ID))
     expect(result.current).toBe('sync-pending')
+  })
+
+  it('returns "conflicted" when trip is dirty AND marked conflicted (highest priority over sync-pending)', () => {
+    useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID], conflictedTripIds: [TRIP_ID] })
+    appendPendingTripMutation(PENDING_MUTATION)
+    const { result } = renderHook(() => useTripSyncStatus(TRIP_ID))
+    expect(result.current).toBe('conflicted')
+  })
+
+  it('returns "conflicted" when trip is dirty and conflicted but no queue item', () => {
+    useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID], conflictedTripIds: [TRIP_ID] })
+    const { result } = renderHook(() => useTripSyncStatus(TRIP_ID))
+    expect(result.current).toBe('conflicted')
+  })
+
+  it('transitions to "local-draft" when resolveConflict is called', () => {
+    useTripDraftStore.setState({ dirtyTripIds: [TRIP_ID], conflictedTripIds: [TRIP_ID] })
+    const { result } = renderHook(() => useTripSyncStatus(TRIP_ID))
+    expect(result.current).toBe('conflicted')
+
+    act(() => {
+      useTripDraftStore.getState().resolveConflict(TRIP_ID)
+    })
+
+    expect(result.current).toBe('local-draft')
   })
 
   it('transitions from "local-draft" to "sync-pending" when queue item is appended', () => {

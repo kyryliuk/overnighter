@@ -43,6 +43,10 @@ vi.mock('./useDeleteTripMutation', () => ({
   useDeleteTripMutation: () => mockUseDeleteTripMutation(),
 }))
 
+vi.mock('./useOfflineTripQueue', () => ({
+  useOfflineTripQueue: () => ({ isFlushing: false, triggerFlush: vi.fn() }),
+}))
+
 vi.mock('@/hooks/usePinsQuery', () => ({
   usePinsQuery: () => mockUsePinsQuery(),
 }))
@@ -803,6 +807,24 @@ describe('MyRoutesScreen', () => {
       })
 
       expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync pending')
+    })
+
+    it('badge shows "Sync error" when trip is conflicted', () => {
+      mockUseTripsQuery.mockReturnValue({
+        data: [SAMPLE_TRIP],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      })
+      useTripDraftStore.setState({
+        dirtyTripIds: [SAMPLE_TRIP.id],
+        conflictedTripIds: [SAMPLE_TRIP.id],
+      })
+
+      renderScreen()
+
+      expect(screen.getByTestId('trip-sync-indicator')).toHaveTextContent('Sync error')
     })
 
     it('excludes archived trips from the default view', () => {
