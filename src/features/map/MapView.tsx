@@ -73,6 +73,7 @@ function MapViewContent() {
   const location = useLocation()
   const { previewTrip } = useTripCorridorPreview()
   const [geoState, requestGeo] = useGeolocation()
+  const [searchExpanded, setSearchExpanded] = useState(false)
   const [pendingDeparturePin, setPendingDeparturePin] = useState<VisitRecord | null>(null)
   const departureCheckedRef = useRef(false)
   const lastFittedRouteSignatureRef = useRef<string | null>(null)
@@ -275,16 +276,18 @@ function MapViewContent() {
   return (
     <div className="relative bg-background" style={{ height: '100dvh' }}>
       <div className="absolute top-0 left-0 right-0 z-10 p-4 flex flex-col gap-2 pointer-events-none">
-        <div className="pointer-events-auto">
-          <SearchBar mapRef={mapRef} />
+        {/* Row 1: search icon + filter icon (or expanded search field) */}
+        <div className="pointer-events-auto flex gap-2 items-center">
+          <SearchBar mapRef={mapRef} onExpandedChange={setSearchExpanded} />
+          <AmenityFilterBar isSearchExpanded={searchExpanded} />
         </div>
-        <div className="pointer-events-auto flex justify-center">
-          <RigFilterOverlay />
-        </div>
-        <div className="pointer-events-auto w-full">
-          <AmenityFilterBar />
-        </div>
-        {downloadStatus === 'idle' && (
+        {/* Row 2: rig pill — hidden when search is expanded */}
+        {!searchExpanded && (
+          <div className="pointer-events-auto flex justify-center">
+            <RigFilterOverlay />
+          </div>
+        )}
+        {downloadStatus === 'idle' && !searchExpanded && (
           <div className="pointer-events-auto">
             <OfflineDownloadGate onStartPreview={handleStartPreview} />
           </div>
@@ -325,7 +328,7 @@ function MapViewContent() {
           </div>
         </div>
       )}
-      {/* Near Me FAB — bottom-right floating action button */}
+      {/* Locate me FAB — bottom-right */}
       <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
         {geoError && (
           <p
@@ -339,17 +342,26 @@ function MapViewContent() {
           type="button"
           onClick={requestGeo}
           disabled={geoState.isLoading}
-          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-md disabled:opacity-50 text-lg"
+          className="rounded-full min-h-[48px] min-w-[48px] flex items-center justify-center shadow-md disabled:opacity-50"
+          style={{ background: 'rgba(30,41,59,0.95)', border: '1px solid #334155' }}
           aria-label={geoState.isLoading ? 'Getting location...' : 'Use my current location'}
         >
-          {geoState.isLoading ? '…' : '📍'}
+          {geoState.isLoading ? (
+            <span className="text-sm text-muted-foreground">…</span>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <polygon points="12,2 19,21 12,17 5,21" fill="#0ea5e9" stroke="#0ea5e9" strokeWidth="0.5" strokeLinejoin="round"/>
+            </svg>
+          )}
         </button>
       </div>
+      {/* Action FABs — bottom-left */}
       <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-2">
         <button
           type="button"
           onClick={() => navigate('/trips')}
-          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          className="rounded-full min-h-[44px] px-4 shadow-md text-sm font-semibold"
+          style={{ background: 'rgba(30,41,59,0.95)', border: '1px solid #334155', color: '#f1f5f9' }}
           aria-label="Open My Routes"
         >
           My Routes
@@ -357,7 +369,8 @@ function MapViewContent() {
         <button
           type="button"
           onClick={() => navigate('/suggest-spot')}
-          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          className="rounded-full min-h-[44px] px-4 shadow-md text-sm font-semibold"
+          style={{ background: 'rgba(30,41,59,0.95)', border: '1px solid #334155', color: '#f1f5f9' }}
           aria-label="Suggest a spot"
         >
           Suggest spot
@@ -365,7 +378,8 @@ function MapViewContent() {
         <button
           type="button"
           onClick={() => navigate('/saved')}
-          className="bg-gray-200 border border-gray-300 rounded-full min-h-[44px] px-4 shadow-md text-sm font-medium"
+          className="rounded-full min-h-[44px] px-4 shadow-md text-sm font-semibold"
+          style={{ background: 'rgba(30,41,59,0.95)', border: '1px solid #334155', color: '#f1f5f9' }}
           aria-label="Open saved spots"
         >
           Saved spots
@@ -373,9 +387,10 @@ function MapViewContent() {
         <button
           type="button"
           onClick={() => navigate('/account')}
-          className={`bg-gray-200 border border-gray-300 min-h-[44px] shadow-md text-sm font-medium ${
+          className={`min-h-[44px] shadow-md text-sm font-semibold ${
             isAuthenticated ? 'min-w-[44px] rounded-full px-0 flex items-center justify-center' : 'rounded-full px-4'
           }`}
+          style={{ background: 'rgba(30,41,59,0.95)', border: '1px solid #334155', color: '#f1f5f9' }}
           aria-label={isAuthenticated ? `Open profile for ${session?.user.email ?? 'your account'}` : 'Open account'}
         >
           {isAuthenticated ? accountInitial : 'Account'}
