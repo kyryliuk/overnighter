@@ -276,7 +276,7 @@ export default function PinDetailSheet() {
               </div>
               {/* Rig fit notice (AC4) */}
               {showRigNotice && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-sm text-yellow-500">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-sm text-amber-400">
                   This spot may not fit your {rigProfile.rigType}, {rigProfile.lengthFt}ft rig
                 </div>
               )}
@@ -311,7 +311,7 @@ export default function PinDetailSheet() {
                     href={pin.website.startsWith('http') ? pin.website : `https://${pin.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-sky-400 underline break-all"
+                    className="text-sm text-sky-500 underline break-all"
                   >
                     {pin.website}
                   </a>
@@ -321,7 +321,7 @@ export default function PinDetailSheet() {
               {pin.phone && (
                 <div>
                   <span className="block text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 border-l-2 border-muted-foreground/30 pl-2 mb-1">Phone</span>
-                  <a href={`tel:${pin.phone}`} className="text-sm text-sky-400 underline">{pin.phone}</a>
+                  <a href={`tel:${pin.phone}`} className="text-sm text-sky-500 underline">{pin.phone}</a>
                 </div>
               )}
               {/* Last verified — hidden for gov pins (always green from sync, not user-verified) */}
@@ -339,7 +339,7 @@ export default function PinDetailSheet() {
                     [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-3 [&_h2]:mb-1
                     [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-foreground [&_h3]:mt-2 [&_h3]:mb-1
                     [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-2
-                    [&_a]:text-sky-400 [&_a]:underline
+                    [&_a]:text-sky-500 [&_a]:underline
                     [&_strong]:text-foreground [&_strong]:font-semibold
                     [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:text-muted-foreground
                     [&_li]:mb-0.5">

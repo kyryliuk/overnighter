@@ -17,9 +17,9 @@ export function SubscriptionStatusCard() {
         data-testid="subscription-card-skeleton"
       >
         <div className="animate-pulse space-y-3">
-          <div className="h-5 w-1/3 rounded bg-zinc-700" />
-          <div className="h-4 w-2/3 rounded bg-zinc-700" />
-          <div className="h-10 w-1/2 rounded bg-zinc-700" />
+          <div className="h-5 w-1/3 rounded bg-muted" />
+          <div className="h-4 w-2/3 rounded bg-muted" />
+          <div className="h-10 w-1/2 rounded bg-muted" />
         </div>
       </section>
     )
@@ -71,9 +71,9 @@ export function SubscriptionStatusCard() {
 
       {status === 'premium' && (
         <div className="flex items-center gap-2">
-          <span className="text-amber-400">✓</span>
-          <span className="font-medium text-amber-400">Overnighter Premium</span>
-          <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-xs font-medium text-amber-400">
+          <span className="text-sky-400">✓</span>
+          <span className="font-medium text-foreground">Overnighter Premium</span>
+          <span className="rounded-full bg-sky-500/10 border border-sky-500/30 px-2 py-0.5 text-xs font-medium text-sky-400">
             Premium
           </span>
         </div>
@@ -82,9 +82,9 @@ export function SubscriptionStatusCard() {
       {status === 'trialing' && (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-amber-400">✓</span>
-            <span className="font-medium text-amber-400">Premium Trial</span>
-            <span className="rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-xs font-medium text-amber-400">
+            <span className="text-sky-400">✓</span>
+            <span className="font-medium text-foreground">Premium trial</span>
+            <span className="rounded-full bg-eab308/10 border border-eab308/30 px-2 py-0.5 text-xs font-medium text-yellow-500" style={{ background: 'rgba(234,179,8,0.1)', borderColor: 'rgba(234,179,8,0.3)', color: '#eab308' }}>
               Trial
             </span>
           </div>
@@ -94,8 +94,8 @@ export function SubscriptionStatusCard() {
 
       {status === 'expired' && (
         <div className="flex items-center gap-2">
-          <span className="font-medium text-muted-foreground">Subscription Expired</span>
-          <span className="rounded-full bg-zinc-500/10 border border-zinc-500/30 px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <span className="font-medium text-muted-foreground">Subscription expired</span>
+          <span className="rounded-full bg-border/50 border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
             Expired
           </span>
         </div>
@@ -116,7 +116,7 @@ export function SubscriptionStatusCard() {
           type="button"
           onClick={handleManageSubscription}
           disabled={isRedirecting}
-          className="min-h-[44px] rounded-lg border border-amber-500/30 px-4 text-sm font-medium text-amber-400 disabled:opacity-50"
+          className="min-h-[44px] rounded-lg border border-border px-4 text-sm font-medium text-muted-foreground disabled:opacity-50"
         >
           {isRedirecting ? 'Redirecting…' : 'Manage subscription'}
         </button>
@@ -127,7 +127,7 @@ export function SubscriptionStatusCard() {
           type="button"
           onClick={handleUpgrade}
           disabled={isRedirecting}
-          className="min-h-[44px] rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-900 disabled:opacity-50"
+          className="min-h-[44px] rounded-lg bg-sky-500 px-4 text-sm font-medium text-white disabled:opacity-50"
         >
           {isRedirecting ? 'Redirecting…' : 'Resubscribe'}
         </button>
@@ -138,7 +138,7 @@ export function SubscriptionStatusCard() {
           type="button"
           onClick={handleUpgrade}
           disabled={isRedirecting}
-          className="min-h-[44px] rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-900 disabled:opacity-50"
+          className="min-h-[44px] rounded-lg bg-sky-500 px-4 text-sm font-medium text-white disabled:opacity-50"
         >
           {isRedirecting ? 'Redirecting…' : 'Upgrade to Premium'}
         </button>

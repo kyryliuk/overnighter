@@ -74,7 +74,7 @@ describe('SubscriptionStatusCard', () => {
 
     renderCard()
 
-    expect(screen.getByText('Premium Trial')).toBeInTheDocument()
+    expect(screen.getByText('Premium trial')).toBeInTheDocument()
     expect(screen.getByText('Trial')).toBeInTheDocument()
     expect(screen.getByText('Trial active')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /manage subscription/i })).toBeInTheDocument()
@@ -90,7 +90,7 @@ describe('SubscriptionStatusCard', () => {
 
     renderCard()
 
-    expect(screen.getByText('Subscription Expired')).toBeInTheDocument()
+    expect(screen.getByText('Subscription expired')).toBeInTheDocument()
     expect(screen.getByText('Expired')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /resubscribe/i })).toBeInTheDocument()
   })

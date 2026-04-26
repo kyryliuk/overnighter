@@ -315,7 +315,7 @@ export default function RoutePlanningScreen() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-        <section className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <section className="rounded-xl border border-border bg-secondary p-4 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="font-semibold">Saved trip drafts</h2>
@@ -500,7 +500,7 @@ export default function RoutePlanningScreen() {
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <section className="rounded-xl border border-border bg-secondary p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold">Trip start</h2>
@@ -535,7 +535,7 @@ export default function RoutePlanningScreen() {
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <section className="rounded-xl border border-border bg-secondary p-4 space-y-3">
           <div>
             <h2 className="font-semibold">Destination</h2>
             <p className="text-sm text-muted-foreground">Search the spot database and pick your final stop.</p>
@@ -592,7 +592,7 @@ export default function RoutePlanningScreen() {
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <section className="rounded-xl border border-border bg-secondary p-4 space-y-3">
           <div>
             <h2 className="font-semibold">Selected waypoints</h2>
             <p className="text-sm text-muted-foreground">
@@ -661,7 +661,7 @@ export default function RoutePlanningScreen() {
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <section className="rounded-xl border border-border bg-secondary p-4 space-y-3">
           <div>
             <h2 className="font-semibold">Suggested overnight stops</h2>
             <p className="text-sm text-muted-foreground">
@@ -711,7 +711,7 @@ export default function RoutePlanningScreen() {
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <section className="rounded-xl border border-border bg-secondary p-4 space-y-3">
           <div>
             <h2 className="font-semibold">Route handoff</h2>
             <p className="text-sm text-muted-foreground">

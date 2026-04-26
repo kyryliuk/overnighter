@@ -18,7 +18,7 @@ export default function UpdateBanner() {
     >
       <div
         role="status"
-        className="max-w-xl w-full flex items-center justify-between gap-3 rounded-lg border border-blue-500/30 bg-background/95 px-4 py-3 text-sm text-foreground shadow-lg pointer-events-auto"
+        className="max-w-xl w-full flex items-center justify-between gap-3 rounded-lg border border-sky-500/30 bg-background/95 px-4 py-3 text-sm text-foreground shadow-lg pointer-events-auto"
         data-testid="update-banner"
       >
         <span>A new version is available</span>
@@ -26,7 +26,7 @@ export default function UpdateBanner() {
           <button
             type="button"
             onClick={() => updateServiceWorker()}
-            className="min-h-11 min-w-11 rounded-lg bg-blue-500 px-4 font-medium text-white"
+            className="min-h-11 min-w-11 rounded-lg bg-sky-500 px-4 font-medium text-white"
             data-testid="update-button"
             aria-label="Update app now (page will reload)"
           >

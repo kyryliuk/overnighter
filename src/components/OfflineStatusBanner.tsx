@@ -45,7 +45,7 @@ export default function OfflineStatusBanner() {
     <div className="fixed top-4 left-4 right-4 z-[1100] flex justify-center pointer-events-none">
       <p
         role="status"
-        className="max-w-xl rounded-lg border border-amber-500/30 bg-background/95 px-4 py-3 text-center text-sm text-foreground shadow-lg"
+        className="max-w-xl rounded-lg border border-border bg-background/95 px-4 py-3 text-center text-sm text-foreground shadow-lg"
       >
         {message}
       </p>
