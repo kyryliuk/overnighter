@@ -1,6 +1,6 @@
 # Story p3-5: 3 — Shared Trip Compatibility and Premium Import
 
-Status: in-progress
+Status: done
 
 ## Story
 
