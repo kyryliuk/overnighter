@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/contexts/AuthContext'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import type { Trip, TripStatus } from '@/types/trip'
+import type { TripStatus } from '@/types/trip'
 import { appendPendingTripMutation, OFFLINE_QUEUED_ERROR } from '@/lib/offline/pendingTripMutations'
 import { updateTripStatus } from './api'
 import { tripQueryKey } from './useTripQuery'
