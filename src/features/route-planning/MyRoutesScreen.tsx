@@ -11,6 +11,7 @@ import { buildDuplicateTripPayload } from './routePlanning'
 import { useTripCorridorPreview } from './TripCorridorPreviewContext'
 import { useCreateTripMutation } from './useCreateTripMutation'
 import { useDeleteTripMutation } from './useDeleteTripMutation'
+import { useOfflineTripQueue } from './useOfflineTripQueue'
 import { useTripQuery } from './useTripQuery'
 import { useTripsQuery } from './useTripsQuery'
 import { useTripStatusMutation } from './useTripStatusMutation'
@@ -276,6 +277,7 @@ function MyRoutesContent() {
   const updateTripMutation = useUpdateTripMutation()
   const tripStatusMutation = useTripStatusMutation()
   const deleteTripMutation = useDeleteTripMutation()
+  useOfflineTripQueue()
   const rawTrips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data])
   const trips = useMemo(() => {
     if (sortOrder === 'oldest') return [...rawTrips].reverse()

@@ -5,11 +5,14 @@ import {
   PENDING_TRIP_MUTATIONS_UPDATED_EVENT,
 } from '@/lib/offline/pendingTripMutations'
 
-export type TripSyncStatus = 'synced' | 'local-draft' | 'sync-pending'
+export type TripSyncStatus = 'synced' | 'local-draft' | 'sync-pending' | 'conflicted'
 
 export function useTripSyncStatus(tripId: string | null | undefined): TripSyncStatus {
   const isDirty = useTripDraftStore((state) =>
     tripId ? state.dirtyTripIds.includes(tripId) : false,
+  )
+  const isConflicted = useTripDraftStore((state) =>
+    tripId ? state.conflictedTripIds.includes(tripId) : false,
   )
 
   // Eagerly read queue so first render reflects the correct state (e.g. after page reload).
@@ -33,6 +36,7 @@ export function useTripSyncStatus(tripId: string | null | undefined): TripSyncSt
   }, [tripId])
 
   if (!isDirty) return 'synced'
+  if (isConflicted) return 'conflicted'
   if (hasPendingMutation) return 'sync-pending'
   return 'local-draft'
 }
