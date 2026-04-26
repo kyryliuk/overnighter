@@ -12,6 +12,7 @@ const PIN_TYPE_LABELS: Record<PinSource, string> = {
   nps: 'National Park',
   overpass: 'OpenStreetMap',
   community: 'Community Stop',
+  water_tap: 'Water Tap',
 }
 
 function distanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {

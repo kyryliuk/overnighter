@@ -169,7 +169,7 @@ export default function TapPinDetailSheet() {
                     Photos
                   </span>
                   <div className="flex gap-2 overflow-x-auto pb-1">
-                    {tap.photos.map((url) => (
+                    {tap.photos.map((url: string) => (
                       <a
                         key={url}
                         href={url}
