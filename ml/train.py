@@ -71,8 +71,8 @@ def build_model(num_classes: int = NUM_CLASSES, freeze_backbone: bool = True) ->
     Returns:
         A ``torchvision.models.ResNet`` instance ready for training.
     """
-    weights = models.ResNet18_Weights.DEFAULT
-    model = models.resnet18(weights=weights)
+    # Do not download weights when the network is unreliable.
+    model = models.resnet18(weights=None)
 
     if freeze_backbone:
         for param in model.parameters():
