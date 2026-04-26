@@ -21,7 +21,7 @@ export function useOfflineTripQueue(): { isFlushing: boolean; triggerFlush: () =
   const isOnline = useOnlineStatus()
   const { session, isAuthenticated } = useAuth()
   const queryClient = useQueryClient()
-  const { draftsById, markClean, markConflicted, removeDraft, hydrateDraftFromServer } =
+  const { markClean, markConflicted, removeDraft, hydrateDraftFromServer } =
     useTripDraftStore()
 
   const flushingRef = useRef(false)
@@ -63,7 +63,8 @@ export function useOfflineTripQueue(): { isFlushing: boolean; triggerFlush: () =
           // Conflict detection: if server cached revision is newer than last synced revision,
           // the server moved ahead without our changes — mark conflict, skip flush
           const cachedTrip = queryClient.getQueryData<Trip>(tripQueryKey(userId, tripId))
-          const draft = draftsById[tripId]
+          // Read live from store — not from a stale closure snapshot
+          const draft = useTripDraftStore.getState().draftsById[tripId]
           if (
             cachedTrip &&
             draft?.lastSyncedRevision !== null &&
@@ -75,8 +76,9 @@ export function useOfflineTripQueue(): { isFlushing: boolean; triggerFlush: () =
 
           const updatedTrip = await updateTrip(accessToken!, tripId, payload as Parameters<typeof updateTrip>[2])
           removePendingTripMutation(id)
-          hydrateDraftFromServer(updatedTrip)
+          // markClean first so hydrateDraftFromServer finds the trip non-dirty and updates lastSyncedRevision
           markClean(tripId)
+          hydrateDraftFromServer(updatedTrip)
           queryClient.setQueryData(tripQueryKey(userId, updatedTrip.id), updatedTrip)
           void queryClient.invalidateQueries({ queryKey: ['trips', userId] })
           return
@@ -131,7 +133,6 @@ export function useOfflineTripQueue(): { isFlushing: boolean; triggerFlush: () =
     accessToken,
     userId,
     queryClient,
-    draftsById,
     markClean,
     markConflicted,
     removeDraft,
