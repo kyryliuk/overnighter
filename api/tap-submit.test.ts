@@ -8,13 +8,8 @@ const {
   mockClassifyImageUrl,
   mockStorageUpload,
   mockStorageGetPublicUrl,
-  mockSelectEq,
-  mockSelectResult,
-  mockInsertSelect,
   mockInsertSingle,
   mockInsertResult,
-  mockUpdateEq,
-  mockUpdateResult,
   mockEventInsert,
 } = vi.hoisted(() => {
   // Storage mock chain
@@ -23,28 +18,10 @@ const {
     data: { publicUrl: 'https://supabase.test/storage/v1/object/public/tap-photos/uuid/ts.jpg' },
   })
 
-  // Select chain: .select().eq()
-  const mockSelectResult = vi.fn().mockResolvedValue({
-    data: [],
-    error: null,
-  })
-  const mockSelectEq = vi.fn().mockReturnValue({
-    eq: vi.fn().mockReturnValue({ data: [], error: null }),
-    // Allow direct await as well (for .select().eq().is_active resolution)
-    then: undefined,
-  })
-
-  // water_tap_pins select mock — returns no nearby pins by default
-  const mockActivePinsResult = vi.fn().mockResolvedValue({ data: [], error: null })
-
   // Insert with .select().single() chain
   const mockInsertSingle = vi.fn().mockResolvedValue({ data: { id: 'new-pin-uuid' }, error: null })
   const mockInsertSelect = vi.fn().mockReturnValue({ single: mockInsertSingle })
   const mockInsertResult = vi.fn().mockReturnValue({ select: mockInsertSelect })
-
-  // Update chain
-  const mockUpdateResult = vi.fn().mockResolvedValue({ error: null })
-  const mockUpdateEq = vi.fn().mockReturnValue({ eq: mockUpdateResult })
 
   // Event insert
   const mockEventInsert = vi.fn().mockResolvedValue({ error: null })
@@ -60,15 +37,9 @@ const {
     mockClassifyImageUrl,
     mockStorageUpload,
     mockStorageGetPublicUrl,
-    mockSelectEq,
-    mockSelectResult,
-    mockInsertSelect,
     mockInsertSingle,
     mockInsertResult,
-    mockUpdateEq,
-    mockUpdateResult,
     mockEventInsert,
-    mockActivePinsResult,
   }
 })
 

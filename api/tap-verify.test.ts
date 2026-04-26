@@ -5,28 +5,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const {
   mockEventInsert,
-  mockConfirmedSelect,
-  mockDeniedSelect,
   mockUpdateEq,
 } = vi.hoisted(() => {
   const mockEventInsert = vi.fn().mockResolvedValue({ error: null })
 
-  // confirmed events query chain: .select().eq('tap_pin_id').eq('event_type')
-  const mockConfirmedSelect = vi.fn().mockResolvedValue({
-    data: [],
-    error: null,
-  })
-
-  // denied events query chain
-  const mockDeniedSelect = vi.fn().mockResolvedValue({
-    data: [],
-    error: null,
-  })
-
   // update chain
   const mockUpdateEq = vi.fn().mockResolvedValue({ error: null })
 
-  return { mockEventInsert, mockConfirmedSelect, mockDeniedSelect, mockUpdateEq }
+  return { mockEventInsert, mockUpdateEq }
 })
 
 // Track query chains per call sequence
