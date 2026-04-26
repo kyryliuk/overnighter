@@ -107,8 +107,8 @@ export default function SharedTripPlanScreen() {
   function handleImportTrip() {
     if (!tripQuery.data) return
 
-    const copiedTripId = saveTripPlan(createTripCopyDraft(tripQuery.data))
-    navigate(`/plan-route?openPlan=${encodeURIComponent(copiedTripId)}`)
+    saveTripPlan(createTripCopyDraft(tripQuery.data))
+    navigate('/trips')
   }
 
   async function handleHelpfulReactionToggle() {
@@ -128,7 +128,7 @@ export default function SharedTripPlanScreen() {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/plan-route')}
+            onClick={() => navigate('/trips')}
             className="min-h-[44px] rounded-lg border border-border px-4 text-sm text-muted-foreground"
           >
             Open planner

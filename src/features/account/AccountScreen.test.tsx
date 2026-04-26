@@ -417,4 +417,14 @@ describe('AccountScreen', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Failed to disable notifications')
   })
-})
+
+  it('"My Routes" button navigates to /trips (AC4)', () => {
+    authState.isAuthenticated = true
+    authState.session = { user: { id: 'user-1', email: 'user@example.com' }, access_token: 'token' }
+
+    renderScreen()
+
+    fireEvent.click(screen.getByRole('button', { name: /my routes/i }))
+
+    expect(mockNavigate).toHaveBeenCalledWith('/trips')
+  })})

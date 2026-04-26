@@ -95,6 +95,15 @@ describe('App initialization', () => {
     expect(screen.queryByTestId('account-screen')).not.toBeInTheDocument()
   })
 
+  it('redirects authenticated /plan-route visits to the my routes screen', async () => {
+    authState.isAuthenticated = true
+    window.history.pushState({}, '', '/plan-route')
+
+    await act(async () => { render(<App />) })
+
+    expect(screen.getByTestId('my-routes-screen')).toBeInTheDocument()
+  })
+
   it('allows anonymous users to open the account route directly', async () => {
     window.history.pushState({}, '', '/account')
 
