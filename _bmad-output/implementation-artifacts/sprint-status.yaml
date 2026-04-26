@@ -179,7 +179,7 @@ development_status:
   p3-epic-5: in-progress
   p3-5-1-backfill-legacy-trip-plans: done
   p3-5-2-dual-read-cutover-and-plan-route-redirect: done
-  p3-5-3-shared-trip-compatibility-and-premium-import: backlog
+  p3-5-3-shared-trip-compatibility-and-premium-import: done
   p3-epic-5-retrospective: optional
 
   # ══════════════════════════════════════════════════════════════════

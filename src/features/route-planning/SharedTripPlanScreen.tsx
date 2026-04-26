@@ -6,6 +6,8 @@ import { buildDirectionsUrl } from '@/lib/maps/googleMaps'
 import { createTripPlanComment, deleteTripPlanComment, getTripPlanComments } from '@/lib/supabase/tripPlanComments'
 import { getTripPlanReactionSummary, setTripPlanHelpfulReaction } from '@/lib/supabase/tripPlanReactions'
 import { getPublicTripPlanByToken } from '@/lib/supabase/tripPlans'
+import { PremiumGate } from '@/components/PremiumGate'
+import { useCreateTripMutation } from './useCreateTripMutation'
 
 export default function SharedTripPlanScreen() {
   const navigate = useNavigate()
@@ -86,6 +88,8 @@ export default function SharedTripPlanScreen() {
     },
   })
 
+  const importMutation = useCreateTripMutation()
+
   const routeHref = useMemo(() => {
     if (!tripQuery.data) return null
 
@@ -101,8 +105,33 @@ export default function SharedTripPlanScreen() {
     })
   }, [tripQuery.data])
 
-  function handleImportTrip() {
+  async function handleImportTrip() {
     if (!tripQuery.data) return
+
+    await importMutation.mutateAsync({
+      title: tripQuery.data.title,
+      notes: tripQuery.data.notes,
+      destination: {
+        id: tripQuery.data.destination.id,
+        name: tripQuery.data.destination.name,
+        latitude: tripQuery.data.destination.latitude,
+        longitude: tripQuery.data.destination.longitude,
+      },
+      stops: tripQuery.data.stops.map((stop, index) => ({
+        stopOrder: index + 1,
+        source: 'imported' as const,
+        pinId: null,
+        place: {
+          id: stop.id,
+          name: stop.name,
+          latitude: stop.latitude,
+          longitude: stop.longitude,
+        },
+        notes: '',
+      })),
+      sourceTripId: tripQuery.data.id,
+    })
+
     navigate('/trips')
   }
 
@@ -337,13 +366,27 @@ export default function SharedTripPlanScreen() {
               Open shared trip in Google Maps
             </a>
 
-            <button
-              type="button"
-              onClick={handleImportTrip}
-              className="flex min-h-[44px] w-full items-center justify-center rounded-lg border border-border bg-background font-semibold"
+            <PremiumGate
+              feature="Save to My Routes"
+              description="Premium members can save a private copy of any shared trip into their personal route planner."
+              variant="compact"
             >
-              Save a copy to my planner
-            </button>
+              <button
+                type="button"
+                onClick={() => void handleImportTrip()}
+                disabled={importMutation.isPending}
+                className="flex min-h-[44px] w-full items-center justify-center rounded-lg border border-border bg-background font-semibold disabled:opacity-50"
+              >
+                {importMutation.isPending ? 'Saving to planner…' : 'Save a copy to my planner'}
+              </button>
+              {importMutation.error && (
+                <p role="alert" className="mt-2 text-sm text-red-300">
+                  {importMutation.error instanceof Error
+                    ? importMutation.error.message
+                    : 'Failed to import trip'}
+                </p>
+              )}
+            </PremiumGate>
           </>
         )}
       </div>

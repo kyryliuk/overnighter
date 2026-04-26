@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -10,6 +11,7 @@ const createTripPlanComment = vi.fn()
 const deleteTripPlanComment = vi.fn()
 const getTripPlanReactionSummary = vi.fn()
 const setTripPlanHelpfulReaction = vi.fn()
+const mockImportMutateAsync = vi.fn()
 
 const mockNavigate = vi.fn()
 
@@ -21,11 +23,30 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
+let mockAuthState = {
+  isAuthenticated: true,
+  session: { user: { id: 'user-1' }, access_token: 'tok' },
+  isLoading: false,
+}
+
 vi.mock('@/features/account/AuthContext', () => ({
-  useAuth: () => ({
-    isAuthenticated: true,
-    session: { user: { id: 'user-1' } },
-  }),
+  useAuth: () => mockAuthState,
+}))
+
+let mockSubscriptionState = { isPremium: true, isTrial: false, status: 'premium', isLoading: false }
+
+vi.mock('@/hooks/useSubscription', () => ({
+  useSubscription: () => mockSubscriptionState,
+}))
+
+let mockImportMutationState: { mutateAsync: typeof mockImportMutateAsync; isPending: boolean; error: Error | null } = {
+  mutateAsync: mockImportMutateAsync,
+  isPending: false,
+  error: null,
+}
+
+vi.mock('./useCreateTripMutation', () => ({
+  useCreateTripMutation: () => mockImportMutationState,
 }))
 
 vi.mock('@/lib/supabase/tripPlans', () => ({
@@ -42,6 +63,28 @@ vi.mock('@/lib/supabase/tripPlanReactions', () => ({
   getTripPlanReactionSummary: (...args: unknown[]) => getTripPlanReactionSummary(...args),
   setTripPlanHelpfulReaction: (...args: unknown[]) => setTripPlanHelpfulReaction(...args),
 }))
+
+// PremiumGate: renders children for premium users; renders upsell stub for others.
+// The real PremiumGate is unit-tested separately.
+vi.mock('@/components/PremiumGate', () => ({
+  PremiumGate: ({ children, feature }: { children: ReactNode; feature: string }) => {
+    if (mockSubscriptionState.isPremium) return <>{children}</>
+    return <div data-testid="premium-gate-upsell">{feature}</div>
+  },
+}))
+
+const TRIP_DATA = {
+  id: 'trip-1',
+  title: 'Desert handoff',
+  notes: 'Best for a quiet overnight stop after dark.',
+  destination: { id: 'dest', name: 'Quartzsite', latitude: 33.6639, longitude: -114.2297 },
+  stops: [],
+  isPublic: true,
+  shareToken: 'share-123',
+  sourceTrip: null,
+  createdAt: '2026-03-23T00:00:00.000Z',
+  updatedAt: '2026-03-23T00:00:00.000Z',
+}
 
 function renderScreen() {
   const queryClient = new QueryClient({
@@ -62,9 +105,10 @@ function renderScreen() {
   )
 }
 
-describe('SharedTripPlanScreen reactions', () => {
+describe('SharedTripPlanScreen', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    mockImportMutateAsync.mockReset()
     getPublicTripPlanByToken.mockReset()
     getTripPlanComments.mockReset()
     createTripPlanComment.mockReset()
@@ -72,22 +116,13 @@ describe('SharedTripPlanScreen reactions', () => {
     getTripPlanReactionSummary.mockReset()
     setTripPlanHelpfulReaction.mockReset()
 
-    getPublicTripPlanByToken.mockResolvedValue({
-      id: 'trip-1',
-      title: 'Desert handoff',
-      notes: 'Best for a quiet overnight stop after dark.',
-      destination: { id: 'dest', name: 'Quartzsite', latitude: 33.6639, longitude: -114.2297 },
-      stops: [],
-      isPublic: true,
-      shareToken: 'share-123',
-      sourceTrip: null,
-      createdAt: '2026-03-23T00:00:00.000Z',
-      updatedAt: '2026-03-23T00:00:00.000Z',
-    })
-    getTripPlanReactionSummary.mockResolvedValue({
-      helpfulCount: 2,
-      hasReacted: false,
-    })
+    // Default: authenticated premium user
+    mockAuthState = { isAuthenticated: true, session: { user: { id: 'user-1' }, access_token: 'tok' }, isLoading: false }
+    mockSubscriptionState = { isPremium: true, isTrial: false, status: 'premium', isLoading: false }
+    mockImportMutationState = { mutateAsync: mockImportMutateAsync, isPending: false, error: null }
+
+    getPublicTripPlanByToken.mockResolvedValue(TRIP_DATA)
+    getTripPlanReactionSummary.mockResolvedValue({ helpfulCount: 2, hasReacted: false })
     getTripPlanComments.mockResolvedValue([
       {
         id: 'comment-1',
@@ -100,6 +135,7 @@ describe('SharedTripPlanScreen reactions', () => {
     createTripPlanComment.mockResolvedValue(undefined)
     deleteTripPlanComment.mockResolvedValue(undefined)
     setTripPlanHelpfulReaction.mockResolvedValue(undefined)
+    mockImportMutateAsync.mockResolvedValue({ id: 'new-trip-1' })
   })
 
   it('shows trip notes, comments, and public helpful feedback count', async () => {
@@ -153,7 +189,7 @@ describe('SharedTripPlanScreen reactions', () => {
     })
   })
 
-  it('"Open planner" button navigates to /trips (AC4)', async () => {
+  it('"Open planner" button navigates to /trips', async () => {
     renderScreen()
 
     fireEvent.click(await screen.findByRole('button', { name: /open planner/i }))
@@ -161,13 +197,94 @@ describe('SharedTripPlanScreen reactions', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/trips')
   })
 
-  it('"Copy to planner" button navigates to /trips (AC4)', async () => {
-    renderScreen()
+  describe('premium import', () => {
+    it('premium user: import creates trip with correct payload and navigates to /trips (AC3)', async () => {
+      renderScreen()
 
-    fireEvent.click(await screen.findByRole('button', { name: /save a copy to my planner/i }))
+      fireEvent.click(await screen.findByRole('button', { name: /save a copy to my planner/i }))
 
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/trips')
+      await waitFor(() => {
+        expect(mockImportMutateAsync).toHaveBeenCalledWith({
+          title: 'Desert handoff',
+          notes: 'Best for a quiet overnight stop after dark.',
+          destination: { id: 'dest', name: 'Quartzsite', latitude: 33.6639, longitude: -114.2297 },
+          stops: [],
+          sourceTripId: 'trip-1',
+        })
+      })
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/trips')
+      })
+    })
+
+    it('premium user: import maps waypoint stops with source=imported and correct stopOrder', async () => {
+      getPublicTripPlanByToken.mockResolvedValue({
+        ...TRIP_DATA,
+        stops: [
+          { id: 'stop-1', name: 'Blythe', latitude: 33.6, longitude: -114.5 },
+          { id: 'stop-2', name: 'Parker', latitude: 34.1, longitude: -114.3 },
+        ],
+      })
+
+      renderScreen()
+
+      fireEvent.click(await screen.findByRole('button', { name: /save a copy to my planner/i }))
+
+      await waitFor(() => {
+        expect(mockImportMutateAsync).toHaveBeenCalledWith(
+          expect.objectContaining({
+            stops: [
+              { stopOrder: 1, source: 'imported', pinId: null, place: { id: 'stop-1', name: 'Blythe', latitude: 33.6, longitude: -114.5 }, notes: '' },
+              { stopOrder: 2, source: 'imported', pinId: null, place: { id: 'stop-2', name: 'Parker', latitude: 34.1, longitude: -114.3 }, notes: '' },
+            ],
+          }),
+        )
+      })
+    })
+
+    it('non-premium authenticated user sees PremiumGate upsell, not the import button (AC2)', async () => {
+      mockSubscriptionState = { isPremium: false, isTrial: false, status: 'free', isLoading: false }
+
+      renderScreen()
+
+      expect(await screen.findByTestId('premium-gate-upsell')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /save a copy to my planner/i })).not.toBeInTheDocument()
+    })
+
+    it('non-authenticated user sees PremiumGate upsell — gate handles auth redirect (AC2)', async () => {
+      mockAuthState = { isAuthenticated: false, session: null as never, isLoading: false }
+      mockSubscriptionState = { isPremium: false, isTrial: false, status: 'free', isLoading: false }
+
+      renderScreen()
+
+      expect(await screen.findByTestId('premium-gate-upsell')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /save a copy to my planner/i })).not.toBeInTheDocument()
+    })
+
+    it('shows error alert when import mutation has an error', async () => {
+      mockImportMutationState = {
+        mutateAsync: mockImportMutateAsync,
+        isPending: false,
+        error: new Error('Unable to save your route right now.'),
+      }
+
+      renderScreen()
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Unable to save your route right now.')
+    })
+
+    it('shows loading state and disables button while import is pending', async () => {
+      mockImportMutationState = {
+        mutateAsync: mockImportMutateAsync,
+        isPending: true,
+        error: null,
+      }
+
+      renderScreen()
+
+      const button = await screen.findByRole('button', { name: /saving to planner/i })
+      expect(button).toBeDisabled()
     })
   })
 })
