@@ -47,6 +47,15 @@ vi.mock('./useOfflineTripQueue', () => ({
   useOfflineTripQueue: () => ({ isFlushing: false, triggerFlush: vi.fn() }),
 }))
 
+const mockTripPlansState = vi.hoisted(() => ({
+  tripPlans: [] as { id: string; title: string }[],
+  hasHydrated: true,
+}))
+vi.mock('@/store/tripPlansStore', () => ({
+  useTripPlansStore: (selector: (state: typeof mockTripPlansState) => unknown) =>
+    selector(mockTripPlansState),
+}))
+
 vi.mock('@/hooks/usePinsQuery', () => ({
   usePinsQuery: () => mockUsePinsQuery(),
 }))
@@ -138,6 +147,7 @@ const SAMPLE_MULTI_STOP_TRIP: Trip = {
 const EMPTY_TRIPS_RESULT = {
   data: [] as Trip[],
   isLoading: false,
+  isSuccess: true,
   isError: false,
   error: null,
   refetch: vi.fn(),
@@ -172,6 +182,8 @@ function renderScreen(path = '/trips') {
 describe('MyRoutesScreen', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    mockTripPlansState.tripPlans = []
+    mockTripPlansState.hasHydrated = true
     useUIStore.setState({ activeTripId: null })
     useTripDraftStore.setState({ ...INITIAL_TRIP_DRAFT_STATE })
     clearPendingTripMutations()
@@ -399,6 +411,55 @@ describe('MyRoutesScreen', () => {
 
     expect(screen.getByRole('dialog', { name: /create route/i })).toBeInTheDocument()
     expect(screen.getByTestId('location-search')).toHaveTextContent('')
+  })
+
+  it('shows legacy plans notice when trips are empty but legacy plans exist (AC3)', () => {
+    mockTripPlansState.tripPlans = [{ id: 'plan-1', title: 'Old road trip' }, { id: 'plan-2', title: 'Another trip' }] as never[]
+
+    renderScreen()
+
+    expect(screen.getByTestId('legacy-plans-notice')).toBeInTheDocument()
+    expect(screen.getByText(/you have 2 trip plans from your earlier session/i)).toBeInTheDocument()
+  })
+
+  it('does not show legacy plans notice when normalized trips exist (AC3)', () => {
+    mockTripPlansState.tripPlans = [{ id: 'plan-1', title: 'Old road trip' }] as never[]
+    mockUseTripsQuery.mockReturnValue({
+      data: [{
+        id: 'trip-1', title: 'My Trip', stops: [], stopCount: 0, status: 'draft',
+        isPublic: false, shareToken: null, sourceTripId: null, sourceShareToken: null,
+        revision: 1, routeMode: 'corridor', notes: '',
+        origin: { id: 'o1', name: 'Phoenix', latitude: 33.4484, longitude: -112.074 },
+        destination: { id: 'd1', name: 'Tucson', latitude: 32.2226, longitude: -110.9747 },
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }],
+      isLoading: false,
+      isSuccess: true,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+
+    renderScreen()
+
+    expect(screen.queryByTestId('legacy-plans-notice')).not.toBeInTheDocument()
+  })
+
+  it('does not show legacy plans notice when legacy plans store is empty (AC3)', () => {
+    mockTripPlansState.tripPlans = []
+
+    renderScreen()
+
+    expect(screen.queryByTestId('legacy-plans-notice')).not.toBeInTheDocument()
+  })
+
+  it('does not show legacy plans notice before the legacy store has hydrated (AC3)', () => {
+    mockTripPlansState.tripPlans = [{ id: 'plan-1', title: 'Old road trip' }] as never[]
+    mockTripPlansState.hasHydrated = false
+
+    renderScreen()
+
+    expect(screen.queryByTestId('legacy-plans-notice')).not.toBeInTheDocument()
   })
 
   it('shows a loading shell while trips are loading', () => {

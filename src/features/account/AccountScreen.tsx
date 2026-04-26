@@ -324,10 +324,10 @@ export default function AccountScreen() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/plan-route')}
+                onClick={() => navigate('/trips')}
                 className="min-h-[44px] rounded-lg border border-border bg-background px-4 text-sm"
               >
-                Trip drafts
+                My Routes
               </button>
               {permissionState !== 'unsupported' && (
                 isSubscribed ? (

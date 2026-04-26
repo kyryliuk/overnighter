@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PremiumGate } from '@/components/PremiumGate'
 import { useUIStore } from '@/store/uiStore'
 import { useTripDraftStore } from '@/store/tripDraftStore'
+import { useTripPlansStore } from '@/store/tripPlansStore'
 import { OFFLINE_QUEUED_ERROR } from '@/lib/offline/pendingTripMutations'
 import type { Trip, TripWritePayload } from '@/types/trip'
 import RouteBuilderSheet, { type PendingRouteStopIntent } from './RouteBuilderSheet'
@@ -278,6 +279,8 @@ function MyRoutesContent() {
   const tripStatusMutation = useTripStatusMutation()
   const deleteTripMutation = useDeleteTripMutation()
   useOfflineTripQueue()
+  const legacyPlans = useTripPlansStore((state) => state.tripPlans)
+  const legacyPlansHydrated = useTripPlansStore((state) => state.hasHydrated)
   const rawTrips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data])
   const trips = useMemo(() => {
     if (sortOrder === 'oldest') return [...rawTrips].reverse()
@@ -551,30 +554,44 @@ function MyRoutesContent() {
         ) : null}
 
         {trips.length === 0 ? (
-          <div className="space-y-4 rounded-3xl border border-border bg-secondary p-5" data-testid="my-routes-empty-state">
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">No saved routes yet</h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                This is the new trip workspace for route planning. Create a route here or head back to the map to start with a spot.
-              </p>
+          <>
+            <div className="space-y-4 rounded-3xl border border-border bg-secondary p-5" data-testid="my-routes-empty-state">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">No saved routes yet</h2>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  This is the new trip workspace for route planning. Create a route here or head back to the map to start with a spot.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={openCreateBuilder}
+                  className="min-h-[44px] rounded-full bg-sky-500 px-4 text-sm font-semibold text-slate-950"
+                >
+                  Create route
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium"
+                >
+                  Start from map
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={openCreateBuilder}
-                className="min-h-[44px] rounded-full bg-sky-500 px-4 text-sm font-semibold text-slate-950"
+            {legacyPlansHydrated && legacyPlans.length > 0 && tripsQuery.isSuccess ? (
+              <div
+                className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 space-y-1"
+                data-testid="legacy-plans-notice"
               >
-                Create route
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="min-h-[44px] rounded-full border border-border px-4 text-sm font-medium"
-              >
-                Start from map
-              </button>
-            </div>
-          </div>
+                <p className="text-sm font-medium text-amber-200">Older trip plans found</p>
+                <p className="text-sm text-amber-100/80">
+                  You have {legacyPlans.length} trip plan{legacyPlans.length !== 1 ? 's' : ''} from your earlier session.{' '}
+                  They&apos;ll appear here once your data is migrated.
+                </p>
+              </div>
+            ) : null}
+          </>
         ) : (
           <>
             <div className="flex items-center justify-between gap-2">
