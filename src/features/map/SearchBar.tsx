@@ -8,12 +8,13 @@ interface NominatimResult {
 
 interface SearchBarProps {
   mapRef: React.RefObject<unknown>
+  onExpandedChange?: (expanded: boolean) => void
 }
 
 // NOTE: For production, proxy Nominatim via /api/geocode to respect usage policy
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 
-export default function SearchBar({ mapRef }: SearchBarProps) {
+export default function SearchBar({ mapRef, onExpandedChange }: SearchBarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<NominatimResult[]>([])
@@ -63,33 +64,43 @@ export default function SearchBar({ mapRef }: SearchBarProps) {
 
   function handleClose() {
     setIsOpen(false)
+    onExpandedChange?.(false)
     setQuery('')
     setResults([])
+  }
+
+  function handleOpen() {
+    setIsOpen(true)
+    onExpandedChange?.(true)
   }
 
   if (!isOpen) {
     return (
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
-        className="bg-surface border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-sm text-foreground text-lg"
+        onClick={handleOpen}
+        className="bg-secondary border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center shadow-md flex-shrink-0"
         aria-label="Open search"
       >
-        🔍
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
       </button>
     )
   }
 
   return (
-    <div className="relative">
+    <div className="relative flex-1">
       <div className="flex gap-2 items-center">
         <button
           type="button"
           onClick={handleClose}
-          className="bg-surface border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center text-foreground flex-shrink-0"
+          className="bg-secondary border border-border rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
           aria-label="Close search"
         >
-          ←
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
         </button>
         <div className="relative flex-1">
           <input
