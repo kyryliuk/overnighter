@@ -1,6 +1,6 @@
 # Story p3-5: 1 — Backfill Legacy Trip Plans
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -71,13 +71,13 @@ Epic 5 covers the legacy migration and sharing compatibility layer. Epics 1–4 
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Migration: add `legacy_plan_id` column** (AC: 1, 2)
-  - [ ] 1.1 Write `supabase/migrations/035_add_legacy_plan_id_to_trips.sql`
+- [x] **Task 1 — Migration: add `legacy_plan_id` column** (AC: 1, 2)
+  - [x] 1.1 Write `supabase/migrations/035_add_legacy_plan_id_to_trips.sql`
     - Add `legacy_plan_id TEXT` column to `trips` (nullable)
     - Add `UNIQUE(user_id, legacy_plan_id)` constraint for idempotency
 
-- [ ] **Task 2 — Backfill script** (AC: 1, 2, 3, 4)
-  - [ ] 2.1 Create `scripts/backfill-legacy-trip-plans.ts`
+- [x] **Task 2 — Backfill script** (AC: 1, 2, 3, 4)
+  - [x] 2.1 Create `scripts/backfill-legacy-trip-plans.ts`
     - Use `createServiceClient()` from `api/_supabase.ts` (bypasses RLS)
     - Read all `trip_plans` rows (paginated with `BATCH_SIZE = 100`)
     - For each row:
@@ -90,8 +90,8 @@ Epic 5 covers the legacy migration and sharing compatibility layer. Epics 1–4 
     - At end: print summary `Processed: X | Inserted: Y | Skipped: Z | Errors: E`
     - Print rollback statement to stdout
 
-- [ ] **Task 3 — Unit tests** (AC: 1, 2, 3, 4)
-  - [ ] 3.1 Create `scripts/backfill-legacy-trip-plans.test.ts`
+- [x] **Task 3 — Unit tests** (AC: 1, 2, 3, 4)
+  - [x] 3.1 Create `scripts/backfill-legacy-trip-plans.test.ts`
     - Export and test a pure `transformLegacyPlan(row)` function that converts a `DbTripPlan` to `{ trip, stops }` — separate from I/O for testability
     - Test: valid plan with 2 waypoints → correct `trips` row + 3 `trip_stops` (2 waypoints + 1 destination)
     - Test: plan with 0 stops → 1 `trip_stops` (destination only), `stop_count = 1`
@@ -193,6 +193,13 @@ claude-sonnet-4.6
 ### Debug Log References
 
 ### Completion Notes List
+
+- All 10 unit tests pass covering all ACs
+- `transformLegacyPlan()` is a pure exported function — no I/O dependency in tests
+- Individual malformed waypoints are silently dropped (trip preserved); missing destination returns null (trip skipped)
+- Script uses BATCH_SIZE=100 pagination; per-trip try/catch prevents one bad row aborting the batch
+- DB-level UNIQUE(user_id, legacy_plan_id) constraint provides race-safe idempotency
+- `trip_plans` rows are never touched (read-only)
 
 ### File List
 
