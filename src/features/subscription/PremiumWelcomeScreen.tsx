@@ -87,29 +87,29 @@ export default function PremiumWelcomeScreen() {
 
   if (welcomeState === 'polling') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4" data-testid="premium-welcome-polling">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-amber-500 border-t-transparent" />
-        <p className="mt-4 text-sm text-zinc-400">Confirming your subscription…</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4" data-testid="premium-welcome-polling">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
+        <p className="mt-4 text-sm text-muted-foreground">Confirming your subscription…</p>
       </div>
     )
   }
 
   if (welcomeState === 'pending') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4" data-testid="premium-welcome-pending">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4" data-testid="premium-welcome-pending">
         <div className="mx-auto max-w-sm text-center">
-          <h1 className="text-2xl font-bold text-white">Payment Processing</h1>
-          <p className="mt-3 text-sm text-zinc-400">
+          <h1 className="text-2xl font-bold text-foreground">Payment processing</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
             Your payment is being processed. This usually takes just a moment — check back shortly.
           </p>
           {sessionId && (
-            <p className="mt-2 text-xs text-zinc-600">Session: {sessionId.slice(0, 8)}…</p>
+            <p className="mt-2 text-xs text-muted-foreground/60">Session: {sessionId.slice(0, 8)}…</p>
           )}
           <button
             onClick={() => navigate(returnTo)}
-            className="mt-6 rounded-md bg-zinc-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-600"
+            className="mt-6 min-h-[44px] rounded-lg border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground"
           >
-            Back to Map
+            Back to map
           </button>
         </div>
       </div>
@@ -117,34 +117,34 @@ export default function PremiumWelcomeScreen() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4" data-testid="premium-welcome-confirmed">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4" data-testid="premium-welcome-confirmed">
       <div className="mx-auto max-w-sm text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/20">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sky-500/20">
           <span className="text-3xl" role="img" aria-label="celebration">🎉</span>
         </div>
-        <h1 className="mt-6 text-2xl font-bold text-white">
+        <h1 className="mt-6 text-2xl font-bold text-foreground">
           You're now an Overnighter Premium member
         </h1>
-        <p className="mt-3 text-sm text-zinc-400">
-          Welcome to Premium! Here's what you've unlocked:
+        <p className="mt-3 text-sm text-muted-foreground">
+          Here's what you've unlocked:
         </p>
-        <ul className="mt-4 space-y-2 text-left text-sm text-zinc-300">
+        <ul className="mt-4 space-y-2 text-left text-sm text-foreground/80">
           <li className="flex items-center gap-2">
-            <span className="text-amber-400">✓</span> Offline maps for trips without signal
+            <span className="text-sky-400">✓</span> Offline maps for trips without signal
           </li>
           <li className="flex items-center gap-2">
-            <span className="text-amber-400">✓</span> Advanced route planning
+            <span className="text-sky-400">✓</span> Advanced route planning
           </li>
           <li className="flex items-center gap-2">
-            <span className="text-amber-400">✓</span> Priority support
+            <span className="text-sky-400">✓</span> Priority support
           </li>
         </ul>
         <button
           onClick={() => navigate(returnTo)}
           data-testid="premium-welcome-cta"
-          className="mt-8 w-full rounded-md bg-amber-500 px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-amber-400"
+          className="mt-8 w-full min-h-[44px] rounded-lg bg-sky-500 px-4 py-3 text-sm font-semibold text-white"
         >
-          Start Exploring
+          Start exploring
         </button>
       </div>
     </div>
