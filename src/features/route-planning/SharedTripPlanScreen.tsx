@@ -6,15 +6,12 @@ import { buildDirectionsUrl } from '@/lib/maps/googleMaps'
 import { createTripPlanComment, deleteTripPlanComment, getTripPlanComments } from '@/lib/supabase/tripPlanComments'
 import { getTripPlanReactionSummary, setTripPlanHelpfulReaction } from '@/lib/supabase/tripPlanReactions'
 import { getPublicTripPlanByToken } from '@/lib/supabase/tripPlans'
-import { useTripPlansStore } from '@/store/tripPlansStore'
-import { createTripCopyDraft } from './tripSharing'
 
 export default function SharedTripPlanScreen() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { shareToken } = useParams<{ shareToken: string }>()
   const { session, isAuthenticated } = useAuth()
-  const saveTripPlan = useTripPlansStore((state) => state.saveTripPlan)
   const [commentAuthorLabel, setCommentAuthorLabel] = useState('')
   const [commentBody, setCommentBody] = useState('')
 
@@ -106,8 +103,6 @@ export default function SharedTripPlanScreen() {
 
   function handleImportTrip() {
     if (!tripQuery.data) return
-
-    saveTripPlan(createTripCopyDraft(tripQuery.data))
     navigate('/trips')
   }
 

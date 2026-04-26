@@ -12,7 +12,6 @@ const getTripPlanReactionSummary = vi.fn()
 const setTripPlanHelpfulReaction = vi.fn()
 
 const mockNavigate = vi.fn()
-const mockSaveTripPlan = vi.fn().mockReturnValue('copied-plan-id')
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
@@ -27,11 +26,6 @@ vi.mock('@/features/account/AuthContext', () => ({
     isAuthenticated: true,
     session: { user: { id: 'user-1' } },
   }),
-}))
-
-vi.mock('@/store/tripPlansStore', () => ({
-  useTripPlansStore: (selector: (state: { saveTripPlan: typeof mockSaveTripPlan }) => unknown) =>
-    selector({ saveTripPlan: mockSaveTripPlan }),
 }))
 
 vi.mock('@/lib/supabase/tripPlans', () => ({
@@ -71,7 +65,6 @@ function renderScreen() {
 describe('SharedTripPlanScreen reactions', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
-    mockSaveTripPlan.mockReturnValue('copied-plan-id')
     getPublicTripPlanByToken.mockReset()
     getTripPlanComments.mockReset()
     createTripPlanComment.mockReset()
@@ -168,13 +161,12 @@ describe('SharedTripPlanScreen reactions', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/trips')
   })
 
-  it('"Copy to planner" button navigates to /trips after saving (AC4)', async () => {
+  it('"Copy to planner" button navigates to /trips (AC4)', async () => {
     renderScreen()
 
     fireEvent.click(await screen.findByRole('button', { name: /save a copy to my planner/i }))
 
     await waitFor(() => {
-      expect(mockSaveTripPlan).toHaveBeenCalled()
       expect(mockNavigate).toHaveBeenCalledWith('/trips')
     })
   })

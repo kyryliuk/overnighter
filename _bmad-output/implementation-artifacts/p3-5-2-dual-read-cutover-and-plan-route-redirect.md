@@ -66,28 +66,28 @@ Story 5.1 backfilled legacy `trip_plans` rows into normalized `trips` + `trip_st
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Redirect `/plan-route` → `/trips` in App.tsx** (AC: 1)
-  - [ ] 1.1 Import `Navigate` from `react-router-dom` in `App.tsx`
-  - [ ] 1.2 Replace `<Route path="/plan-route" element={<RoutePlanningScreen />} />` with `<Route path="/plan-route" element={<Navigate to="/trips" replace />} />`
-  - [ ] 1.3 Test: visiting `/plan-route` (authenticated) renders my-routes-screen via redirect
+- [x] **Task 1 — Redirect `/plan-route` → `/trips` in App.tsx** (AC: 1)
+  - [x] 1.1 Import `Navigate` from `react-router-dom` in `App.tsx`
+  - [x] 1.2 Replace `<Route path="/plan-route" element={<RoutePlanningScreen />} />` with `<Route path="/plan-route" element={<Navigate to="/trips" replace />} />`
+  - [x] 1.3 Test: visiting `/plan-route` (authenticated) renders my-routes-screen via redirect
 
-- [ ] **Task 2 — Fix `SharedTripPlanScreen.tsx` navigation** (AC: 4)
-  - [ ] 2.1 Change `navigate('/plan-route?openPlan=...')` in `handleImportTrip` → `navigate('/trips')`
-  - [ ] 2.2 Change `navigate('/plan-route')` in "Open planner" button → `navigate('/trips')`
-  - [ ] 2.3 Add tests: "Open planner" navigates to `/trips`; "Copy to planner" navigates to `/trips`
+- [x] **Task 2 — Fix `SharedTripPlanScreen.tsx` navigation** (AC: 4)
+  - [x] 2.1 Change `navigate('/plan-route?openPlan=...')` in `handleImportTrip` → `navigate('/trips')`
+  - [x] 2.2 Change `navigate('/plan-route')` in "Open planner" button → `navigate('/trips')`
+  - [x] 2.3 Add tests: "Open planner" navigates to `/trips`; "Copy to planner" navigates to `/trips`
 
-- [ ] **Task 3 — Fix `AccountScreen.tsx` navigation** (AC: 4)
-  - [ ] 3.1 Change `navigate('/plan-route')` → `navigate('/trips')` in AccountScreen
-  - [ ] 3.2 Update button label from "Trip drafts" → "My Routes"
-  - [ ] 3.3 Add/update test: "My Routes" button navigates to `/trips`
+- [x] **Task 3 — Fix `AccountScreen.tsx` navigation** (AC: 4)
+  - [x] 3.1 Change `navigate('/plan-route')` → `navigate('/trips')` in AccountScreen
+  - [x] 3.2 Update button label from "Trip drafts" → "My Routes"
+  - [x] 3.3 Add/update test: "My Routes" button navigates to `/trips`
 
-- [ ] **Task 4 — Legacy plans notice in `MyRoutesScreen` empty state** (AC: 3)
-  - [ ] 4.1 Import and call `useTripPlansStore` in `MyRoutesContent`
-  - [ ] 4.2 When `trips.length === 0 && tripsQuery.isSuccess && !tripsQuery.isLoading && legacyPlans.length > 0`: render a notice below the empty state card with `data-testid="legacy-plans-notice"`
-  - [ ] 4.3 Notice text: "You have {N} trip plan(s) from your earlier session. They'll appear here once your data is migrated."
-  - [ ] 4.4 Test: legacy notice shown when normalized trips = 0 + legacy plans > 0
-  - [ ] 4.5 Test: legacy notice NOT shown when normalized trips exist
-  - [ ] 4.6 Test: legacy notice NOT shown when legacy plans is empty
+- [x] **Task 4 — Legacy plans notice in `MyRoutesScreen` empty state** (AC: 3)
+  - [x] 4.1 Import and call `useTripPlansStore` in `MyRoutesContent`
+  - [x] 4.2 When `trips.length === 0 && tripsQuery.isSuccess && !tripsQuery.isLoading && legacyPlans.length > 0`: render a notice below the empty state card with `data-testid="legacy-plans-notice"`
+  - [x] 4.3 Notice text: "You have {N} trip plan(s) from your earlier session. They'll appear here once your data is migrated."
+  - [x] 4.4 Test: legacy notice shown when normalized trips = 0 + legacy plans > 0
+  - [x] 4.5 Test: legacy notice NOT shown when normalized trips exist
+  - [x] 4.6 Test: legacy notice NOT shown when legacy plans is empty
 
 ---
 
