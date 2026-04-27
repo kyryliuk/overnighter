@@ -80,7 +80,11 @@ export async function fetchOverpassLocations(bbox: BBox): Promise<OverpassNode[]
   const query = buildMlScanOverpassQuery(bbox)
   const response = await fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json',
+      'User-Agent': 'Overnighter/1.0 (overnighter.net)',
+    },
     body: `data=${encodeURIComponent(query)}`,
     signal: AbortSignal.timeout(90000),
   })
