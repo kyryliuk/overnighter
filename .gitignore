@@ -55,6 +55,12 @@ Thumbs.db
 *.sln
 *.sw?
 
+# Python (for ml/ scripts)
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
 # Local AI/editor workspace state at the repo root
 /.agent/
 /.agents/
