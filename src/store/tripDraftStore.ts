@@ -141,6 +141,7 @@ export const useTripDraftStore = create<TripDraftStore>()(
 
       removeDraft: (tripId) =>
         set((state) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [tripId]: _removed, ...rest } = state.draftsById
           return {
             draftsById: rest,
