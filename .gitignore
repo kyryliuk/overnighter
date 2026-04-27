@@ -81,3 +81,6 @@ __pycache__/
 /.rovodev/
 /.trae/
 /.windsurf/
+
+# Local-only ML test script (never commit again — see security retro 2026-04-27)
+ml/test_endpoint.py
